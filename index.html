@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Misk Beauty & Gifts | مسك للجمال والهدايا</title>
+    <!-- Secure HTTPS Links for external libraries -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <div class="logo">
+                <h1>مسك <span>Misk</span></h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home">الرئيسية</a></li>
+                <li><a href="#products">المنتجات</a></li>
+                <li><a href="#about">عن مسك</a></li>
+            </ul>
+            <div class="nav-icons">
+                <div class="cart-icon" id="cartToggle">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span id="cartCount">0</span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero" id="home">
+            <div class="hero-content container">
+                <h2>عالم من الجمال والتميز</h2>
+                <p>اكتشف مجموعتنا المختارة من العطور ومنتجات التجميل والهدايا الفاخرة.</p>
+                <a href="#products" class="btn btn-primary">تسوق الآن</a>
+            </div>
+        </section>
+
+        <section class="products container" id="products">
+            <div class="section-title">
+                <h2>أحدث المنتجات</h2>
+            </div>
+            <div class="product-grid" id="productGrid">
+                <!-- Products will be injected by JS -->
+                <div class="product-card" data-id="1" data-name="مسك إيطالي فاخر" data-price="150">
+                    <div class="product-image">
+                        <div class="placeholder-img"></div>
+                    </div>
+                    <div class="product-info">
+                        <h3>مسك إيطالي فاخر</h3>
+                        <p class="price">150 ر.س</p>
+                        <button class="add-to-cart-btn" onclick="addToCart(1, 'مسك إيطالي فاخر', 150)">إضافة للسلة</button>
+                    </div>
+                </div>
+                
+                <div class="product-card" data-id="2" data-name="طقم هدايا ملكي" data-price="450">
+                    <div class="product-image">
+                        <div class="placeholder-img"></div>
+                    </div>
+                    <div class="product-info">
+                        <h3>طقم هدايا ملكي</h3>
+                        <p class="price">450 ر.س</p>
+                        <button class="add-to-cart-btn" onclick="addToCart(2, 'طقم هدايا ملكي', 450)">إضافة للسلة</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="cart-sidebar" id="cartSidebar">
+        <div class="cart-header">
+            <h3>سلة التسوق</h3>
+            <button id="closeCart"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cart-items" id="cartItems">
+            <!-- Cart items will be injected by JS -->
+        </div>
+        <div class="cart-footer">
+            <div class="total">المجموع: <span id="cartTotal">0</span> ر.س</div>
+            <button class="btn btn-checkout">إتمام الشراء</button>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 مسك للجمال والهدايا. جميع الحقوق محفوظة.</p>
+        </div>
+    </footer>
+
+    <script src="assets/js/main.js"></script>
+</body>
+</html>
