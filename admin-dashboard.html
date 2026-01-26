@@ -162,10 +162,36 @@
     </div>
 
     <script>
-        // Simple authentication check
-        if (localStorage.getItem('misk_admin_session') !== 'active') {
-            window.location.href = 'admin-login.html';
+        // --- Robust Session Verification ---
+        function verifyAdminSession() {
+            const sessionDataString = localStorage.getItem('misk_admin_session');
+
+            if (!sessionDataString) {
+                window.location.href = 'admin-login.html';
+                return;
+            }
+
+            const sessionData = JSON.parse(sessionDataString);
+            const now = Date.now();
+            const sessionHours = (now - sessionData.loginTime) / (1000 * 60 * 60);
+
+            // If not persistent (Stay logged in unchecked) and older than 2 hours, expire
+            if (!sessionData.persistent && sessionHours > 2) {
+                localStorage.removeItem('misk_admin_session');
+                window.location.href = 'admin-login.html';
+                return;
+            }
+
+            // Global persistence: 24 hours max safety even for remembered sessions
+            if (sessionHours > 24) {
+                localStorage.removeItem('misk_admin_session');
+                window.location.href = 'admin-login.html';
+                return;
+            }
         }
+
+        // Run check
+        verifyAdminSession();
     </script>
 </body>
 
