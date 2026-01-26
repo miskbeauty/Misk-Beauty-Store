@@ -3,8 +3,8 @@
  * Focused on Security, Validation, and Premium UX
  */
 
-// Cart State
-let cart = [];
+// Cart State - Load from LocalStorage if exists
+let cart = JSON.parse(localStorage.getItem('misk_cart')) || [];
 
 // DOM Elements
 const cartSidebar = document.getElementById('cartSidebar');
@@ -72,13 +72,32 @@ function addToCart(id, name, price, image = 'assets/images/1745215944148877862.p
         cart.push({ id, name, price, quantity: 1, image });
     }
 
+    saveCart();
     updateCartUI();
     openCart();
 }
 
+function saveCart() {
+    localStorage.setItem('misk_cart', JSON.stringify(cart));
+}
+
 function removeFromCart(id) {
     cart = cart.filter(item => item.id !== id);
+    saveCart();
     updateCartUI();
+}
+
+function updateQuantity(id, delta) {
+    const item = cart.find(i => i.id === id);
+    if (item) {
+        item.quantity += delta;
+        if (item.quantity <= 0) {
+            removeFromCart(id);
+        } else {
+            saveCart();
+            updateCartUI();
+        }
+    }
 }
 
 function updateCartUI() {
@@ -144,37 +163,113 @@ function updateCartUI() {
         }
     }
 
-    if (widgetCartTotalText) {
-        if (isEmpty) {
-            widgetCartTotalText.style.display = 'none';
-        } else {
-            widgetCartTotalText.textContent = `${total} شيكل`;
-            widgetCartTotalText.style.display = 'inline';
-        }
+    // --- Cart Page Specific Rendering ---
+    const cartPageItems = document.getElementById('cartPageItems');
+    if (cartPageItems) {
+        renderFullCart();
+    }
+}
+
+// Full Cart Page Logic
+const shippingRates = {
+    'none': 0,
+    'aqraba': 7,
+    'westbank': 20,
+    'jerusalem': 30,
+    'inside': 70
+};
+
+let selectedShippingRate = 0;
+
+function renderFullCart() {
+    const cartPageItems = document.getElementById('cartPageItems');
+    const subtotalEl = document.getElementById('cartSubtotal');
+    const shippingEl = document.getElementById('shippingCost');
+    const grandTotalEl = document.getElementById('grandTotal');
+    const freeShippingMsg = document.getElementById('freeShippingMsg');
+
+    if (!cartPageItems) return;
+
+    cartPageItems.innerHTML = '';
+    let subtotal = 0;
+
+    if (cart.length === 0) {
+        cartPageItems.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">سلة المشتريات فارغة.</td></tr>';
+    } else {
+        cart.forEach(item => {
+            const itemTotal = item.price * item.quantity;
+            subtotal += itemTotal;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <div class="cart-product-info">
+                        <img src="${item.image}" alt="${item.name}">
+                        <span>${escapeHTML(item.name)}</span>
+                    </div>
+                </td>
+                <td>${item.price} شيكل</td>
+                <td>
+                    <div class="quantity-controls">
+                        <button onclick="updateQuantity(${item.id}, -1)">-</button>
+                        <span>${item.quantity}</span>
+                        <button onclick="updateQuantity(${item.id}, 1)">+</button>
+                    </div>
+                </td>
+                <td>${itemTotal} شيكل</td>
+                <td>
+                    <button class="remove-btn" onclick="removeFromCart(${item.id})"><i class="fas fa-trash"></i></button>
+                </td>
+            `;
+            cartPageItems.appendChild(tr);
+        });
     }
 
-    // Update Mini Cart Dropdown
-    if (miniCartItems) {
-        miniCartItems.innerHTML = '';
-        if (isEmpty) {
-            // Dropdown is hidden via CSS .is-empty .mini-cart-dropdown
-            miniCartItems.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">السلة فارغة.</p>';
-        } else {
-            cart.forEach(item => {
-                const miniItem = document.createElement('div');
-                miniItem.className = 'mini-cart-item';
-                miniItem.innerHTML = `
+    subtotalEl.textContent = `${subtotal}`;
+
+    // Free Shipping Rule
+    let activeShipping = selectedShippingRate;
+    if (subtotal >= 300 && selectedShippingRate > 0) {
+        activeShipping = 0;
+        if (freeShippingMsg) freeShippingMsg.style.display = 'block';
+    } else {
+        if (freeShippingMsg) freeShippingMsg.style.display = 'none';
+    }
+
+    shippingEl.textContent = `${activeShipping}`;
+    grandTotalEl.textContent = `${subtotal + activeShipping}`;
+}
+
+function updateShipping() {
+    const selector = document.getElementById('shippingRegion');
+    if (selector) {
+        selectedShippingRate = shippingRates[selector.value] || 0;
+        renderFullCart();
+    }
+}
+
+// Update Mini Cart Dropdown
+if (miniCartItems) {
+    miniCartItems.innerHTML = '';
+    if (isEmpty) {
+        // Dropdown is hidden via CSS .is-empty .mini-cart-dropdown
+        miniCartItems.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">السلة فارغة.</p>';
+    } else {
+        cart.forEach(item => {
+            const miniItem = document.createElement('div');
+            miniItem.className = 'mini-cart-item';
+            miniItem.innerHTML = `
                     <img src="${item.image}" alt="${item.name}" style="width: 40px; height: 40px; border-radius: 5px; margin-left: 10px; object-fit: cover;">
                     <div class="mini-item-info">
                         <h4 style="margin: 0; font-size: 0.9rem;">${escapeHTML(item.name)}</h4>
                         <p style="margin: 2px 0 0; font-size: 0.8rem; color: #6a1b9a;">${item.price} شيكل × ${item.quantity}</p>
                     </div>
                 `;
-                miniCartItems.appendChild(miniItem);
-            });
-        }
+            miniCartItems.appendChild(miniItem);
+        });
     }
-    if (miniCartTotal) miniCartTotal.textContent = total;
+}
+if (miniCartTotal) miniCartTotal.textContent = total;
 }
 
 /**
@@ -189,11 +284,8 @@ function escapeHTML(str) {
 // --- UI Interactions ---
 
 function openCart() {
-    cartSidebar.classList.add('active');
-}
-
-function closeCartSidebar() {
-    cartSidebar.classList.remove('active');
+    // Redirect to the full cart page instead of just opening a sidebar
+    window.location.href = 'cart.html';
 }
 
 // Event Listeners
@@ -253,6 +345,7 @@ dots.forEach((dot, index) => {
 
 // Initialization
 startSlideShow();
+updateCartUI(); // Ensure UI reflects localStorage state on load
 
 // --- Search Functionality ---
 
@@ -282,13 +375,14 @@ if (searchInput) {
     });
 }
 
-// Close cart when clicking outside
+// Close cart when clicking outside (kept for safety, though we now redirect)
 document.addEventListener('click', (e) => {
+    if (!cartSidebar) return;
     const isClickInsideCart = cartSidebar.contains(e.target);
     const isClickOnToggle = (cartToggle && cartToggle.contains(e.target)) || (cartWidgetToggle && cartWidgetToggle.contains(e.target));
 
     if (!isClickInsideCart && !isClickOnToggle && cartSidebar.classList.contains('active')) {
-        closeCartSidebar();
+        cartSidebar.classList.remove('active');
     }
 });
 

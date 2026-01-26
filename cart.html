@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سلة المشتريات | مسك بيوتي</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Tajawal:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .cart-page-container {
+            padding: 40px 0;
+            min-height: 60vh;
+        }
+
+        .cart-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 992px) {
+            .cart-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .cart-table-wrapper {
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: right;
+            padding: 15px;
+            border-bottom: 2px solid #fce4ec;
+            color: #880E4F;
+        }
+
+        td {
+            padding: 20px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .cart-product-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .cart-product-info img {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            object-fit: cover;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #fdf6ff;
+            padding: 5px 10px;
+            border-radius: 20px;
+            width: fit-content;
+        }
+
+        .quantity-controls button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #6a1b9a;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+        }
+
+        .quantity-controls button:hover {
+            color: #D4AF37;
+        }
+
+        .remove-btn {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: 0.3s;
+        }
+
+        .remove-btn:hover {
+            color: #a71d2a;
+        }
+
+        .cart-summary-card {
+            background: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .summary-title {
+            font-size: 1.5rem;
+            color: #880E4F;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #fce4ec;
+            padding-bottom: 10px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .summary-total {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #fce4ec;
+            font-weight: 700;
+            font-size: 1.4rem;
+            color: #6a1b9a;
+        }
+
+        .shipping-box {
+            margin: 20px 0;
+            background: #fdf6ff;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .shipping-box label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #4a4a4a;
+        }
+
+        .shipping-box select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: inherit;
+        }
+
+        .btn-checkout-page {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(to right, #6a1b9a, #880E4F);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(136, 14, 79, 0.2);
+        }
+
+        .btn-checkout-page:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(136, 14, 79, 0.3);
+        }
+
+        .free-shipping-badge {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            display: none;
+            text-align: center;
+            border: 1px dashed #2e7d32;
+        }
+
+        .breadcrumbs {
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <nav class="container">
+            <div class="logo">
+                <a href="index.html">
+                    <img src="assets/images/1745215944148877862-removebg-preview.png" alt="Misk Beauty Logo">
+                </a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">الرئيسية</a></li>
+                <li class="dropdown">
+                    <a href="#">العناية والجمال</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#">مكياج</a></li>
+                        <li><a href="#">عناية بالبشرة</a></li>
+                        <li><a href="#">شعر</a></li>
+                        <li><a href="#">جسم</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a href="#">عطور</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#">ستاتي</a></li>
+                        <li><a href="#">رجالي</a></li>
+                        <li><a href="#">مزيل عرق</a></li>
+                        <li><a href="#">عطر شعر</a></li>
+                        <li><a href="#">بخور</a></li>
+                    </ul>
+                </li>
+                <li><a href="#">الهدايا</a></li>
+            </ul>
+        </nav>
+        <div class="search-cart-row container">
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="ابحث في مسك بيوتي">
+                <i class="fas fa-search"></i>
+            </div>
+            <div class="cart-widget" id="cartWidgetToggle">
+                <div class="cart-icon-wrapper">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-badge" id="widgetCartCountBadge">0</span>
+                </div>
+                <div class="cart-info">
+                    <span class="cart-label">مشترياتك</span>
+                    <span id="widgetCartCountText">السلة فارغة</span>
+                    <span id="widgetCartTotalText" style="display: none;">0 شيكل</span>
+                </div>
+                <div class="mini-cart-dropdown" id="miniCartDropdown">
+                    <div class="mini-cart-items" id="miniCartItems"></div>
+                    <div class="mini-cart-footer">
+                        <div class="mini-total">المجموع: <span id="miniCartTotal">0</span> شيكل</div>
+                        <button class="btn btn-mini-checkout" onclick="location.reload()">تحديث الصفحة</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container cart-page-container">
+        <nav class="breadcrumbs">
+            <ul>
+                <li><a href="index.html">الرئيسية</a></li>
+                <li class="current-page">سلة المشتريات</li>
+            </ul>
+        </nav>
+
+        <h1 style="color: #6a1b9a; margin-bottom: 30px;">سلة المشتريات</h1>
+
+        <div class="cart-grid">
+            <!-- Cart Items List -->
+            <div class="cart-table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>المنتج</th>
+                            <th>السعر</th>
+                            <th>الكمية</th>
+                            <th>المجموع</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cartPageItems">
+                        <!-- Injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Summary Sidebar -->
+            <div class="cart-summary-card">
+                <h2 class="summary-title">ملخص الطلب</h2>
+
+                <div class="summary-row">
+                    <span>المجموع الفرعي:</span>
+                    <span><span id="cartSubtotal">0</span> شيكل</span>
+                </div>
+
+                <div class="shipping-box">
+                    <label for="shippingRegion">حساب التوصيل:</label>
+                    <select id="shippingRegion" onchange="updateShipping()">
+                        <option value="none">اختر المنطقة...</option>
+                        <option value="aqraba">عقربا (7 شيكل)</option>
+                        <option value="westbank">الضفة الغربية (20 شيكل)</option>
+                        <option value="jerusalem">القدس (30 شيكل)</option>
+                        <option value="inside">الداخل المحتل (70 شيكل)</option>
+                    </select>
+                </div>
+
+                <div id="freeShippingMsg" class="free-shipping-badge">
+                    <i class="fas fa-truck"></i> مبروك! حصلت على توصيل مجاني
+                </div>
+
+                <div class="summary-row">
+                    <span>توصيل:</span>
+                    <span><span id="shippingCost">0</span> شيكل</span>
+                </div>
+
+                <div class="summary-row summary-total">
+                    <span>الإجمالي الكلي:</span>
+                    <span><span id="grandTotal">0</span> شيكل</span>
+                </div>
+
+                <button class="btn-checkout-page">إتمام عملية الشراء</button>
+
+                <p style="text-align: center; font-size: 0.85rem; color: #888; margin-top: 15px;">
+                    <i class="fas fa-lock"></i> دفع آمن ومضمون 100%
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h3>مسك بيوتي</h3>
+                    <p>مسك بيوتي - وجهتكم الأولى لأرقى العطور ومنتجات العناية والجمال. نحن نجمع بين الجودة والفخامة
+                        لنقدم لكم الأفضل دائماً.</p>
+                </div>
+                <div class="footer-col">
+                    <h3>روابط سريعة</h3>
+                    <ul class="footer-links">
+                        <li><a href="#">سياسة الاستبدال والاسترجاع</a></li>
+                        <li><a href="#">من نحن</a></li>
+                        <li><a href="#">تواصل معنا</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="copyright">© 2026 مسك بيوتي للجمال والهدايا. جميع الحقوق محفوظة</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="assets/js/main.js"></script>
+    <div id="cartSidebar" style="display:none;"></div> <!-- Hidden stub for JS logic compatibility -->
+    <div id="cartCount" style="display:none;"></div> <!-- Hidden stub -->
+    <div id="cartTotal" style="display:none;"></div> <!-- Hidden stub -->
+    <div id="closeCart" style="display:none;"></div> <!-- Hidden stub -->
+</body>
+
+</html>
