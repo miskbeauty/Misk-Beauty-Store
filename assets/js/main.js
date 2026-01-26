@@ -168,6 +168,12 @@ function updateCartUI() {
     if (cartPageItems) {
         renderFullCart();
     }
+
+    // --- Checkout Page Specific Rendering ---
+    const checkoutItemsList = document.getElementById('checkoutItemsList');
+    if (checkoutItemsList) {
+        renderCheckoutSummary();
+    }
 }
 
 // Full Cart Page Logic
@@ -245,6 +251,97 @@ function updateShipping() {
     if (selector) {
         selectedShippingRate = shippingRates[selector.value] || 0;
         renderFullCart();
+    }
+}
+
+// Checkout Page Functions
+function renderCheckoutSummary() {
+    const listContainer = document.getElementById('checkoutItemsList');
+    const subtotalEl = document.getElementById('checkoutSubtotal');
+    const shippingEl = document.getElementById('checkoutShipping');
+    const grandTotalEl = document.getElementById('checkoutGrandTotal');
+
+    if (!listContainer) return;
+
+    listContainer.innerHTML = '';
+    let subtotal = 0;
+
+    cart.forEach(item => {
+        const itemTotal = item.price * item.quantity;
+        subtotal += itemTotal;
+
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'checkout-item-compact';
+        itemDiv.style.display = 'flex';
+        itemDiv.style.justifyContent = 'space-between';
+        itemDiv.style.marginBottom = '10px';
+        itemDiv.style.fontSize = '0.9rem';
+        itemDiv.innerHTML = `
+            <span>${escapeHTML(item.name)} (×${item.quantity})</span>
+            <span>${itemTotal} شيكل</span>
+        `;
+        listContainer.appendChild(itemDiv);
+    });
+
+    if (cart.length === 0) {
+        listContainer.innerHTML = '<p style="text-align: center; color: #888;">السلة فارغة</p>';
+    }
+
+    subtotalEl.textContent = `${subtotal}`;
+
+    // Apply Free Shipping Rule in Checkout too
+    let activeShipping = selectedShippingRate;
+    if (subtotal >= 300 && selectedShippingRate > 0) {
+        activeShipping = 0;
+    }
+
+    shippingEl.textContent = `${activeShipping}`;
+    grandTotalEl.textContent = `${subtotal + activeShipping}`;
+}
+
+function updateCheckoutShipping() {
+    const citySelector = document.getElementById('checkoutCity');
+    if (citySelector) {
+        selectedShippingRate = shippingRates[citySelector.value] || 0;
+        renderCheckoutSummary();
+    }
+}
+
+function handleCheckoutSubmit(e) {
+    if (e) e.preventDefault();
+
+    // Basic validation
+    const form = document.getElementById('checkoutForm');
+    const fullName = document.getElementById('fullName').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const city = document.getElementById('checkoutCity').value;
+    const address = document.getElementById('address').value.trim();
+
+    if (!fullName || !phone || city === 'none' || !address) {
+        alert("يرجى ملء جميع الحقول المطلوبة واختيار المدينة.");
+        return;
+    }
+
+    if (cart.length === 0) {
+        alert("سلة المشتريات فارغة!");
+        return;
+    }
+
+    // Success Action
+    const checkoutContent = document.getElementById('checkoutContent');
+    const successSection = document.getElementById('successSection');
+
+    if (checkoutContent && successSection) {
+        checkoutContent.style.display = 'none';
+        successSection.style.display = 'block';
+
+        // Clear Cart
+        cart = [];
+        saveCart();
+        updateCartUI();
+
+        // Scroll to top
+        window.scrollTo(0, 0);
     }
 }
 
