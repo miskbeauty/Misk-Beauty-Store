@@ -6,52 +6,34 @@
 // Cart State - Load from LocalStorage if exists
 let cart = JSON.parse(localStorage.getItem('misk_cart')) || [];
 
-// DOM Elements (Initially empty, will be populated after header load)
-let cartSidebar, closeCart, cartItemsContainer, cartCount, cartTotal;
-let cartWidgetToggle, widgetCartCountBadge, widgetCartCountText, widgetCartTotalText;
-let miniCartItems, miniCartTotal;
-let searchInput, noResultsMessage;
+// DOM Elements
+const cartSidebar = document.getElementById('cartSidebar');
+const cartToggle = document.getElementById('cartToggle'); // Might be null now
+const closeCart = document.getElementById('closeCart');
+const cartItemsContainer = document.getElementById('cartItems');
+const cartCount = document.getElementById('cartCount');
+const cartTotal = document.getElementById('cartTotal');
 
-function refreshHeaderElements() {
-    cartSidebar = document.getElementById('cartSidebar');
-    closeCart = document.getElementById('closeCart');
-    cartItemsContainer = document.getElementById('cartItems');
-    cartCount = document.getElementById('cartCount');
-    cartTotal = document.getElementById('cartTotal');
+// New Functional Row Elements
+const cartWidgetToggle = document.getElementById('cartWidgetToggle');
+const widgetCartCountBadge = document.getElementById('widgetCartCountBadge');
+const widgetCartCountText = document.getElementById('widgetCartCountText');
+const widgetCartTotalText = document.getElementById('widgetCartTotalText');
 
-    cartWidgetToggle = document.getElementById('cartWidgetToggle');
-    widgetCartCountBadge = document.getElementById('widgetCartCountBadge');
-    widgetCartCountText = document.getElementById('widgetCartCountText');
-    widgetCartTotalText = document.getElementById('widgetCartTotalText');
+// Mini Cart Elements
+const miniCartItems = document.getElementById('miniCartItems');
+const miniCartTotal = document.getElementById('miniCartTotal');
 
-    miniCartItems = document.getElementById('miniCartItems');
-    miniCartTotal = document.getElementById('miniCartTotal');
+// Search Elements
+const searchInput = document.getElementById('searchInput');
+const noResultsMessage = document.getElementById('noResultsMessage');
+const productCards = document.querySelectorAll('.product-card');
 
-    searchInput = document.getElementById('searchInput');
-    noResultsMessage = document.getElementById('noResultsMessage');
-
-    // Re-bind listeners if elements exist
-    if (cartWidgetToggle) cartWidgetToggle.addEventListener('click', openCart);
-    if (closeCart) closeCart.addEventListener('click', () => cartSidebar?.classList.remove('active'));
-    if (searchInput) initSearch();
-}
-
-async function loadHeader() {
-    const headerPlaceholder = document.querySelector('header');
-    if (!headerPlaceholder) return;
-
-    try {
-        const response = await fetch('assets/partials/header.html');
-        if (!response.ok) throw new Error('Failed to fetch header partial');
-        const content = await response.text();
-        headerPlaceholder.innerHTML = content;
-
-        refreshHeaderElements();
-        updateCartUI();
-    } catch (error) {
-        console.error('Error loading header:', error);
-    }
-}
+// Slider Elements
+const slides = document.querySelectorAll('.slide');
+const dots = document.querySelectorAll('.dot');
+const prevBtn = document.querySelector('.slider-arrow.prev');
+const nextBtn = document.querySelector('.slider-arrow.next');
 
 // --- Security & Validation ---
 
@@ -401,8 +383,10 @@ function openCart() {
     window.location.href = 'cart.html';
 }
 
+// Event Listeners
+if (cartToggle) cartToggle.addEventListener('click', openCart);
 if (cartWidgetToggle) cartWidgetToggle.addEventListener('click', openCart);
-// closeCart listener moved to refreshHeaderElements
+if (closeCart) closeCart.addEventListener('click', () => cartSidebar?.classList.remove('active'));
 
 // --- Slider Component ---
 let currentSlide = 0;
@@ -454,22 +438,56 @@ dots.forEach((dot, index) => {
     });
 });
 
-// --- Initialization ---
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Load the shared header
-    loadHeader();
+// Initialization
+startSlideShow();
+updateCartUI(); // Ensure UI reflects localStorage state on load
 
-    // 2. Initialize Slider (if on index.html)
-    const slides = document.querySelectorAll('.slide');
-    if (slides.length > 0) {
-        startSlideShow();
+// --- Search Functionality ---
+
+if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase().trim();
+        let anyVisible = false;
+
+        productCards.forEach(card => {
+            const productName = card.getAttribute('data-name').toLowerCase();
+            if (productName.includes(searchTerm)) {
+                card.style.display = 'block';
+                anyVisible = true;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        // Show/Hide No Results Message
+        if (noResultsMessage) {
+            if (!anyVisible) {
+                noResultsMessage.classList.remove('hidden');
+            } else {
+                noResultsMessage.classList.add('hidden');
+            }
+        }
+    });
+}
+
+// Close cart when clicking outside (kept for safety, though we now redirect)
+document.addEventListener('click', (e) => {
+    if (!cartSidebar) return;
+    const isClickInsideCart = cartSidebar.contains(e.target);
+    const isClickOnToggle = (cartToggle && cartToggle.contains(e.target)) || (cartWidgetToggle && cartWidgetToggle.contains(e.target));
+
+    if (!isClickInsideCart && !isClickOnToggle && cartSidebar.classList.contains('active')) {
+        cartSidebar.classList.remove('active');
     }
+});
 
-    // 3. Page-specific Logic
+// --- Single Product Page Interactions ---
 
-    // Product Page: Thumbnail Switching & Quantity Selector & Zoom
+document.addEventListener('DOMContentLoaded', () => {
+    // Thumbnail Switching
     const mainImg = document.getElementById('mainProductImg');
     const thumbnails = document.querySelectorAll('.thumb');
+
     if (thumbnails.length > 0 && mainImg) {
         thumbnails.forEach(thumb => {
             thumb.addEventListener('click', () => {
@@ -480,13 +498,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Quantity Selector
     const qtyInput = document.getElementById('productQty');
     const plusBtn = document.querySelector('.qty-btn.plus');
     const minusBtn = document.querySelector('.qty-btn.minus');
+
     if (qtyInput && plusBtn && minusBtn) {
         plusBtn.addEventListener('click', () => {
             qtyInput.value = parseInt(qtyInput.value) + 1;
         });
+
         minusBtn.addEventListener('click', () => {
             if (parseInt(qtyInput.value) > 1) {
                 qtyInput.value = parseInt(qtyInput.value) - 1;
@@ -494,34 +515,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Zoom Effect
     const zoomContainer = document.getElementById('zoomContainer');
     if (zoomContainer && mainImg) {
         zoomContainer.addEventListener('mousemove', (e) => {
             const { left, top, width, height } = zoomContainer.getBoundingClientRect();
             const x = ((e.pageX - left) / width) * 100;
             const y = ((e.pageY - top) / height) * 100;
+
             mainImg.style.transformOrigin = `${x}% ${y}%`;
             mainImg.style.transform = "scale(2)";
         });
+
         zoomContainer.addEventListener('mouseleave', () => {
             mainImg.style.transform = "scale(1.1)";
             mainImg.style.transformOrigin = "center center";
         });
     }
-
-    // Standard Cart Initial sync (logic for sync is in loadHeader -> refreshHeaderElements -> updateCartUI)
 });
 
-// Close cart when clicking outside (kept for safety, though we now redirect)
-document.addEventListener('click', (e) => {
-    if (!cartSidebar) return;
-    const isClickInsideCart = cartSidebar.contains(e.target);
-    const isClickOnToggle = (cartWidgetToggle && cartWidgetToggle.contains(e.target));
-
-    if (!isClickInsideCart && !isClickOnToggle && cartSidebar.classList.contains('active')) {
-        cartSidebar.classList.remove('active');
-    }
-});
-
-console.log("Misk Beauty JS initialized successfully with Shared Header logic.");
+console.log("Misk Beauty JS initialized successfully with Security Validation & Product Page logic.");
 
