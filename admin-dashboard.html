@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم | مسك بيوتي</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/admin.css">
+</head>
+
+<body>
+    <div class="dashboard-wrapper">
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-logo">
+                <img src="assets/images/1745215944148877862-removebg-preview.png" alt="Misk Beauty Logo">
+                <h3 style="color: #6a1b9a; font-size: 0.9rem; margin-top: 10px;">إدارة مسك بيوتي</h3>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li class="menu-item active">
+                    <a href="admin-dashboard.html">
+                        <i class="fas fa-chart-line"></i>
+                        <span>الرئيسية</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>إدارة الطلبات</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#">
+                        <i class="fas fa-box-open"></i>
+                        <span>إدارة المنتجات</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#">
+                        <i class="fas fa-users"></i>
+                        <span>العملاء</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#">
+                        <i class="fas fa-cog"></i>
+                        <span>الإعدادات</span>
+                    </a>
+                </li>
+                <li class="menu-item" style="margin-top: 50px;">
+                    <a href="admin-login.html" onclick="localStorage.removeItem('misk_admin_session')">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>تسجيل الخروج</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="admin-main">
+            <!-- Top Header -->
+            <header class="dashboard-header">
+                <div>
+                    <h1 style="font-size: 1.8rem; font-weight: 700;">أهلاً بك، المدير</h1>
+                    <p style="color: #636e72;">نظرة عامة على نشاط المتجر اليوم.</p>
+                </div>
+
+                <div class="admin-user-info">
+                    <div class="user-details" style="text-align: left;">
+                        <span style="display: block; font-weight: 700;">أحمد محمد</span>
+                        <span style="font-size: 0.8rem; color: #888;">مدير المتجر</span>
+                    </div>
+                    <div class="user-avatar">AD</div>
+                </div>
+            </header>
+
+            <!-- Quick Stats -->
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon bg-purple">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h4>إجمالي الطلبات</h4>
+                        <span>124</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon bg-pink">
+                        <i class="fas fa-shekel-sign"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h4>المبيعات (شيكل)</h4>
+                        <span>4,820</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon bg-gold">
+                        <i class="fas fa-user-friends"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h4>زوار اليوم</h4>
+                        <span>352</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recent Orders Table -->
+            <section class="admin-card">
+                <div class="card-header">
+                    <h3 style="font-weight: 700;">آخر الطلبات الواردة</h3>
+                    <button
+                        style="background: none; border: 1px solid #ddd; padding: 5px 15px; border-radius: 8px; cursor: pointer;">عرض
+                        الكل</button>
+                </div>
+
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>رقم الطلب</th>
+                            <th>العميل</th>
+                            <th>المنطقة</th>
+                            <th>المبلغ</th>
+                            <th>الحالة</th>
+                            <th>العمليات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>#1001</td>
+                            <td>ياسر الأحمد</td>
+                            <td>عقربا</td>
+                            <td>120 شيكل</td>
+                            <td><span class="status-badge status-new">جديد</span></td>
+                            <td><i class="fas fa-eye" style="color: #6a1b9a; cursor: pointer;"></i></td>
+                        </tr>
+                        <tr>
+                            <td>#1002</td>
+                            <td>سارة محمود</td>
+                            <td>القدس</td>
+                            <td>315 شيكل</td>
+                            <td><span class="status-badge status-pending">قيد المعالجة</span></td>
+                            <td><i class="fas fa-eye" style="color: #6a1b9a; cursor: pointer;"></i></td>
+                        </tr>
+                        <tr>
+                            <td>#1003</td>
+                            <td>محمد علي</td>
+                            <td>رام الله</td>
+                            <td>85 شيكل</td>
+                            <td><span class="status-badge status-completed">تم التسليم</span></td>
+                            <td><i class="fas fa-eye" style="color: #6a1b9a; cursor: pointer;"></i></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Simple authentication check
+        if (localStorage.getItem('misk_admin_session') !== 'active') {
+            window.location.href = 'admin-login.html';
+        }
+    </script>
+</body>
+
+</html>
