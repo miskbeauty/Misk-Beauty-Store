@@ -174,6 +174,28 @@ function updateCartUI() {
     if (checkoutItemsList) {
         renderCheckoutSummary();
     }
+
+    // --- Update Mini Cart Dropdown ---
+    if (miniCartItems) {
+        miniCartItems.innerHTML = '';
+        if (isEmpty) {
+            miniCartItems.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">السلة فارغة.</p>';
+        } else {
+            cart.forEach(item => {
+                const miniItem = document.createElement('div');
+                miniItem.className = 'mini-cart-item';
+                miniItem.innerHTML = `
+                        <img src="${item.image}" alt="${item.name}" style="width: 40px; height: 40px; border-radius: 5px; margin-left: 10px; object-fit: cover;">
+                        <div class="mini-item-info">
+                            <h4 style="margin: 0; font-size: 0.9rem;">${escapeHTML(item.name)}</h4>
+                            <p style="margin: 2px 0 0; font-size: 0.8rem; color: #6a1b9a;">${item.price} شيكل × ${item.quantity}</p>
+                        </div>
+                    `;
+                miniCartItems.appendChild(miniItem);
+            });
+        }
+    }
+    if (miniCartTotal) miniCartTotal.textContent = total;
 }
 
 // Full Cart Page Logic
@@ -345,30 +367,6 @@ function handleCheckoutSubmit(e) {
     }
 }
 
-// Update Mini Cart Dropdown
-if (miniCartItems) {
-    miniCartItems.innerHTML = '';
-    if (isEmpty) {
-        // Dropdown is hidden via CSS .is-empty .mini-cart-dropdown
-        miniCartItems.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">السلة فارغة.</p>';
-    } else {
-        cart.forEach(item => {
-            const miniItem = document.createElement('div');
-            miniItem.className = 'mini-cart-item';
-            miniItem.innerHTML = `
-                    <img src="${item.image}" alt="${item.name}" style="width: 40px; height: 40px; border-radius: 5px; margin-left: 10px; object-fit: cover;">
-                    <div class="mini-item-info">
-                        <h4 style="margin: 0; font-size: 0.9rem;">${escapeHTML(item.name)}</h4>
-                        <p style="margin: 2px 0 0; font-size: 0.8rem; color: #6a1b9a;">${item.price} شيكل × ${item.quantity}</p>
-                    </div>
-                `;
-            miniCartItems.appendChild(miniItem);
-        });
-    }
-}
-if (miniCartTotal) miniCartTotal.textContent = total;
-}
-
 /**
  * Escapes HTML characters to prevent XSS
  */
@@ -388,7 +386,7 @@ function openCart() {
 // Event Listeners
 if (cartToggle) cartToggle.addEventListener('click', openCart);
 if (cartWidgetToggle) cartWidgetToggle.addEventListener('click', openCart);
-closeCart.addEventListener('click', closeCartSidebar);
+if (closeCart) closeCart.addEventListener('click', () => cartSidebar?.classList.remove('active'));
 
 // --- Slider Component ---
 let currentSlide = 0;
