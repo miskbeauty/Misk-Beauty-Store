@@ -212,8 +212,8 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="phone">رقم الواتساب <span style="color: #dc3545;">*</span></label>
-                        <input type="tel" id="phone" placeholder="05x-xxxxxxx أو رقمك الدولي" required>
+                        <label for="phone">رقم الواتساب / الجوال <span style="color: #dc3545;">*</span></label>
+                        <input type="tel" id="phone" placeholder="05x-xxxxxxx" required>
                     </div>
 
                     <div class="form-group">
@@ -228,8 +228,13 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="address">المدينة / العنوان بالتفصيل <span style="color: #dc3545;">*</span></label>
-                        <input type="text" id="address" placeholder="اسم المدينة، الحي، الشارع، علامة مميزة" required>
+                        <label for="cityText">المدينة <span style="color: #dc3545;">*</span></label>
+                        <input type="text" id="cityText" placeholder="أدخل اسم المدينة" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address">العنوان بالتفصيل <span style="color: #dc3545;">*</span></label>
+                        <textarea id="address" rows="3" placeholder="الحي، الشارع، علامة مميزة..." required></textarea>
                     </div>
 
                     <button type="submit" class="btn-confirm">تأكيد الطلب</button>

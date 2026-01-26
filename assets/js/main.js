@@ -333,14 +333,14 @@ function handleCheckoutSubmit(e) {
     if (e) e.preventDefault();
 
     // Basic validation
-    const form = document.getElementById('checkoutForm');
     const fullName = document.getElementById('fullName').value.trim();
     const phone = document.getElementById('phone').value.trim();
-    const city = document.getElementById('checkoutCity').value;
+    const region = document.getElementById('checkoutCity').value;
+    const city = document.getElementById('cityText').value.trim();
     const address = document.getElementById('address').value.trim();
 
-    if (!fullName || !phone || city === 'none' || !address) {
-        alert("يرجى ملء جميع الحقول المطلوبة واختيار المدينة.");
+    if (!fullName || !phone || region === 'none' || !city || !address) {
+        alert("يرجى ملء جميع الحقول المطلوبة واختيار المنطقة.");
         return;
     }
 
