@@ -20,20 +20,14 @@
             </div>
 
             <ul class="sidebar-menu">
-                <li class="menu-item active">
-                    <a href="admin-dashboard.html">
-                        <i class="fas fa-chart-line"></i>
-                        <span>الرئيسية</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="#">
+                <li class="menu-item active" id="menu-orders">
+                    <a href="#" onclick="switchTab('orders')">
                         <i class="fas fa-shopping-bag"></i>
                         <span>إدارة الطلبات</span>
                     </a>
                 </li>
-                <li class="menu-item">
-                    <a href="#">
+                <li class="menu-item" id="menu-products">
+                    <a href="#" onclick="switchTab('products')">
                         <i class="fas fa-box-open"></i>
                         <span>إدارة المنتجات</span>
                     </a>
@@ -111,7 +105,7 @@
             </section>
 
             <!-- Orders Management Table -->
-            <section class="admin-card">
+            <section id="orders-section" class="admin-card">
                 <div class="card-header">
                     <h3 style="font-weight: 700;">إدارة الطلبات</h3>
                     <div class="header-actions">
@@ -140,6 +134,37 @@
                     </table>
                 </div>
             </section>
+
+            <!-- Product Management Table -->
+            <section id="products-section" class="admin-card hidden">
+                <div class="card-header">
+                    <h3 style="font-weight: 700;">إدارة المنتجات</h3>
+                    <div class="header-actions">
+                        <button onclick="openProductModal()" class="btn-admin-login"
+                            style="padding: 8px 15px; font-size: 0.9rem; width: auto; box-shadow: none;">
+                            <i class="fas fa-plus"></i> إضافة منتج جديد
+                        </button>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>صورة المنتج</th>
+                                <th>الاسم</th>
+                                <th>التصنيف</th>
+                                <th>السعر</th>
+                                <th>المخزون</th>
+                                <th>العمليات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-table-body">
+                            <!-- Data populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -148,7 +173,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="modal-order-number">تفاصيل الطلب</h3>
-                <button class="close-modal" onclick="closeModal()">&times;</button>
+                <button class="close-modal" onclick="closeModal('order-modal')">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="details-grid">
@@ -185,9 +210,62 @@
         </div>
     </div>
 
+    <!-- Product Modal (Add/Edit) -->
+    <div id="product-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="product-modal-title">إضافة منتج جديد</h3>
+                <button class="close-modal" onclick="closeModal('product-modal')">&times;</button>
+            </div>
+            <form id="product-form" onsubmit="handleProductSubmit(event)">
+                <input type="hidden" id="product-id">
+                <div class="modal-body">
+                    <div class="details-grid">
+                        <div class="admin-form-group full-width">
+                            <label>اسم المنتج</label>
+                            <input type="text" id="prod-name" class="admin-input" required>
+                        </div>
+                        <div class="admin-form-group">
+                            <label>السعر (شيكل)</label>
+                            <input type="number" id="prod-price" class="admin-input" required>
+                        </div>
+                        <div class="admin-form-group">
+                            <label>المخزون</label>
+                            <input type="number" id="prod-stock" class="admin-input" required>
+                        </div>
+                        <div class="admin-form-group">
+                            <label>التصنيف</label>
+                            <select id="prod-category" class="admin-input" required>
+                                <option value="عطور">عطور</option>
+                                <option value="عناية وجمال">عناية وجمال</option>
+                                <option value="حقائب وإكسسوارات">حقائب وإكسسوارات</option>
+                                <option value="هدايا">هدايا</option>
+                                <option value="طباعة حرارية">طباعة حرارية</option>
+                            </select>
+                        </div>
+                        <div class="admin-form-group">
+                            <label>رابط الصورة</label>
+                            <input type="text" id="prod-image" class="admin-input" placeholder="رابط خارجي أو مسار محلي"
+                                required>
+                        </div>
+                        <div class="admin-form-group full-width">
+                            <label>الوصف</label>
+                            <textarea id="prod-desc" class="admin-input"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closeModal('product-modal')">إلغاء</button>
+                    <button type="submit" class="btn-admin-login" style="width: auto; padding: 10px 30px;">حفظ
+                        المنتج</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         // --- Mock Data ---
-        const mockOrders = [
+        let mockOrders = [
             {
                 id: "10521",
                 date: "2024-01-29",
@@ -230,6 +308,36 @@
             }
         ];
 
+        let mockProducts = [
+            {
+                id: 1,
+                name: "عطر مسك فاخر",
+                category: "عطور",
+                price: 85,
+                stock: 24,
+                image: "assets/images/perfume-sample.jpg",
+                desc: "عطر مسك مميز يدوم طويلاً"
+            },
+            {
+                id: 2,
+                name: "مجموعة العناية بالبشرة",
+                category: "عناية وجمال",
+                price: 150,
+                stock: 12,
+                image: "assets/images/beauty-set.jpg",
+                desc: "مجموعة متكاملة لتنظيف وترطيب البشرة"
+            },
+            {
+                id: 3,
+                name: "حقيبة يد عصرية",
+                category: "حقائب وإكسسوارات",
+                price: 120,
+                stock: 8,
+                image: "assets/images/bag-sample.jpg",
+                desc: "حقيبة جلدية فاخرة بألوان جذابة"
+            }
+        ];
+
         const statusMap = {
             'waiting': 'بانتظار التأكيد',
             'preparing': 'قيد التجهيز',
@@ -238,6 +346,27 @@
         };
 
         // --- Core Functions ---
+
+        function switchTab(tab) {
+            const ordersSec = document.getElementById('orders-section');
+            const productsSec = document.getElementById('products-section');
+            const menuOrders = document.getElementById('menu-orders');
+            const menuProducts = document.getElementById('menu-products');
+
+            if (tab === 'orders') {
+                ordersSec.classList.remove('hidden');
+                productsSec.classList.add('hidden');
+                menuOrders.classList.add('active');
+                menuProducts.classList.remove('active');
+                renderOrders();
+            } else {
+                ordersSec.classList.add('hidden');
+                productsSec.classList.remove('hidden');
+                menuOrders.classList.remove('active');
+                menuProducts.classList.add('active');
+                renderProducts();
+            }
+        }
 
         function renderOrders() {
             const tableBody = document.getElementById('orders-table-body');
@@ -274,8 +403,6 @@
             const order = mockOrders.find(o => o.id === orderId);
             if (order) {
                 order.status = newStatus;
-                console.log(`Order ${orderId} updated to ${newStatus}`);
-                // In a real app, this would be an API call
                 alert(`تم تحديث حالة الطلب #${orderId} إلى: ${statusMap[newStatus]}`);
             }
         }
@@ -299,8 +426,90 @@
             }
         }
 
-        function closeModal() {
-            document.getElementById('order-modal').style.display = 'none';
+        // --- Product Management Logic ---
+
+        function renderProducts() {
+            const tableBody = document.getElementById('products-table-body');
+            if (!tableBody) return;
+            tableBody.innerHTML = '';
+
+            mockProducts.forEach(prod => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><img src="${prod.image}" class="product-thumb" onerror="this.src='https://placehold.co/50x50?text=Logo'"></td>
+                    <td>${prod.name}</td>
+                    <td>${prod.category}</td>
+                    <td>${prod.price} شيكل</td>
+                    <td>${prod.stock}</td>
+                    <td>
+                        <button onclick="openProductModal(${prod.id})" style="background:none; border:none; cursor:pointer; color: #2e7d32; margin-left: 10px;">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteProduct(${prod.id})" style="background:none; border:none; cursor:pointer; color: #d32f2f;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function openProductModal(id = null) {
+            const form = document.getElementById('product-form');
+            form.reset();
+            document.getElementById('product-id').value = id || '';
+            document.getElementById('product-modal-title').innerText = id ? 'تعديل المنتج' : 'إضافة منتج جديد';
+
+            if (id) {
+                const prod = mockProducts.find(p => p.id === id);
+                if (prod) {
+                    document.getElementById('prod-name').value = prod.name;
+                    document.getElementById('prod-price').value = prod.price;
+                    document.getElementById('prod-stock').value = prod.stock;
+                    document.getElementById('prod-category').value = prod.category;
+                    document.getElementById('prod-image').value = prod.image;
+                    document.getElementById('prod-desc').value = prod.desc || '';
+                }
+            }
+
+            document.getElementById('product-modal').style.display = 'flex';
+        }
+
+        function handleProductSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('product-id').value;
+            const newProd = {
+                id: id ? parseInt(id) : Date.now(),
+                name: document.getElementById('prod-name').value,
+                price: parseInt(document.getElementById('prod-price').value),
+                stock: parseInt(document.getElementById('prod-stock').value),
+                category: document.getElementById('prod-category').value,
+                image: document.getElementById('prod-image').value,
+                desc: document.getElementById('prod-desc').value
+            };
+
+            if (id) {
+                const index = mockProducts.findIndex(p => p.id === parseInt(id));
+                mockProducts[index] = newProd;
+                alert('تم التحديث بنجاح');
+            } else {
+                mockProducts.push(newProd);
+                alert('تم الإضافة بنجاح');
+            }
+
+            closeModal('product-modal');
+            renderProducts();
+        }
+
+        function deleteProduct(id) {
+            if (confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
+                mockProducts = mockProducts.filter(p => p.id !== id);
+                renderProducts();
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
         }
 
         // --- Session & Init ---
@@ -329,13 +538,17 @@
 
         // Initialize
         window.onclick = function (event) {
-            const modal = document.getElementById('order-modal');
-            if (event.target == modal) closeModal();
+            if (event.target.classList.contains('modal-overlay')) {
+                event.target.style.display = 'none';
+            }
         }
 
         verifyAdminSession();
         renderOrders();
     </script>
+</body>
+
+</html>
 </body>
 
 </html>
