@@ -389,9 +389,12 @@
                             <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>تم التوصيل</option>
                         </select>
                     </td>
-                    <td style="text-align: center;">
-                        <button onclick="viewDetails('${order.id}')" style="background:none; border:none; cursor:pointer;">
+                    <td style="text-align: center; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <button onclick="viewDetails('${order.id}')" title="عرض التفاصيل" style="background:none; border:none; cursor:pointer;">
                             <i class="fas fa-eye" style="color: #6a1b9a; font-size: 1.1rem;"></i>
+                        </button>
+                        <button onclick="contactWhatsApp('${order.id}')" title="تواصل عبر واتساب" class="btn-whatsapp-icon">
+                            <i class="fab fa-whatsapp"></i>
                         </button>
                     </td>
                 `;
@@ -423,6 +426,18 @@
                 badge.innerText = statusMap[order.status];
 
                 document.getElementById('order-modal').style.display = 'flex';
+            }
+        }
+
+        function contactWhatsApp(orderId) {
+            const order = mockOrders.find(o => o.id === orderId);
+            if (order) {
+                // Clean phone number: remove non-digits
+                const cleanPhone = order.whatsapp.replace(/\D/g, '');
+                const message = `أهلاً بكِ في مسك بيوتي، نؤكد استلام طلبك رقم ${order.id}. هل العنوان المذكور ( ${order.address} ) دقيق للبدء بالتجهيز؟`;
+                const encodedMessage = encodeURIComponent(message);
+                const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+                window.open(whatsappUrl, '_blank');
             }
         }
 

@@ -464,6 +464,20 @@ body {
     font-weight: 600;
 }
 
+.btn-whatsapp-icon {
+    color: #25D366;
+    font-size: 1.2rem;
+    cursor: pointer;
+    background: none;
+    border: none;
+    transition: transform 0.2s ease;
+    margin-right: 8px;
+}
+
+.btn-whatsapp-icon:hover {
+    transform: scale(1.2);
+}
+
 @media (max-width: 768px) {
     .admin-sidebar {
         width: 70px;
