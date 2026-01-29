@@ -110,79 +110,216 @@
                 </div>
             </section>
 
-            <!-- Recent Orders Table -->
+            <!-- Orders Management Table -->
             <section class="admin-card">
                 <div class="card-header">
-                    <h3 style="font-weight: 700;">آخر الطلبات الواردة</h3>
-                    <button
-                        style="background: none; border: 1px solid #ddd; padding: 5px 15px; border-radius: 8px; cursor: pointer;">عرض
-                        الكل</button>
+                    <h3 style="font-weight: 700;">إدارة الطلبات</h3>
+                    <div class="header-actions">
+                        <button class="btn-admin-login"
+                            style="padding: 8px 15px; font-size: 0.9rem; width: auto; box-shadow: none;">تصدير
+                            البيانات</button>
+                    </div>
                 </div>
 
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>رقم الطلب</th>
-                            <th>العميل</th>
-                            <th>المنطقة</th>
-                            <th>المبلغ</th>
-                            <th>الحالة</th>
-                            <th>العمليات</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>#1001</td>
-                            <td>ياسر الأحمد</td>
-                            <td>عقربا</td>
-                            <td>120 شيكل</td>
-                            <td><span class="status-badge status-new">جديد</span></td>
-                            <td><i class="fas fa-eye" style="color: #6a1b9a; cursor: pointer;"></i></td>
-                        </tr>
-                        <tr>
-                            <td>#1002</td>
-                            <td>سارة محمود</td>
-                            <td>القدس</td>
-                            <td>315 شيكل</td>
-                            <td><span class="status-badge status-pending">قيد المعالجة</span></td>
-                            <td><i class="fas fa-eye" style="color: #6a1b9a; cursor: pointer;"></i></td>
-                        </tr>
-                        <tr>
-                            <td>#1003</td>
-                            <td>محمد علي</td>
-                            <td>رام الله</td>
-                            <td>85 شيكل</td>
-                            <td><span class="status-badge status-completed">تم التسليم</span></td>
-                            <td><i class="fas fa-eye" style="color: #6a1b9a; cursor: pointer;"></i></td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>رقم الطلب</th>
+                                <th>التاريخ</th>
+                                <th>الاسم</th>
+                                <th>المنطقة/المدينة</th>
+                                <th>الإجمالي</th>
+                                <th>الحالة</th>
+                                <th>العمليات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-table-body">
+                            <!-- Data populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
             </section>
         </main>
     </div>
 
+    <!-- Order Details Modal -->
+    <div id="order-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-order-number">تفاصيل الطلب</h3>
+                <button class="close-modal" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">اسم العميل</span>
+                        <span class="detail-value" id="detail-name">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">رقم الواتساب</span>
+                        <span class="detail-value" id="detail-whatsapp">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">المدينة/المنطقة</span>
+                        <span class="detail-value" id="detail-city">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">التاريخ</span>
+                        <span class="detail-value" id="detail-date">-</span>
+                    </div>
+                    <div class="detail-item full-width">
+                        <span class="detail-label">العنوان بالتفصيل</span>
+                        <span class="detail-value" id="detail-address">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">المبلغ الإجمالي</span>
+                        <span class="detail-value" id="detail-total">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">الحالة الحالية</span>
+                        <span id="detail-status-badge" class="status-badge">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // --- Robust Session Verification ---
+        // --- Mock Data ---
+        const mockOrders = [
+            {
+                id: "10521",
+                date: "2024-01-29",
+                customer: "ياسر الأحمد",
+                whatsapp: "+970 599 123 456",
+                city: "عقربا، نابلس",
+                address: "شارع المدارس، عمارة الأمل، ط2",
+                total: "120 شيكل",
+                status: "waiting"
+            },
+            {
+                id: "10522",
+                date: "2024-01-28",
+                customer: "سارة محمود",
+                whatsapp: "+970 568 987 654",
+                city: "القدس، شارع الزهراء",
+                address: "فوق صيدلية القدس، شقة 4",
+                total: "315 شيكل",
+                status: "preparing"
+            },
+            {
+                id: "10523",
+                date: "2024-01-28",
+                customer: "محمد علي",
+                whatsapp: "+970 592 111 222",
+                city: "رام الله، المصيف",
+                address: "بالقرب من سوبر ماركت برافو",
+                total: "85 شيكل",
+                status: "shipped"
+            },
+            {
+                id: "10524",
+                date: "2024-01-27",
+                customer: "لينا عودة",
+                whatsapp: "+970 597 444 555",
+                city: "نابلس، رفيديا",
+                address: "دخلة جامعة النجاح القديمة",
+                total: "250 شيكل",
+                status: "delivered"
+            }
+        ];
+
+        const statusMap = {
+            'waiting': 'بانتظار التأكيد',
+            'preparing': 'قيد التجهيز',
+            'shipped': 'تم الشحن',
+            'delivered': 'تم التوصيل'
+        };
+
+        // --- Core Functions ---
+
+        function renderOrders() {
+            const tableBody = document.getElementById('orders-table-body');
+            if (!tableBody) return;
+            tableBody.innerHTML = '';
+
+            mockOrders.forEach(order => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>#${order.id}</td>
+                    <td>${order.date}</td>
+                    <td>${order.customer}</td>
+                    <td>${order.city}</td>
+                    <td>${order.total}</td>
+                    <td>
+                        <select class="status-select" onchange="updateStatus('${order.id}', this.value)">
+                            <option value="waiting" ${order.status === 'waiting' ? 'selected' : ''}>بانتظار التأكيد</option>
+                            <option value="preparing" ${order.status === 'preparing' ? 'selected' : ''}>قيد التجهيز</option>
+                            <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>تم الشحن</option>
+                            <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>تم التوصيل</option>
+                        </select>
+                    </td>
+                    <td style="text-align: center;">
+                        <button onclick="viewDetails('${order.id}')" style="background:none; border:none; cursor:pointer;">
+                            <i class="fas fa-eye" style="color: #6a1b9a; font-size: 1.1rem;"></i>
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function updateStatus(orderId, newStatus) {
+            const order = mockOrders.find(o => o.id === orderId);
+            if (order) {
+                order.status = newStatus;
+                console.log(`Order ${orderId} updated to ${newStatus}`);
+                // In a real app, this would be an API call
+                alert(`تم تحديث حالة الطلب #${orderId} إلى: ${statusMap[newStatus]}`);
+            }
+        }
+
+        function viewDetails(orderId) {
+            const order = mockOrders.find(o => o.id === orderId);
+            if (order) {
+                document.getElementById('modal-order-number').innerText = `تفاصيل الطلب #${order.id}`;
+                document.getElementById('detail-name').innerText = order.customer;
+                document.getElementById('detail-whatsapp').innerText = order.whatsapp;
+                document.getElementById('detail-city').innerText = order.city;
+                document.getElementById('detail-date').innerText = order.date;
+                document.getElementById('detail-address').innerText = order.address;
+                document.getElementById('detail-total').innerText = order.total;
+
+                const badge = document.getElementById('detail-status-badge');
+                badge.className = `status-badge status-${order.status}`;
+                badge.innerText = statusMap[order.status];
+
+                document.getElementById('order-modal').style.display = 'flex';
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('order-modal').style.display = 'none';
+        }
+
+        // --- Session & Init ---
         function verifyAdminSession() {
             const sessionDataString = localStorage.getItem('misk_admin_session');
-
             if (!sessionDataString) {
                 window.location.href = 'admin-login.html';
                 return;
             }
-
             const sessionData = JSON.parse(sessionDataString);
             const now = Date.now();
             const sessionHours = (now - sessionData.loginTime) / (1000 * 60 * 60);
 
-            // If not persistent (Stay logged in unchecked) and older than 2 hours, expire
             if (!sessionData.persistent && sessionHours > 2) {
                 localStorage.removeItem('misk_admin_session');
                 window.location.href = 'admin-login.html';
                 return;
             }
 
-            // Global persistence: 24 hours max safety even for remembered sessions
             if (sessionHours > 24) {
                 localStorage.removeItem('misk_admin_session');
                 window.location.href = 'admin-login.html';
@@ -190,8 +327,14 @@
             }
         }
 
-        // Run check
+        // Initialize
+        window.onclick = function (event) {
+            const modal = document.getElementById('order-modal');
+            if (event.target == modal) closeModal();
+        }
+
         verifyAdminSession();
+        renderOrders();
     </script>
 </body>
 
