@@ -13,50 +13,50 @@ const headerHTML = `
         <ul class="nav-links">
             <li><a href="index.html">الرئيسية</a></li>
             <li class="dropdown">
-                <a href="#">العناية والجمال</a>
+                <a href="index.html?category=عناية وجمال">العناية والجمال</a>
                 <ul class="dropdown-menu">
-                    <li><a href="#">مكياج</a></li>
-                    <li><a href="#">عناية بالبشرة</a></li>
-                    <li><a href="#">شعر</a></li>
-                    <li><a href="#">جسم</a></li>
+                    <li><a href="index.html?sub=مكياج">مكياج</a></li>
+                    <li><a href="index.html?sub=عناية بالبشرة">عناية بالبشرة</a></li>
+                    <li><a href="index.html?sub=شعر">شعر</a></li>
+                    <li><a href="index.html?sub=جسم">جسم</a></li>
                 </ul>
             </li>
             <li class="dropdown">
-                <a href="#">عطور</a>
+                <a href="index.html?category=عطور">عطور</a>
                 <ul class="dropdown-menu">
-                    <li><a href="#">ستاتي</a></li>
-                    <li><a href="#">رجالي</a></li>
-                    <li><a href="#">مزيل عرق</a></li>
-                    <li><a href="#">عطر شعر</a></li>
-                    <li><a href="#">بخور</a></li>
+                    <li><a href="index.html?sub=ستاتي">ستاتي</a></li>
+                    <li><a href="index.html?sub=رجالي">رجالي</a></li>
+                    <li><a href="index.html?sub=مزيل عرق">مزيل عرق</a></li>
+                    <li><a href="index.html?sub=عطر شعر">عطر شعر</a></li>
+                    <li><a href="index.html?sub=بخور">بخور</a></li>
                 </ul>
             </li>
             <li class="dropdown">
-                <a href="#">شنط وإكسسوارات</a>
+                <a href="index.html?category=شنط وإكسسوارات">شنط وإكسسورات</a>
                 <ul class="dropdown-menu">
-                    <li><a href="#">شنط</a></li>
-                    <li><a href="#">إكسسوارات ستاتي</a></li>
-                    <li><a href="#">رجالي</a></li>
+                    <li><a href="index.html?sub=شنط">شنط</a></li>
+                    <li><a href="index.html?sub=إكسسوارات ستاتي">إكسسوارات ستاتي</a></li>
+                    <li><a href="index.html?sub=إكسسوارات رجالي">رجالي</a></li>
                 </ul>
             </li>
             <li class="dropdown">
-                <a href="#">الأطفال والبيبي</a>
+                <a href="index.html?category=الأطفال والبيبي">الأطفال والبيبي</a>
                 <ul class="dropdown-menu">
-                    <li><a href="#">مستلزمات</a></li>
-                    <li><a href="#">إكسسوارات</a></li>
+                    <li><a href="index.html?sub=مستلزمات">مستلزمات</a></li>
+                    <li><a href="index.html?sub=إكسسوارات بيبي">إكسسوارات</a></li>
                 </ul>
             </li>
             <li class="dropdown">
-                <a href="#">الطباعة الحرارية</a>
+                <a href="index.html?category=الطباعة الحرارية">الطباعة الحرارية</a>
                 <ul class="dropdown-menu">
-                    <li><a href="#">براويز</a></li>
-                    <li><a href="#">مجات</a></li>
-                    <li><a href="#">لهايات وبلايز</a></li>
+                    <li><a href="index.html?sub=براويز">براويز</a></li>
+                    <li><a href="index.html?sub=مجات">مجات</a></li>
+                    <li><a href="index.html?sub=لهايات وبلايز">لهايات وبلايز</a></li>
                 </ul>
             </li>
-            <li><a href="#">منتجات طبية</a></li>
-            <li><a href="#">المنزل والديكور</a></li>
-            <li><a href="#">الهدايا</a></li>
+            <li><a href="index.html?category=منتجات طبية">منتجات طبية</a></li>
+            <li><a href="index.html?category=المنزل والديكور">المنزل والديكور</a></li>
+            <li><a href="index.html?category=الهدايا">الهدايا</a></li>
         </ul>
     </nav>
     <div class="search-cart-row container">

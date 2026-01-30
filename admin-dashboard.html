@@ -276,17 +276,53 @@
                         <div class="admin-form-group">
                             <label>التصنيف الرئيسي</label>
                             <select id="prod-category" class="admin-input" required>
-                                <option value="عطور">عطور</option>
                                 <option value="عناية وجمال">عناية وجمال</option>
-                                <option value="حقائب وإكسسوارات">حقائب وإكسسوارات</option>
-                                <option value="هدايا">هدايا</option>
-                                <option value="طباعة حرارية">طباعة حرارية</option>
+                                <option value="عطور">عطور</option>
+                                <option value="شنط وإكسسوارات">شنط وإكسسوارات</option>
+                                <option value="الأطفال والبيبي">الأطفال والبيبي</option>
+                                <option value="الطباعة الحرارية">الطباعة الحرارية</option>
+                                <option value="منتجات طبية">منتجات طبية</option>
+                                <option value="المنزل والديكور">المنزل والديكور</option>
+                                <option value="الهدايا">الهدايا</option>
                             </select>
                         </div>
                         <div class="admin-form-group">
                             <label>التصنيف الفرعي</label>
-                            <input type="text" id="prod-sub-category" class="admin-input"
-                                placeholder="مثلاً: عطور فرنسية">
+                            <select id="prod-sub-category" class="admin-input" onchange="syncParentCategory()">
+                                <option value="">بدون تصنيف فرعي</option>
+                                <!-- Group: Beauty -->
+                                <optgroup label="عناية وجمال">
+                                    <option value="مكياج">مكياج</option>
+                                    <option value="عناية بالبشرة">عناية بالبشرة</option>
+                                    <option value="شعر">شعر</option>
+                                    <option value="جسم">جسم</option>
+                                </optgroup>
+                                <!-- Group: Perfumes -->
+                                <optgroup label="عطور">
+                                    <option value="ستاتي">ستاتي</option>
+                                    <option value="رجالي">رجالي</option>
+                                    <option value="مزيل عرق">مزيل عرق</option>
+                                    <option value="عطر شعر">عطر شعر</option>
+                                    <option value="بخور">بخور</option>
+                                </optgroup>
+                                <!-- Group: Bags -->
+                                <optgroup label="شنط وإكسسوارات">
+                                    <option value="شنط">شنط</option>
+                                    <option value="إكسسوارات ستاتي">إكسسوارات ستاتي</option>
+                                    <option value="رجالي">إكسسوارات رجالي</option>
+                                </optgroup>
+                                <!-- Group: Kids -->
+                                <optgroup label="الأطفال والبيبي">
+                                    <option value="مستلزمات">مستلزمات</option>
+                                    <option value="إكسسوارات">إكسسوارات بيبي</option>
+                                </optgroup>
+                                <!-- Group: Printing -->
+                                <optgroup label="الطباعة الحرارية">
+                                    <option value="براويز">براويز</option>
+                                    <option value="مجات">مجات</option>
+                                    <option value="لهايات وبلايز">لهايات وبلايز</option>
+                                </optgroup>
+                            </select>
                         </div>
 
                         <!-- Variants System v2 -->
@@ -566,6 +602,34 @@
                 `;
                 tableBody.appendChild(tr);
             });
+        }
+
+        // --- Category Auto-Mapping Logic ---
+        const subToParentMap = {
+            "مكياج": "عناية وجمال",
+            "عناية بالبشرة": "عناية وجمال",
+            "شعر": "عناية وجمال",
+            "جسم": "عناية وجمال",
+            "ستاتي": "عطور",
+            "رجالي": "عطور",
+            "مزيل عرق": "عطور",
+            "عطر شعر": "عطور",
+            "بخور": "عطور",
+            "شنط": "شنط وإكسسوارات",
+            "إكسسوارات ستاتي": "شنط وإكسسوارات",
+            "رجالي": "شنط وإكسسوارات",
+            "مستلزمات": "الأطفال والبيبي",
+            "إكسسوارات بيبي": "الأطفال والبيبي",
+            "براويز": "الطباعة الحرارية",
+            "مجات": "الطباعة الحرارية",
+            "لهايات وبلايز": "الطباعة الحرارية"
+        };
+
+        function syncParentCategory() {
+            const subVal = document.getElementById('prod-sub-category').value;
+            if (subToParentMap[subVal]) {
+                document.getElementById('prod-category').value = subToParentMap[subVal];
+            }
         }
 
         function openProductModal(id = null) {

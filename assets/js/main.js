@@ -524,6 +524,18 @@ function renderProductGrid(containerId) {
 
     let products = loadProducts();
 
+    // Automatic Category Filtering based on URL Parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const filterCat = urlParams.get('category');
+    const filterSub = urlParams.get('sub');
+
+    if (filterCat) {
+        products = products.filter(p => p.category === filterCat);
+    }
+    if (filterSub) {
+        products = products.filter(p => p.subCategory === filterSub);
+    }
+
     // Sort by Priority (Descending)
     products.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
