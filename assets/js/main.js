@@ -55,7 +55,7 @@ function validateProduct(id, name, price) {
 
 // --- Cart Core Functions ---
 
-function addToCart(id, name, price, image = 'assets/images/1745215944148877862.png') {
+function addToCart(id, name, price, image = 'assets/images/1745215944148877862.png', variant = null) {
     console.log(`جارِ إضافة المنتج: ${name}`);
 
     // Data Validation
@@ -65,11 +65,13 @@ function addToCart(id, name, price, image = 'assets/images/1745215944148877862.p
         return;
     }
 
-    const existingItem = cart.find(item => item.id === id);
+    // Include variant in uniqueness check if applicable
+    const existingItem = cart.find(item => item.id === id && JSON.stringify(item.variant) === JSON.stringify(variant));
+
     if (existingItem) {
         existingItem.quantity += 1;
     } else {
-        cart.push({ id, name, price, quantity: 1, image });
+        cart.push({ id, name, price, quantity: 1, image, variant });
     }
 
     saveCart();
@@ -112,12 +114,17 @@ function updateCartUI() {
 
         const cartItem = document.createElement('div');
         cartItem.className = 'cart-item';
+        let variantText = '';
+        if (item.variant) {
+            variantText = Object.entries(item.variant).map(([k, v]) => `<span style="font-size: 0.75rem; color: #888;">${k}: ${v}</span>`).join(' | ');
+        }
         cartItem.innerHTML = `
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
                 <div style="display: flex; align-items: center;">
                     <img src="${item.image}" class="cart-item-img" alt="${item.name}">
                     <div>
                         <h4 style="margin: 0; font-size: 0.95rem;">${escapeHTML(item.name)}</h4>
+                        ${variantText ? `<div style="margin-top: 2px;">${variantText}</div>` : ''}
                         <p style="color: #6a1b9a; margin: 5px 0; font-size: 0.85rem;">${item.price} شيكل × ${item.quantity}</p>
                     </div>
                 </div>
@@ -483,20 +490,272 @@ document.addEventListener('click', (e) => {
 
 // --- Single Product Page Interactions ---
 
+// --- Advanced Product Data Management ---
+
+function loadProducts() {
+    let products = JSON.parse(localStorage.getItem('misk_products'));
+    if (!products || products.length === 0) {
+        products = [
+            {
+                id: 1,
+                name: "عطر مسك إيطالي فاخر",
+                slug: "premium-italian-musk",
+                metaDesc: "عطر مسك فاخر يدوم طويلاً",
+                category: "عطور",
+                subCategory: "عطور رجالية",
+                priority: 10,
+                price: 150,
+                stock: 24,
+                images: ["https://images.unsplash.com/photo-1541643600914-78b084683601?q=80&w=800&auto=format&fit=crop"],
+                desc: "<p>عطر مسك إيطالي فاخر يدوم طويلاً.</p>",
+                variants: [
+                    { label: "50 مل", price: 150, stock: 10, sku: "M-50" },
+                    { label: "100 مل", price: 280, stock: 5, sku: "M-100" }
+                ]
+            }
+        ];
+    }
+    return products;
+}
+
+function renderProductGrid(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    let products = loadProducts();
+
+    // Sort by Priority (Descending)
+    products.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+
+    container.innerHTML = '';
+
+    products.forEach(prod => {
+        const primaryImage = prod.images && prod.images[0] ? prod.images[0] : 'https://placehold.co/400x400?text=No+Image';
+        const hasDiscount = prod.originalPrice && prod.originalPrice > prod.price;
+        const discountPercent = hasDiscount ? Math.round(((prod.originalPrice - prod.price) / prod.originalPrice) * 100) : 0;
+
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.setAttribute('data-id', prod.id);
+        card.setAttribute('data-name', prod.name);
+        card.setAttribute('data-price', prod.price);
+
+        card.innerHTML = `
+            ${hasDiscount ? `<span class="badge-sale">-${discountPercent}%</span>` : ''}
+            <div class="product-image">
+                <a href="product.html?id=${prod.id}">
+                    <img src="${primaryImage}" alt="${prod.name}">
+                </a>
+                <div class="product-actions">
+                    <button class="btn-quick-view" onclick="location.href='product.html?id=${prod.id}'"><i class="fas fa-eye"></i></button>
+                    <button class="btn-add-cart"
+                        onclick="addToCart(${prod.id}, '${prod.name}', ${prod.price}, '${primaryImage}')"><i
+                            class="fas fa-shopping-cart"></i></button>
+                </div>
+            </div>
+            <div class="product-info">
+                <div class="product-category-small">${prod.subCategory || prod.category}</div>
+                <a href="product.html?id=${prod.id}">
+                    <h3>${prod.name}</h3>
+                </a>
+                <div class="price-wrapper" style="margin-bottom: 0;">
+                    ${hasDiscount ? `<span class="old-price" style="font-size: 0.85rem;">${prod.originalPrice} شيكل</span>` : ''}
+                    <p class="price" style="${hasDiscount ? 'color: #ff5252;' : ''}">${prod.price} شيكل</p>
+                </div>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+// --- Single Product Page (Advanced) ---
+
+function initProductPage() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const prodId = parseInt(urlParams.get('id'));
+    if (!prodId) return;
+
+    const products = loadProducts();
+    const prod = products.find(p => p.id === prodId);
+    if (!prod) return;
+
+    // Update Meta
+    document.title = `${prod.name} | مسك بيوتي`;
+    if (prod.metaDesc) {
+        let meta = document.querySelector('meta[name="description"]');
+        if (!meta) {
+            meta = document.createElement('meta');
+            meta.name = "description";
+            document.head.appendChild(meta);
+        }
+        meta.content = prod.metaDesc;
+    }
+
+    // Breadcrumbs
+    const currentBreadcrumb = document.querySelector('.breadcrumbs .current-page');
+    if (currentBreadcrumb) currentBreadcrumb.textContent = prod.name;
+
+    // Gallery
+    const mainImg = document.getElementById('mainProductImg');
+    const thumbList = document.querySelector('.thumbnail-list');
+    if (mainImg && prod.images && prod.images.length > 0) {
+        mainImg.src = prod.images[0];
+
+        if (thumbList) {
+            thumbList.innerHTML = '';
+            prod.images.forEach((img, idx) => {
+                const thumb = document.createElement('img');
+                thumb.src = img;
+                thumb.className = `thumb ${idx === 0 ? 'active' : ''}`;
+                thumb.onclick = function () {
+                    document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    mainImg.src = this.src;
+                };
+                thumbList.appendChild(thumb);
+            });
+        }
+    }
+
+    // Details logic
+    const titleEl = document.querySelector('.product-title');
+    if (titleEl) titleEl.textContent = prod.name;
+
+    const skuEl = document.getElementById('product-sku');
+    if (skuEl) skuEl.textContent = prod.sku || 'N/A';
+
+    const stockEl = document.getElementById('product-stock-status');
+    const stockCountEl = document.getElementById('stock-count');
+
+    function updateStockDisplay(count) {
+        if (!stockEl) return;
+        if (count > 0) {
+            stockEl.innerHTML = `<span style="color: #2e7d32;"><i class="fas fa-check-circle"></i> متوفر في المخزون</span>`;
+            if (stockCountEl) stockCountEl.textContent = `(${count} متوفرة)`;
+        } else {
+            stockEl.innerHTML = `<span style="color: #d32f2f;"><i class="fas fa-times-circle"></i> غير متوفر حالياً</span>`;
+            if (stockCountEl) stockCountEl.textContent = '';
+        }
+    }
+
+    updateStockDisplay(prod.stock);
+
+    const priceWrapper = document.querySelector('.price-wrapper-single');
+    function updatePriceDisplay(price, original) {
+        if (!priceWrapper) return;
+        const hasDiscount = original && original > price;
+        priceWrapper.innerHTML = `
+            ${hasDiscount ? `<span class="old-price-single">${original} شيكل</span>` : ''}
+            <span class="sale-price-single" style="${hasDiscount ? 'color: #ff5252;' : ''}">${price} شيكل</span>
+        `;
+    }
+
+    updatePriceDisplay(prod.price, prod.originalPrice);
+
+    // Description (Rich Text)
+    const descEl = document.querySelector('.product-description');
+    if (descEl) {
+        descEl.innerHTML = `<h3>وصف المنتج</h3>` + (prod.desc || '<p>لا يوجد وصف متاح.</p>');
+    }
+
+    // Variants v2
+    const purchaseActions = document.querySelector('.purchase-actions');
+    if (purchaseActions && prod.variants && prod.variants.length > 0) {
+        // Remove existing selectors if any
+        document.querySelectorAll('.variant-selectors').forEach(el => el.remove());
+
+        const variantContainer = document.createElement('div');
+        variantContainer.className = 'variant-selectors';
+        variantContainer.style.marginBottom = '25px';
+
+        variantContainer.innerHTML = `
+            <label style="display: block; margin-bottom: 12px; font-weight: 700; color: #444;">المواصفات المختارة:</label>
+            <div class="variant-options-v2" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                ${prod.variants.map((v, i) => `
+                    <button class="variant-opt-v2-btn ${i === 0 ? 'active' : ''}" 
+                            data-label="${v.label}"
+                            data-price="${v.price}"
+                            data-orig="${v.originalPrice || ''}"
+                            data-stock="${v.stock}"
+                            data-sku="${v.sku || ''}">
+                        ${v.label}
+                    </button>
+                `).join('')}
+            </div>
+        `;
+
+        // Insert before purchase actions
+        purchaseActions.parentNode.insertBefore(variantContainer, purchaseActions);
+
+        // Variant Selection Logic
+        document.querySelectorAll('.variant-opt-v2-btn').forEach(btn => {
+            btn.onclick = function () {
+                document.querySelectorAll('.variant-opt-v2-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                // Update Price, Stock, SKU
+                const vPrice = parseInt(this.getAttribute('data-price'));
+                const vOrig = this.getAttribute('data-orig') ? parseInt(this.getAttribute('data-orig')) : null;
+                const vStock = parseInt(this.getAttribute('data-stock'));
+                const vSku = this.getAttribute('data-sku');
+
+                updatePriceDisplay(vPrice, vOrig);
+                updateStockDisplay(vStock);
+                if (skuEl) skuEl.textContent = vSku || prod.sku || 'N/A';
+            };
+        });
+
+        // Initialize with first variant if exists
+        const firstVar = prod.variants[0];
+        updatePriceDisplay(firstVar.price, firstVar.originalPrice);
+        updateStockDisplay(firstVar.stock);
+        if (skuEl) skuEl.textContent = firstVar.sku || prod.sku || 'N/A';
+    }
+
+    // Add to Cart update
+    const addBtn = document.querySelector('.btn-add-cart-single');
+    if (addBtn) {
+        addBtn.onclick = function () {
+            const activeVarBtn = document.querySelector('.variant-opt-v2-btn.active');
+            let finalPrice = prod.price;
+            let finalVariant = null;
+            let finalSku = prod.sku;
+
+            if (activeVarBtn) {
+                finalPrice = parseInt(activeVarBtn.getAttribute('data-price'));
+                finalVariant = { label: activeVarBtn.getAttribute('data-label') };
+                finalSku = activeVarBtn.getAttribute('data-sku');
+            }
+
+            const qty = parseInt(document.getElementById('productQty').value) || 1;
+
+            // Simple validation: check stock
+            const currentStock = activeVarBtn ? parseInt(activeVarBtn.getAttribute('data-stock')) : prod.stock;
+            if (qty > currentStock) {
+                alert("عذراً، الكمية المطلوبة غير متوفرة حالياً.");
+                return;
+            }
+
+            for (let i = 0; i < qty; i++) {
+                addToCart(prod.id, prod.name, finalPrice, prod.images[0], finalVariant);
+            }
+        };
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Thumbnail Switching
+    // Determine Page
+    const path = window.location.pathname;
+    if (path.includes('index.html') || path === '/' || path.endsWith('Misk-Beauty-Store/')) {
+        renderProductGrid('productGrid');
+    } else if (path.includes('product.html')) {
+        initProductPage();
+    }
+
+    // Thumbnail Switching (existing logic, but enhanced in initProductPage)
     const mainImg = document.getElementById('mainProductImg');
     const thumbnails = document.querySelectorAll('.thumb');
-
-    if (thumbnails.length > 0 && mainImg) {
-        thumbnails.forEach(thumb => {
-            thumb.addEventListener('click', () => {
-                thumbnails.forEach(t => t.classList.remove('active'));
-                thumb.classList.add('active');
-                mainImg.src = thumb.src.replace('w=200', 'w=800');
-            });
-        });
-    }
+    // ... rest of DOMContentLoaded ...
 
     // Quantity Selector
     const qtyInput = document.getElementById('productQty');

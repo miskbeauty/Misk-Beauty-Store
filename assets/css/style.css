@@ -1462,3 +1462,11 @@ footer {
         gap: 40px;
     }
 }
+/* --- Advanced Storefront Additions --- */
+.product-category-small { font-size: 0.75rem; color: var(--accent-color); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; text-align: right; }
+.variant-opt-v2-btn { padding: 10px 22px; border: 1.5px solid #eee; border-radius: 12px; background: #fff; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); color: #444; }
+.variant-opt-v2-btn:hover { border-color: var(--hover-color); background: #fdf6ff; transform: translateY(-2px); }
+.variant-opt-v2-btn.active { border-color: var(--primary-dark); background: var(--primary-color); color: var(--primary-dark); box-shadow: 0 4px 12px rgba(74, 20, 140, 0.1); }
+#product-stock-status { font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+#stock-count { font-size: 0.85rem; font-weight: 400; color: #888; }
+#product-sku { color: var(--primary-dark); font-family: inherit; font-weight: 700; background: #f3e5f5; padding: 2px 8px; border-radius: 6px; font-size: 0.9rem; }
