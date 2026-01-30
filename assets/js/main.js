@@ -529,6 +529,30 @@ function renderProductGrid(containerId) {
     const filterCat = urlParams.get('category');
     const filterSub = urlParams.get('sub');
 
+    // Category Static Content Injection
+    const headerContainer = document.getElementById('categoryHeaderContainer');
+    if (headerContainer) {
+        headerContainer.innerHTML = '';
+        const savedCats = localStorage.getItem('misk_categories');
+        if (savedCats) {
+            const categories = JSON.parse(savedCats);
+            let activeCat = null;
+            if (filterSub) {
+                activeCat = categories.find(c => c.name === filterSub);
+            } else if (filterCat) {
+                activeCat = categories.find(c => c.name === filterCat);
+            }
+
+            if (activeCat) {
+                if (activeCat.staticHeader && activeCat.staticHeader !== '<p><br></p>') {
+                    headerContainer.innerHTML = `<div class="category-rich-header">${activeCat.staticHeader}</div>`;
+                }
+                const sectionTitle = document.querySelector('.section-title h2');
+                if (sectionTitle) sectionTitle.innerText = activeCat.name;
+            }
+        }
+    }
+
     if (filterCat) {
         products = products.filter(p => p.category === filterCat);
     }

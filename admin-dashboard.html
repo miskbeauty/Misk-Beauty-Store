@@ -34,6 +34,12 @@
                         <span>إدارة المنتجات</span>
                     </a>
                 </li>
+                <li class="menu-item" id="menu-categories">
+                    <a href="#" onclick="switchTab('categories')">
+                        <i class="fas fa-list-ul"></i>
+                        <span>إدارة التصنيفات</span>
+                    </a>
+                </li>
                 <li class="menu-item">
                     <a href="#">
                         <i class="fas fa-users"></i>
@@ -167,6 +173,37 @@
                     </table>
                 </div>
             </section>
+
+            <!-- Category Management Table -->
+            <section id="categories-section" class="admin-card hidden">
+                <div class="card-header">
+                    <h3 style="font-weight: 700;">إدارة التصنيفات</h3>
+                    <div class="header-actions">
+                        <button onclick="openCategoryModal()" class="btn-admin-login"
+                            style="padding: 8px 15px; font-size: 0.9rem; width: auto; box-shadow: none;">
+                            <i class="fas fa-plus"></i> إضافة تصنيف جديد
+                        </button>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>أيقونة/صورة</th>
+                                <th>الاسم</th>
+                                <th>التصنيف الأب</th>
+                                <th>في الهيدر</th>
+                                <th>الأولوية</th>
+                                <th>العمليات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categories-table-body">
+                            <!-- Data populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -214,6 +251,7 @@
 
     <!-- Product Modal (Add/Edit) -->
     <div id="product-modal" class="modal-overlay">
+        <!-- ... existing product modal content ... -->
         <div class="modal-content" style="max-width: 850px;">
             <div class="modal-header">
                 <h3 id="product-modal-title">إضافة منتج جديد</h3>
@@ -223,7 +261,7 @@
                 <input type="hidden" id="product-id">
                 <div class="modal-body" style="max-height: 70vh; overflow-y: auto; padding: 10px;">
                     <div class="details-grid">
-                        <!-- Name & Slug -->
+                        <!-- ... existing grid content ... -->
                         <div class="admin-form-group">
                             <label>اسم المنتج</label>
                             <input type="text" id="prod-name" class="admin-input" required
@@ -234,27 +272,19 @@
                             <input type="text" id="prod-slug" class="admin-input"
                                 placeholder="مثلاً: luxury-musk-perfume">
                         </div>
-
-                        <!-- Meta Description -->
                         <div class="admin-form-group full-width">
                             <label>وصف الميتا (SEO Meta Description)</label>
                             <textarea id="prod-meta-desc" class="admin-input" style="min-height: 60px;"
                                 placeholder="اكتب وصفاً مختصراً يظهر في محركات البحث..."></textarea>
                         </div>
-
-                        <!-- Image Upload Section -->
                         <div class="admin-form-group full-width">
                             <label>صور المنتج (يمكنك اختيار عدة صور)</label>
                             <div class="image-upload-wrapper">
                                 <input type="file" id="prod-images-input" class="admin-input" accept="image/*" multiple
                                     onchange="previewImages(this)">
-                                <div id="image-preview-container" class="image-preview-grid">
-                                    <!-- Previews will appear here -->
-                                </div>
+                                <div id="image-preview-container" class="image-preview-grid"></div>
                             </div>
                         </div>
-
-                        <!-- Pricing & Stock & Priority -->
                         <div class="admin-form-group">
                             <label>السعر الأصلي (شيكل)</label>
                             <input type="number" id="prod-original-price" class="admin-input" placeholder="120">
@@ -271,8 +301,6 @@
                             <label>أولوية الظهور (Priority)</label>
                             <input type="number" id="prod-priority" class="admin-input" value="0">
                         </div>
-
-                        <!-- Categorization -->
                         <div class="admin-form-group">
                             <label>التصنيف الرئيسي</label>
                             <select id="prod-category" class="admin-input" required>
@@ -290,14 +318,12 @@
                             <label>التصنيف الفرعي</label>
                             <select id="prod-sub-category" class="admin-input" onchange="syncParentCategory()">
                                 <option value="">بدون تصنيف فرعي</option>
-                                <!-- Group: Beauty -->
                                 <optgroup label="عناية وجمال">
                                     <option value="مكياج">مكياج</option>
                                     <option value="عناية بالبشرة">عناية بالبشرة</option>
                                     <option value="شعر">شعر</option>
                                     <option value="جسم">جسم</option>
                                 </optgroup>
-                                <!-- Group: Perfumes -->
                                 <optgroup label="عطور">
                                     <option value="ستاتي">ستاتي</option>
                                     <option value="رجالي">رجالي</option>
@@ -305,18 +331,15 @@
                                     <option value="عطر شعر">عطر شعر</option>
                                     <option value="بخور">بخور</option>
                                 </optgroup>
-                                <!-- Group: Bags -->
                                 <optgroup label="شنط وإكسسوارات">
                                     <option value="شنط">شنط</option>
                                     <option value="إكسسوارات ستاتي">إكسسوارات ستاتي</option>
                                     <option value="رجالي">إكسسوارات رجالي</option>
                                 </optgroup>
-                                <!-- Group: Kids -->
                                 <optgroup label="الأطفال والبيبي">
                                     <option value="مستلزمات">مستلزمات</option>
                                     <option value="إكسسوارات">إكسسوارات بيبي</option>
                                 </optgroup>
-                                <!-- Group: Printing -->
                                 <optgroup label="الطباعة الحرارية">
                                     <option value="براويز">براويز</option>
                                     <option value="مجات">مجات</option>
@@ -324,8 +347,6 @@
                                 </optgroup>
                             </select>
                         </div>
-
-                        <!-- Variants System v2 -->
                         <div class="admin-form-group full-width"
                             style="margin-top: 20px; border-top: 2px solid #f0f0f0; padding-top: 20px;">
                             <div
@@ -337,7 +358,6 @@
                                 </button>
                             </div>
                             <div id="variants-v2-container">
-                                <!-- Structure: [Label] [Price] [Sale Price] [Stock] [SKU] -->
                                 <div id="variants-header"
                                     style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 40px; gap: 10px; margin-bottom: 5px; font-size: 0.8rem; font-weight: bold; color: #777;">
                                     <span>اسم الخيار (مثلاً: درجة 1)</span>
@@ -350,8 +370,6 @@
                                 <div id="variant-items-list"></div>
                             </div>
                         </div>
-
-                        <!-- Rich Text Description -->
                         <div class="admin-form-group full-width">
                             <label>وصف المنتج التفصيلي (طريقة الاستخدام، المكونات، إلخ)</label>
                             <div id="editor-container" style="height: 200px; background: #fff;"></div>
@@ -368,15 +386,73 @@
         </div>
     </div>
 
+    <!-- Category Modal (Add/Edit) -->
+    <div id="category-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 850px;">
+            <div class="modal-header">
+                <h3 id="category-modal-title">إضافة تصنيف جديد</h3>
+                <button class="close-modal" onclick="closeModal('category-modal')">&times;</button>
+            </div>
+            <form id="category-form" onsubmit="handleCategorySubmit(event)">
+                <input type="hidden" id="category-id">
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto; padding: 10px;">
+                    <div class="details-grid">
+                        <div class="admin-form-group">
+                            <label>اسم التصنيف</label>
+                            <input type="text" id="cat-name" class="admin-input" required
+                                placeholder="مثلاً: عطور فرنسية">
+                        </div>
+                        <div class="admin-form-group">
+                            <label>التصنيف الأب (Hierarchy)</label>
+                            <select id="cat-parent" class="admin-input">
+                                <option value="">بدون (تصنيف رئيسي)</option>
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                        <div class="admin-form-group">
+                            <label>أولوية الترتيب</label>
+                            <input type="number" id="cat-priority" class="admin-input" value="0">
+                        </div>
+                        <div class="admin-form-group">
+                            <label>ظهور في الهيدر الرئيسي؟</label>
+                            <select id="cat-show-header" class="admin-input">
+                                <option value="true">نعم</option>
+                                <option value="false">لا</option>
+                            </select>
+                        </div>
+                        <div class="admin-form-group full-width">
+                            <label>صورة التصنيف</label>
+                            <input type="file" id="cat-image-input" class="admin-input" accept="image/*"
+                                onchange="previewCatImage(this)">
+                            <div id="cat-image-preview" style="margin-top: 10px;"></div>
+                        </div>
+                        <div class="admin-form-group full-width">
+                            <label>محتوى رأس القسم (SEO & Static Content)</label>
+                            <div id="cat-editor-container" style="height: 150px; background: #fff;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closeModal('category-modal')">إلغاء</button>
+                    <button type="submit" class="btn-admin-login" style="width: auto; padding: 10px 30px;">حفظ
+                        التصنيف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Quill.js scripts -->
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <script>
         // Global variables for Advanced Mode
         let quill;
+        let catQuill; // New Quill for categories
         let uploadedImagesBase64 = [];
+        let catImageBase64 = null;
+        let mockCategories = [];
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Init Quill
+            // Init Product Quill
             quill = new Quill('#editor-container', {
                 theme: 'snow',
                 modules: {
@@ -388,6 +464,19 @@
                     ]
                 },
                 placeholder: 'اكتب وصف المنتج هنا...'
+            });
+
+            // Init Category Quill
+            catQuill = new Quill('#cat-editor-container', {
+                theme: 'snow',
+                modules: {
+                    toolbar: [
+                        ['bold', 'italic', 'underline'],
+                        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                        ['clean']
+                    ]
+                },
+                placeholder: 'المحتوى الذي سيظهر في رأس الصفحة...'
             });
         });
 
@@ -418,6 +507,22 @@
         function removePreview(btn, src) {
             uploadedImagesBase64 = uploadedImagesBase64.filter(img => img !== src);
             btn.parentElement.remove();
+        }
+
+        // --- Category Image Logic ---
+        function previewCatImage(input) {
+            const container = document.getElementById('cat-image-preview');
+            container.innerHTML = '';
+            catImageBase64 = null;
+
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    catImageBase64 = e.target.result;
+                    container.innerHTML = `<img src="${catImageBase64}" style="max-width: 100px; border-radius: 8px;">`;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
         }
 
         // --- Variants Logic v2 ---
@@ -482,24 +587,18 @@
 
         // --- Core Functions ---
         function switchTab(tab) {
-            const ordersSec = document.getElementById('orders-section');
-            const productsSec = document.getElementById('products-section');
-            const menuOrders = document.getElementById('menu-orders');
-            const menuProducts = document.getElementById('menu-products');
+            const sections = ['orders-section', 'products-section', 'categories-section'];
+            const menuItems = ['menu-orders', 'menu-products', 'menu-categories'];
 
-            if (tab === 'orders') {
-                ordersSec.classList.remove('hidden');
-                productsSec.classList.add('hidden');
-                menuOrders.classList.add('active');
-                menuProducts.classList.remove('active');
-                renderOrders();
-            } else {
-                ordersSec.classList.add('hidden');
-                productsSec.classList.remove('hidden');
-                menuOrders.classList.remove('active');
-                menuProducts.classList.add('active');
-                renderProducts();
-            }
+            sections.forEach(s => document.getElementById(s).classList.add('hidden'));
+            menuItems.forEach(m => document.getElementById(m).classList.remove('active'));
+
+            document.getElementById(`${tab}-section`).classList.remove('hidden');
+            document.getElementById(`menu-${tab}`).classList.add('active');
+
+            if (tab === 'orders') renderOrders();
+            if (tab === 'products') renderProducts();
+            if (tab === 'categories') renderCategories();
         }
 
         function renderOrders() {
@@ -577,7 +676,9 @@
             if (!tableBody) return;
             tableBody.innerHTML = '';
 
-            // Sort by priority before rendering if needed
+            // Update Product Form Category Dropdowns based on dynamic categories
+            updateProductCategoryDropdowns();
+
             const sortedProducts = [...mockProducts].sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
             sortedProducts.forEach(prod => {
@@ -604,31 +705,155 @@
             });
         }
 
-        // --- Category Auto-Mapping Logic ---
-        const subToParentMap = {
-            "مكياج": "عناية وجمال",
-            "عناية بالبشرة": "عناية وجمال",
-            "شعر": "عناية وجمال",
-            "جسم": "عناية وجمال",
-            "ستاتي": "عطور",
-            "رجالي": "عطور",
-            "مزيل عرق": "عطور",
-            "عطر شعر": "عطور",
-            "بخور": "عطور",
-            "شنط": "شنط وإكسسوارات",
-            "إكسسوارات ستاتي": "شنط وإكسسوارات",
-            "رجالي": "شنط وإكسسوارات",
-            "مستلزمات": "الأطفال والبيبي",
-            "إكسسوارات بيبي": "الأطفال والبيبي",
-            "براويز": "الطباعة الحرارية",
-            "مجات": "الطباعة الحرارية",
-            "لهايات وبلايز": "الطباعة الحرارية"
-        };
+        // --- Category Management Logic ---
+        function renderCategories() {
+            const tableBody = document.getElementById('categories-table-body');
+            if (!tableBody) return;
+            tableBody.innerHTML = '';
+
+            // Hierarchical sorting (Parents first, then their children)
+            const sortedCategories = [];
+            const parents = mockCategories.filter(c => !c.parentId);
+            parents.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+
+            parents.forEach(p => {
+                sortedCategories.push(p);
+                const children = mockCategories.filter(c => c.parentId == p.id);
+                children.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+                children.forEach(c => {
+                    c.isChild = true;
+                    sortedCategories.push(c);
+                });
+            });
+
+            sortedCategories.forEach(cat => {
+                const parentName = cat.parentId ? (mockCategories.find(c => c.id == cat.parentId)?.name || '-') : 'رئيسي';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><img src="${cat.image || 'https://placehold.co/40x40?text=Cat'}" style="width: 40px; height: 40px; border-radius: 5px; object-fit: cover;"></td>
+                    <td style="${cat.isChild ? 'padding-right: 30px;' : 'font-weight: bold;'}">
+                        ${cat.isChild ? '<i class="fas fa-level-down-alt fa-rotate-180" style="color: #ccc; margin-left: 5px;"></i>' : ''} ${cat.name}
+                    </td>
+                    <td>${parentName}</td>
+                    <td>${cat.showInHeader == 'true' ? '<span style="color: green;">نعم</span>' : '<span style="color: red;">لا</span>'}</td>
+                    <td>${cat.priority || 0}</td>
+                    <td>
+                        <button onclick="openCategoryModal(${cat.id})" style="background:none; border:none; cursor:pointer; color: #2e7d32; margin-left: 10px;">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteCategory(${cat.id})" style="background:none; border:none; cursor:pointer; color: #d32f2f;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function openCategoryModal(id = null) {
+            const form = document.getElementById('category-form');
+            form.reset();
+            document.getElementById('category-id').value = id || '';
+            document.getElementById('category-modal-title').innerText = id ? 'تعديل التصنيف' : 'إضافة تصنيف جديد';
+            document.getElementById('cat-image-preview').innerHTML = '';
+            catImageBase64 = null;
+            catQuill.setContents([]);
+
+            // Populate Parent Dropdown
+            const parentSelect = document.getElementById('cat-parent');
+            parentSelect.innerHTML = '<option value="">بدون (تصنيف رئيسي)</option>';
+            mockCategories.filter(c => !c.parentId && c.id != id).forEach(p => {
+                parentSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+            });
+
+            if (id) {
+                const cat = mockCategories.find(c => c.id == id);
+                if (cat) {
+                    document.getElementById('cat-name').value = cat.name;
+                    document.getElementById('cat-parent').value = cat.parentId || '';
+                    document.getElementById('cat-priority').value = cat.priority || 0;
+                    document.getElementById('cat-show-header').value = cat.showInHeader;
+                    if (cat.image) {
+                        catImageBase64 = cat.image;
+                        document.getElementById('cat-image-preview').innerHTML = `<img src="${cat.image}" style="max-width: 100px; border-radius: 8px;">`;
+                    }
+                    catQuill.clipboard.dangerouslyPasteHTML(cat.staticHeader || '');
+                }
+            }
+            document.getElementById('category-modal').style.display = 'flex';
+        }
+
+        function handleCategorySubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('category-id').value;
+            const newCat = {
+                id: id ? parseInt(id) : Date.now(),
+                name: document.getElementById('cat-name').value,
+                parentId: document.getElementById('cat-parent').value ? parseInt(document.getElementById('cat-parent').value) : null,
+                priority: parseInt(document.getElementById('cat-priority').value) || 0,
+                showInHeader: document.getElementById('cat-show-header').value,
+                image: catImageBase64,
+                staticHeader: catQuill.root.innerHTML
+            };
+
+            if (id) {
+                const index = mockCategories.findIndex(c => c.id == parseInt(id));
+                mockCategories[index] = newCat;
+            } else {
+                mockCategories.push(newCat);
+            }
+
+            localStorage.setItem('misk_categories', JSON.stringify(mockCategories));
+            closeModal('category-modal');
+            renderCategories();
+        }
+
+        function deleteCategory(id) {
+            if (confirm('هل أنت متأكد من حذف هذا التصنيف؟ سيتم فك ارتباط الفروع به.')) {
+                mockCategories = mockCategories.filter(c => c.id != id);
+                // Also update children to have no parent
+                mockCategories.forEach(c => {
+                    if (c.parentId == id) c.parentId = null;
+                });
+                localStorage.setItem('misk_categories', JSON.stringify(mockCategories));
+                renderCategories();
+            }
+        }
+
+        function updateProductCategoryDropdowns() {
+            const mainSel = document.getElementById('prod-category');
+            const subSel = document.getElementById('prod-sub-category');
+
+            if (!mainSel || !subSel) return;
+
+            mainSel.innerHTML = '';
+            subSel.innerHTML = '<option value="">بدون تصنيف فرعي</option>';
+
+            const parents = mockCategories.filter(c => !c.parentId);
+            parents.forEach(p => {
+                mainSel.innerHTML += `<option value="${p.name}">${p.name}</option>`;
+
+                const children = mockCategories.filter(c => c.parentId == p.id);
+                if (children.length > 0) {
+                    let group = `<optgroup label="${p.name}">`;
+                    children.forEach(c => {
+                        group += `<option value="${c.name}">${c.name}</option>`;
+                    });
+                    group += `</optgroup>`;
+                    subSel.innerHTML += group;
+                }
+            });
+        }
+
 
         function syncParentCategory() {
             const subVal = document.getElementById('prod-sub-category').value;
-            if (subToParentMap[subVal]) {
-                document.getElementById('prod-category').value = subToParentMap[subVal];
+            const subCatObj = mockCategories.find(c => c.name == subVal && c.parentId);
+            if (subCatObj) {
+                const parentCat = mockCategories.find(c => c.id == subCatObj.parentId);
+                if (parentCat) {
+                    document.getElementById('prod-category').value = parentCat.name;
+                }
             }
         }
 
@@ -762,15 +987,27 @@
             }
         }
 
-        // Load persisted products if available
+        // Load persisted data
         const savedProds = localStorage.getItem('misk_products');
-        if (savedProds) {
-            mockProducts = JSON.parse(savedProds);
+        if (savedProds) mockProducts = JSON.parse(savedProds);
+
+        const savedCats = localStorage.getItem('misk_categories');
+        if (savedCats) {
+            mockCategories = JSON.parse(savedCats);
+        } else {
+            // Initial Seed if empty
+            mockCategories = [
+                { id: 1, name: "عناية وجمال", parentId: null, priority: 10, showInHeader: "true", image: null, staticHeader: "" },
+                { id: 2, name: "عطور", parentId: null, priority: 9, showInHeader: "true", image: null, staticHeader: "" },
+                { id: 3, name: "مكياج", parentId: 1, priority: 0, showInHeader: "true", image: null, staticHeader: "" }
+            ];
+            localStorage.setItem('misk_categories', JSON.stringify(mockCategories));
         }
 
         verifyAdminSession();
         renderOrders();
         renderProducts();
+        renderCategories();
     </script>
 </body>
 

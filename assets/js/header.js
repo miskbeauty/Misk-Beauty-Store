@@ -3,6 +3,39 @@
  * This script injects the consistent header across all pages.
  */
 
+function getDynamicNavHTML() {
+    const savedCats = localStorage.getItem('misk_categories');
+    let categories = [];
+    if (savedCats) {
+        categories = JSON.parse(savedCats);
+    }
+
+    // Filter categories to show in header and sort by priority
+    const headerCats = categories.filter(c => c.showInHeader === 'true');
+    headerCats.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+
+    const parents = headerCats.filter(c => !c.parentId);
+
+    let html = `<li><a href="index.html">الرئيسية</a></li>`;
+
+    parents.forEach(p => {
+        const children = headerCats.filter(c => c.parentId == p.id);
+        if (children.length > 0) {
+            html += `
+                <li class="dropdown">
+                    <a href="index.html?category=${encodeURIComponent(p.name)}">${p.name}</a>
+                    <ul class="dropdown-menu">
+                        ${children.map(c => `<li><a href="index.html?sub=${encodeURIComponent(c.name)}">${c.name}</a></li>`).join('')}
+                    </ul>
+                </li>`;
+        } else {
+            html += `<li><a href="index.html?category=${encodeURIComponent(p.name)}">${p.name}</a></li>`;
+        }
+    });
+
+    return html;
+}
+
 const headerHTML = `
     <nav class="container">
         <div class="logo">
@@ -10,53 +43,8 @@ const headerHTML = `
                 <img src="assets/images/1745215944148877862-removebg-preview.png" alt="Misk Beauty Logo">
             </a>
         </div>
-        <ul class="nav-links">
-            <li><a href="index.html">الرئيسية</a></li>
-            <li class="dropdown">
-                <a href="index.html?category=عناية وجمال">العناية والجمال</a>
-                <ul class="dropdown-menu">
-                    <li><a href="index.html?sub=مكياج">مكياج</a></li>
-                    <li><a href="index.html?sub=عناية بالبشرة">عناية بالبشرة</a></li>
-                    <li><a href="index.html?sub=شعر">شعر</a></li>
-                    <li><a href="index.html?sub=جسم">جسم</a></li>
-                </ul>
-            </li>
-            <li class="dropdown">
-                <a href="index.html?category=عطور">عطور</a>
-                <ul class="dropdown-menu">
-                    <li><a href="index.html?sub=ستاتي">ستاتي</a></li>
-                    <li><a href="index.html?sub=رجالي">رجالي</a></li>
-                    <li><a href="index.html?sub=مزيل عرق">مزيل عرق</a></li>
-                    <li><a href="index.html?sub=عطر شعر">عطر شعر</a></li>
-                    <li><a href="index.html?sub=بخور">بخور</a></li>
-                </ul>
-            </li>
-            <li class="dropdown">
-                <a href="index.html?category=شنط وإكسسوارات">شنط وإكسسورات</a>
-                <ul class="dropdown-menu">
-                    <li><a href="index.html?sub=شنط">شنط</a></li>
-                    <li><a href="index.html?sub=إكسسوارات ستاتي">إكسسوارات ستاتي</a></li>
-                    <li><a href="index.html?sub=إكسسوارات رجالي">رجالي</a></li>
-                </ul>
-            </li>
-            <li class="dropdown">
-                <a href="index.html?category=الأطفال والبيبي">الأطفال والبيبي</a>
-                <ul class="dropdown-menu">
-                    <li><a href="index.html?sub=مستلزمات">مستلزمات</a></li>
-                    <li><a href="index.html?sub=إكسسوارات بيبي">إكسسوارات</a></li>
-                </ul>
-            </li>
-            <li class="dropdown">
-                <a href="index.html?category=الطباعة الحرارية">الطباعة الحرارية</a>
-                <ul class="dropdown-menu">
-                    <li><a href="index.html?sub=براويز">براويز</a></li>
-                    <li><a href="index.html?sub=مجات">مجات</a></li>
-                    <li><a href="index.html?sub=لهايات وبلايز">لهايات وبلايز</a></li>
-                </ul>
-            </li>
-            <li><a href="index.html?category=منتجات طبية">منتجات طبية</a></li>
-            <li><a href="index.html?category=المنزل والديكور">المنزل والديكور</a></li>
-            <li><a href="index.html?category=الهدايا">الهدايا</a></li>
+        <ul class="nav-links" id="dynamic-nav">
+            <!-- Dynamic Nav Links Injected Here -->
         </ul>
     </nav>
     <div class="search-cart-row container">
@@ -92,6 +80,10 @@ function injectHeader() {
     const headerElement = document.querySelector('header');
     if (headerElement) {
         headerElement.innerHTML = headerHTML;
+        const dynamicNav = document.getElementById('dynamic-nav');
+        if (dynamicNav) {
+            dynamicNav.innerHTML = getDynamicNavHTML();
+        }
     }
 }
 
