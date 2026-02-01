@@ -542,6 +542,40 @@ function loadProducts() {
     return products;
 }
 
+function getProductCardHTML(prod) {
+    const primaryImage = prod.images && prod.images[0] ? prod.images[0] : 'https://placehold.co/400x400?text=No+Image';
+    const hasDiscount = prod.originalPrice && prod.originalPrice > prod.price;
+    const discountPercent = hasDiscount ? Math.round(((prod.originalPrice - prod.price) / prod.originalPrice) * 100) : 0;
+
+    return `
+        <div class="product-card" data-id="${prod.id}" data-name="${prod.name}" data-price="${prod.price}">
+            ${hasDiscount ? `<span class="badge-sale">-${discountPercent}%</span>` : ''}
+            <div class="product-image">
+                <a href="product.html?id=${prod.id}">
+                    <img src="${primaryImage}" alt="${prod.name}">
+                </a>
+                <div class="product-actions">
+                    <button class="btn-quick-view" onclick="location.href='product.html?id=${prod.id}'"><i class="fas fa-eye"></i></button>
+                    <button class="btn-add-cart"
+                        onclick="addToCart(${prod.id}, '${prod.name}', ${prod.price}, '${primaryImage}')">
+                        <i class="fas fa-shopping-cart"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="product-info">
+                <div class="product-category-small">${prod.subCategory || prod.category}</div>
+                <a href="product.html?id=${prod.id}">
+                    <h3>${prod.name}</h3>
+                </a>
+                <div class="price-wrapper" style="margin-bottom: 0;">
+                    ${hasDiscount ? `<span class="old-price" style="font-size: 0.85rem;">${prod.originalPrice} شيكل</span>` : ''}
+                    <p class="price" style="${hasDiscount ? 'color: #ff5252;' : ''}">${prod.price} شيكل</p>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 function renderProductGrid(containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -588,43 +622,8 @@ function renderProductGrid(containerId) {
     products.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
     container.innerHTML = '';
-
     products.forEach(prod => {
-        const primaryImage = prod.images && prod.images[0] ? prod.images[0] : 'https://placehold.co/400x400?text=No+Image';
-        const hasDiscount = prod.originalPrice && prod.originalPrice > prod.price;
-        const discountPercent = hasDiscount ? Math.round(((prod.originalPrice - prod.price) / prod.originalPrice) * 100) : 0;
-
-        const card = document.createElement('div');
-        card.className = 'product-card';
-        card.setAttribute('data-id', prod.id);
-        card.setAttribute('data-name', prod.name);
-        card.setAttribute('data-price', prod.price);
-
-        card.innerHTML = `
-            ${hasDiscount ? `<span class="badge-sale">-${discountPercent}%</span>` : ''}
-            <div class="product-image">
-                <a href="product.html?id=${prod.id}">
-                    <img src="${primaryImage}" alt="${prod.name}">
-                </a>
-                <div class="product-actions">
-                    <button class="btn-quick-view" onclick="location.href='product.html?id=${prod.id}'"><i class="fas fa-eye"></i></button>
-                    <button class="btn-add-cart"
-                        onclick="addToCart(${prod.id}, '${prod.name}', ${prod.price}, '${primaryImage}')"><i
-                            class="fas fa-shopping-cart"></i></button>
-                </div>
-            </div>
-            <div class="product-info">
-                <div class="product-category-small">${prod.subCategory || prod.category}</div>
-                <a href="product.html?id=${prod.id}">
-                    <h3>${prod.name}</h3>
-                </a>
-                <div class="price-wrapper" style="margin-bottom: 0;">
-                    ${hasDiscount ? `<span class="old-price" style="font-size: 0.85rem;">${prod.originalPrice} شيكل</span>` : ''}
-                    <p class="price" style="${hasDiscount ? 'color: #ff5252;' : ''}">${prod.price} شيكل</p>
-                </div>
-            </div>
-        `;
-        container.appendChild(card);
+        container.insertAdjacentHTML('beforeend', getProductCardHTML(prod));
     });
 }
 
