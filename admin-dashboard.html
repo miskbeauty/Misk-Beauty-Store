@@ -999,7 +999,9 @@
             mockCategories = [
                 { id: 1, name: "عناية وجمال", parentId: null, priority: 10, showInHeader: "true", image: null, staticHeader: "" },
                 { id: 2, name: "عطور", parentId: null, priority: 9, showInHeader: "true", image: null, staticHeader: "" },
-                { id: 3, name: "مكياج", parentId: 1, priority: 0, showInHeader: "true", image: null, staticHeader: "" }
+                { id: 3, name: "مكياج", parentId: 1, priority: 0, showInHeader: "true", image: null, staticHeader: "" },
+                { id: 4, name: "Perfumes", parentId: null, priority: 8, showInHeader: "true", image: null, staticHeader: "<h1>Perfumes Section</h1><p>Explore our exclusive collection of premium perfumes.</p>" },
+                { id: 5, name: "French Perfumes", parentId: 4, priority: 0, showInHeader: "true", image: null, staticHeader: "<h1>French Perfumes</h1><p>The finest scents from Paris.</p>" }
             ];
             localStorage.setItem('misk_categories', JSON.stringify(mockCategories));
         }

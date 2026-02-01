@@ -10,20 +10,25 @@ function getDynamicNavHTML() {
         categories = JSON.parse(savedCats);
     }
 
-    // Filter categories to show in header and sort by priority
+    // Filter categories to show in header
     const headerCats = categories.filter(c => c.showInHeader === 'true');
+
+    // Sort all by priority descending
     headerCats.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
+    // Get only top-level parents for the main bar
     const parents = headerCats.filter(c => !c.parentId);
 
     let html = `<li><a href="index.html">الرئيسية</a></li>`;
 
     parents.forEach(p => {
+        // Find children that are also marked to show in header
         const children = headerCats.filter(c => c.parentId == p.id);
+
         if (children.length > 0) {
             html += `
                 <li class="dropdown">
-                    <a href="index.html?category=${encodeURIComponent(p.name)}">${p.name}</a>
+                    <a href="index.html?category=${encodeURIComponent(p.name)}">${p.name} <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-right: 5px;"></i></a>
                     <ul class="dropdown-menu">
                         ${children.map(c => `<li><a href="index.html?sub=${encodeURIComponent(c.name)}">${c.name}</a></li>`).join('')}
                     </ul>
