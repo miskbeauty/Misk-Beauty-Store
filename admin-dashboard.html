@@ -46,8 +46,8 @@
                         <span>العملاء</span>
                     </a>
                 </li>
-                <li class="menu-item">
-                    <a href="#">
+                <li class="menu-item" id="menu-settings">
+                    <a href="#" onclick="switchTab('settings')">
                         <i class="fas fa-cog"></i>
                         <span>الإعدادات</span>
                     </a>
@@ -176,6 +176,7 @@
 
             <!-- Category Management Table -->
             <section id="categories-section" class="admin-card hidden">
+                <!-- ... existing content ... -->
                 <div class="card-header">
                     <h3 style="font-weight: 700;">إدارة التصنيفات</h3>
                     <div class="header-actions">
@@ -203,6 +204,62 @@
                         </tbody>
                     </table>
                 </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings-section" class="admin-card hidden">
+                <div class="card-header">
+                    <h3 style="font-weight: 700;">إعدادات المتجر</h3>
+                </div>
+
+                <form id="settings-form" onsubmit="handleSettingsSubmit(event)">
+                    <div class="details-grid">
+                        <div class="admin-form-group">
+                            <label>اسم المتجر</label>
+                            <input type="text" id="set-store-name" class="admin-input" placeholder="مثلاً: مسك بيوتي">
+                        </div>
+                        <div class="admin-form-group">
+                            <label>رقم الواتساب (للتواصل والطلبات)</label>
+                            <input type="text" id="set-whatsapp" class="admin-input" placeholder="+970xxxxxxxxx">
+                        </div>
+                        <div class="admin-form-group">
+                            <label>رابط انستجرام</label>
+                            <input type="text" id="set-instagram" class="admin-input"
+                                placeholder="https://instagram.com/...">
+                        </div>
+                        <div class="admin-form-group">
+                            <label>رابط تيك توك</label>
+                            <input type="text" id="set-tiktok" class="admin-input" placeholder="https://tiktok.com/...">
+                        </div>
+                        <div class="admin-form-group full-width">
+                            <label>شعار المتجر (Logo)</label>
+                            <input type="file" id="set-logo-input" class="admin-input" accept="image/*"
+                                onchange="previewLogo(this)">
+                            <div id="logo-preview" style="margin-top: 10px;"></div>
+                        </div>
+
+                        <div class="full-width"
+                            style="margin-top: 20px; border-top: 2px solid #f0f0f0; padding-top: 20px;">
+                            <h4 style="color: var(--admin-purple); margin-bottom: 15px;">إعدادات الشحن وتكاليف التوصيل
+                            </h4>
+                        </div>
+
+                        <div class="admin-form-group">
+                            <label>حد الشحن المجاني (شيكل)</label>
+                            <input type="number" id="set-free-shipping-threshold" class="admin-input" placeholder="300">
+                        </div>
+                        <div class="admin-form-group">
+                            <label>رابط فيسبوك</label>
+                            <input type="text" id="set-facebook" class="admin-input"
+                                placeholder="https://facebook.com/...">
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 30px; text-align: left;">
+                        <button type="submit" class="btn-admin-login" style="width: auto; padding: 12px 40px;">حفظ
+                            الإعدادات</button>
+                    </div>
+                </form>
             </section>
         </main>
     </div>
@@ -587,8 +644,8 @@
 
         // --- Core Functions ---
         function switchTab(tab) {
-            const sections = ['orders-section', 'products-section', 'categories-section'];
-            const menuItems = ['menu-orders', 'menu-products', 'menu-categories'];
+            const sections = ['orders-section', 'products-section', 'categories-section', 'settings-section'];
+            const menuItems = ['menu-orders', 'menu-products', 'menu-categories', 'menu-settings'];
 
             sections.forEach(s => document.getElementById(s).classList.add('hidden'));
             menuItems.forEach(m => document.getElementById(m).classList.remove('active'));
@@ -599,6 +656,7 @@
             if (tab === 'orders') renderOrders();
             if (tab === 'products') renderProducts();
             if (tab === 'categories') renderCategories();
+            if (tab === 'settings') renderSettings();
         }
 
         function renderOrders() {
@@ -818,6 +876,57 @@
                 localStorage.setItem('misk_categories', JSON.stringify(mockCategories));
                 renderCategories();
             }
+        }
+
+        // --- Settings Management ---
+        let storeSettings = {
+            name: "مسك بيوتي",
+            whatsapp: "+970599000000",
+            instagram: "",
+            tiktok: "",
+            facebook: "",
+            logo: null,
+            freeShippingThreshold: 300
+        };
+
+        function renderSettings() {
+            const saved = localStorage.getItem('misk_settings');
+            if (saved) storeSettings = JSON.parse(saved);
+
+            document.getElementById('set-store-name').value = storeSettings.name || "";
+            document.getElementById('set-whatsapp').value = storeSettings.whatsapp || "";
+            document.getElementById('set-instagram').value = storeSettings.instagram || "";
+            document.getElementById('set-tiktok').value = storeSettings.tiktok || "";
+            document.getElementById('set-facebook').value = storeSettings.facebook || "";
+            document.getElementById('set-free-shipping-threshold').value = storeSettings.freeShippingThreshold || 300;
+
+            if (storeSettings.logo) {
+                document.getElementById('logo-preview').innerHTML = `<img src="${storeSettings.logo}" style="max-height: 80px; border-radius: 8px;">`;
+            }
+        }
+
+        function previewLogo(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    storeSettings.logo = e.target.result;
+                    document.getElementById('logo-preview').innerHTML = `<img src="${e.target.result}" style="max-height: 80px; border-radius: 8px;">`;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function handleSettingsSubmit(e) {
+            e.preventDefault();
+            storeSettings.name = document.getElementById('set-store-name').value;
+            storeSettings.whatsapp = document.getElementById('set-whatsapp').value;
+            storeSettings.instagram = document.getElementById('set-instagram').value;
+            storeSettings.tiktok = document.getElementById('set-tiktok').value;
+            storeSettings.facebook = document.getElementById('set-facebook').value;
+            storeSettings.freeShippingThreshold = parseInt(document.getElementById('set-free-shipping-threshold').value);
+
+            localStorage.setItem('misk_settings', JSON.stringify(storeSettings));
+            alert('تم حفظ الإعدادات بنجاح وسيتم تطبيقها في الموقع.');
         }
 
         function updateProductCategoryDropdowns() {

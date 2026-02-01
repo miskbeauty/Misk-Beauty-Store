@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>عروض المسك | تخفيضات حصرية في مسك بيوتي</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+
+<body>
+    <header></header>
+    <script src="assets/js/header.js"></script>
+
+    <main>
+        <div class="category-header-banner"
+            style="background: linear-gradient(135deg, #6a1b9a 0%, #880e4f 100%); color: white; padding: 60px 0; text-align: center; margin-bottom: 40px;">
+            <div class="container">
+                <h1 style="font-size: 3rem; font-weight: 700; margin-bottom: 15px;">عروض وتخفيضات المسك</h1>
+                <p style="font-size: 1.2rem; opacity: 0.9;">أفضل المنتجات بأفضل الأسعار - لفترة محدودة</p>
+            </div>
+        </div>
+
+        <section class="products container">
+            <div id="noResultsMessage" class="hidden"
+                style="text-align: center; padding: 50px; color: var(--primary-dark); font-size: 1.2rem; font-weight: 600;">
+                <i class="fas fa-percent"
+                    style="display: block; font-size: 3rem; margin-bottom: 20px; opacity: 0.3;"></i>
+                عذراً، لا توجد عروض حالياً. ترقبوا جديدنا قريباً!
+            </div>
+            <div class="product-grid" id="offersGrid">
+                <!-- Products with sale price injected here -->
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h3 id="footerStoreName">مسك بيوتي</h3>
+                    <p id="footerStoreDesc">مسك بيوتي - وجهتكم الأولى لأرقى العطور ومنتجات العناية والجمال.</p>
+                </div>
+                <!-- ... other cols ... -->
+            </div>
+        </div>
+    </footer>
+
+    <script src="assets/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Force rendering only items with discount
+            renderOffersGrid('offersGrid');
+        });
+
+        function renderOffersGrid(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            let products = loadProducts();
+
+            // Filter products with actual discounts
+            products = products.filter(p => p.originalPrice && p.originalPrice > p.price);
+
+            if (products.length === 0) {
+                document.getElementById('noResultsMessage').classList.remove('hidden');
+                return;
+            }
+
+            container.innerHTML = '';
+            products.forEach(prod => {
+                const primaryImage = prod.images && prod.images[0] ? prod.images[0] : 'https://placehold.co/400x400?text=No+Image';
+                const discountPercent = Math.round(((prod.originalPrice - prod.price) / prod.originalPrice) * 100);
+
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <span class="badge-sale">-${discountPercent}%</span>
+                    <div class="product-image">
+                        <a href="product.html?id=${prod.id}">
+                            <img src="${primaryImage}" alt="${prod.name}">
+                        </a>
+                        <div class="product-actions">
+                            <button class="btn-quick-view" onclick="location.href='product.html?id=${prod.id}'"><i class="fas fa-eye"></i></button>
+                            <button class="btn-add-cart" onclick="addToCart(${prod.id}, '${prod.name}', ${prod.price}, '${primaryImage}')"><i class="fas fa-shopping-cart"></i></button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category-small">${prod.subCategory || prod.category}</div>
+                        <a href="product.html?id=${prod.id}">
+                            <h3>${prod.name}</h3>
+                        </a>
+                        <div class="price-wrapper" style="margin-bottom: 0;">
+                            <span class="old-price" style="font-size: 0.85rem;">${prod.originalPrice} شيكل</span>
+                            <p class="price" style="color: #ff5252;">${prod.price} شيكل</p>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+    </script>
+</body>
+
+</html>

@@ -20,6 +20,7 @@ function getDynamicNavHTML() {
     const parents = headerCats.filter(c => !c.parentId);
 
     let html = `<li><a href="index.html">الرئيسية</a></li>`;
+    html += `<li><a href="offers.html" style="color: #d81b60; font-weight: 700;"><i class="fas fa-percent"></i> العروض</a></li>`;
 
     parents.forEach(p => {
         // Find children that are also marked to show in header
@@ -85,6 +86,20 @@ function injectHeader() {
     const headerElement = document.querySelector('header');
     if (headerElement) {
         headerElement.innerHTML = headerHTML;
+
+        // Apply Global Settings
+        const savedSettings = localStorage.getItem('misk_settings');
+        if (savedSettings) {
+            const settings = JSON.parse(savedSettings);
+            const logoImgs = document.querySelectorAll('.logo img');
+            if (settings.logo) {
+                logoImgs.forEach(img => img.src = settings.logo);
+            }
+            if (settings.name) {
+                logoImgs.forEach(img => img.alt = settings.name);
+            }
+        }
+
         const dynamicNav = document.getElementById('dynamic-nav');
         if (dynamicNav) {
             dynamicNav.innerHTML = getDynamicNavHTML();

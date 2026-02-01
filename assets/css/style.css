@@ -1551,3 +1551,90 @@ footer {
     margin-right: 25px;
     margin-bottom: 15px;
 }
+
+/* Promotional Banner */
+.promo-banner {
+    background: linear-gradient(135deg, #6a1b9a 0%, #d81b60 100%);
+    border-radius: 25px;
+    padding: 60px 40px;
+    margin: 40px auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(106, 27, 154, 0.2);
+}
+
+.promo-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.promo-content {
+    max-width: 60%;
+    z-index: 1;
+}
+
+.promo-content h2 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 15px;
+}
+
+.promo-content p {
+    font-size: 1.2rem;
+    margin-bottom: 25px;
+    opacity: 0.9;
+}
+
+.promo-image {
+    max-width: 35%;
+    z-index: 1;
+}
+
+.promo-image img {
+    width: 100%;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.2));
+    transform: rotate(-10deg);
+}
+
+.btn-white {
+    background: white;
+    color: var(--primary-dark);
+    font-weight: 700;
+    padding: 12px 30px;
+    border-radius: 50px;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s;
+}
+
+.btn-white:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 768px) {
+    .promo-banner {
+        flex-direction: column;
+        text-align: center;
+        padding: 40px 20px;
+    }
+
+    .promo-content {
+        max-width: 100%;
+        margin-bottom: 30px;
+    }
+
+    .promo-image {
+        max-width: 70%;
+    }
+}

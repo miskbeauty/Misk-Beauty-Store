@@ -263,10 +263,17 @@ function renderFullCart() {
     subtotalEl.textContent = `${subtotal}`;
 
     // Free Shipping Rule
+    let freeShippingThreshold = 300;
+    const savedSettings = localStorage.getItem('misk_settings');
+    if (savedSettings) {
+        freeShippingThreshold = JSON.parse(savedSettings).freeShippingThreshold || 300;
+    }
+
     let activeShipping = selectedShippingRate;
-    if (subtotal >= 300 && selectedShippingRate > 0) {
+    if (subtotal >= freeShippingThreshold && selectedShippingRate > 0) {
         activeShipping = 0;
         if (freeShippingMsg) freeShippingMsg.style.display = 'block';
+        if (freeShippingMsg) freeShippingMsg.innerHTML = `<i class="fas fa-truck"></i> مبروك! حصلت على توصيل مجاني`;
     } else {
         if (freeShippingMsg) freeShippingMsg.style.display = 'none';
     }
@@ -319,8 +326,14 @@ function renderCheckoutSummary() {
     subtotalEl.textContent = `${subtotal}`;
 
     // Apply Free Shipping Rule in Checkout too
+    let freeShippingThreshold = 300;
+    const savedSettings = localStorage.getItem('misk_settings');
+    if (savedSettings) {
+        freeShippingThreshold = JSON.parse(savedSettings).freeShippingThreshold || 300;
+    }
+
     let activeShipping = selectedShippingRate;
-    if (subtotal >= 300 && selectedShippingRate > 0) {
+    if (subtotal >= freeShippingThreshold && selectedShippingRate > 0) {
         activeShipping = 0;
     }
 
@@ -363,6 +376,17 @@ function handleCheckoutSubmit(e) {
     if (checkoutContent && successSection) {
         checkoutContent.style.display = 'none';
         successSection.style.display = 'block';
+
+        // Update WhatsApp Order Link if button exists
+        const waBtn = document.getElementById('waOrderBtn');
+        if (waBtn) {
+            let storeWa = "+970599000000";
+            const settings = JSON.parse(localStorage.getItem('misk_settings'));
+            if (settings && settings.whatsapp) storeWa = settings.whatsapp;
+
+            const orderMsg = `مرحباً مسك بيوتي، أود تأكيد طلبي:\nالاسم: ${fullName}\nالعنوان: ${address}, ${city}\nالإجمالي: ${grandTotalEl.textContent} شيكل`;
+            waBtn.href = `https://wa.me/${storeWa.replace('+', '')}?text=${encodeURIComponent(orderMsg)}`;
+        }
 
         // Clear Cart
         cart = [];
@@ -779,8 +803,35 @@ function initProductPage() {
     }
 }
 
+function applyStoreSettingsToFooter() {
+    const savedSettings = localStorage.getItem('misk_settings');
+    if (!savedSettings) return;
+
+    const settings = JSON.parse(savedSettings);
+    const footerStoreName = document.querySelector('.footer-col h3');
+    const footerSocialLinks = document.querySelector('.social-links');
+    const copyright = document.querySelector('.copyright');
+
+    if (settings.name && footerStoreName) {
+        footerStoreName.textContent = settings.name;
+    }
+    if (copyright && settings.name) {
+        copyright.textContent = `© ${new Date().getFullYear()} ${settings.name} للجمال والهدايا. جميع الحقوق محفوظة`;
+    }
+
+    if (footerSocialLinks && settings) {
+        footerSocialLinks.innerHTML = `
+            ${settings.instagram ? `<a href="${settings.instagram}" target="_blank"><i class="fab fa-instagram"></i></a>` : ''}
+            ${settings.whatsapp ? `<a href="https://wa.me/${settings.whatsapp.replace('+', '')}" target="_blank"><i class="fab fa-whatsapp"></i></a>` : ''}
+            ${settings.tiktok ? `<a href="${settings.tiktok}" target="_blank"><i class="fab fa-tiktok"></i></a>` : ''}
+            ${settings.facebook ? `<a href="${settings.facebook}" target="_blank"><i class="fab fa-facebook"></i></a>` : ''}
+        `;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Determine Page
+    applyStoreSettingsToFooter();
+    // ... rest of init ...
     const path = window.location.pathname;
     if (path.includes('index.html') || path === '/' || path.endsWith('Misk-Beauty-Store/')) {
         renderProductGrid('productGrid');
