@@ -808,11 +808,15 @@ function applyStoreSettingsToFooter() {
 
     const settings = JSON.parse(savedSettings);
     const footerStoreName = document.querySelector('.footer-col h3');
+    const footerStoreDesc = document.getElementById('footerStoreDesc') || document.querySelector('.footer-col p');
     const footerSocialLinks = document.querySelector('.social-links');
     const copyright = document.querySelector('.copyright');
 
     if (settings.name && footerStoreName) {
         footerStoreName.textContent = settings.name;
+    }
+    if (settings.description && footerStoreDesc) {
+        footerStoreDesc.textContent = settings.description;
     }
     if (copyright && settings.name) {
         copyright.textContent = `© ${new Date().getFullYear()} ${settings.name} للجمال والهدايا. جميع الحقوق محفوظة`;

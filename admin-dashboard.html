@@ -253,6 +253,11 @@
                             <input type="text" id="set-facebook" class="admin-input"
                                 placeholder="https://facebook.com/...">
                         </div>
+                        <div class="admin-form-group full-width">
+                            <label>وصف المتجر (يظهر في التذييل ومحركات البحث)</label>
+                            <textarea id="set-store-desc" class="admin-input" style="min-height: 80px;"
+                                placeholder="اكتب وصفاً مختصراً لمتجرك..."></textarea>
+                        </div>
                     </div>
 
                     <div style="margin-top: 30px; text-align: left;">
@@ -882,6 +887,7 @@
         let storeSettings = {
             name: "مسك بيوتي",
             whatsapp: "+970599000000",
+            description: "مسك بيوتي - وجهتكم الأولى لأرقى العطور ومنتجات العناية والجمال. نحن نجمع بين الجودة والفخامة لنقدم لكم الأفضل دائماً.",
             instagram: "",
             tiktok: "",
             facebook: "",
@@ -895,6 +901,7 @@
 
             document.getElementById('set-store-name').value = storeSettings.name || "";
             document.getElementById('set-whatsapp').value = storeSettings.whatsapp || "";
+            document.getElementById('set-store-desc').value = storeSettings.description || "";
             document.getElementById('set-instagram').value = storeSettings.instagram || "";
             document.getElementById('set-tiktok').value = storeSettings.tiktok || "";
             document.getElementById('set-facebook').value = storeSettings.facebook || "";
@@ -920,6 +927,7 @@
             e.preventDefault();
             storeSettings.name = document.getElementById('set-store-name').value;
             storeSettings.whatsapp = document.getElementById('set-whatsapp').value;
+            storeSettings.description = document.getElementById('set-store-desc').value;
             storeSettings.instagram = document.getElementById('set-instagram').value;
             storeSettings.tiktok = document.getElementById('set-tiktok').value;
             storeSettings.facebook = document.getElementById('set-facebook').value;
