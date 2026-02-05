@@ -217,9 +217,11 @@
                             <tr>
                                 <th>اسم العميل</th>
                                 <th>رقم الهاتف</th>
+                                <th>الحالة</th>
+                                <th>نقاط الولاء</th>
                                 <th>إجمالي الإنفاق (شيكل)</th>
-                                <th>عدد الطلبات</th>
                                 <th>آخر طلب</th>
+                                <th>العمليات</th>
                             </tr>
                         </thead>
                         <tbody id="customers-table-body">
@@ -757,6 +759,12 @@
             if (tab === 'settings') renderSettings();
         }
 
+        function getLoyaltyStatus(points) {
+            if (points > 1500) return { label: 'ذهبي (VIP)', class: 'status-gold' };
+            if (points > 500) return { label: 'فضي', class: 'status-silver' };
+            return { label: 'برونزي', class: 'status-bronze' };
+        }
+
         function renderCustomers() {
             const tableBody = document.getElementById('customers-table-body');
             if (!tableBody) return;
@@ -766,7 +774,7 @@
             const customers = DataVault.decrypt(encryptedCustomers) || [];
 
             if (customers.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">لا يوجد عملاء متاحين حالياً.</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">لا يوجد عملاء متاحين حالياً.</td></tr>';
                 return;
             }
 
@@ -774,16 +782,44 @@
             customers.sort((a, b) => b.totalSpend - a.totalSpend);
 
             customers.forEach(cust => {
+                const points = cust.points || 0;
+                const status = getLoyaltyStatus(points);
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${cust.name}</td>
                     <td>${cust.phone}</td>
+                    <td><span class="status-badge ${status.class}">${status.label}</span></td>
+                    <td style="font-weight: bold; color: var(--admin-purple);">${points} نقطة</td>
                     <td>${cust.totalSpend} شيكل</td>
-                    <td>${cust.orderCount}</td>
                     <td>${cust.lastOrderDate}</td>
+                    <td>
+                        <button onclick="redeemPoints('${cust.phone}')" class="btn-admin-login" 
+                            style="padding: 5px 10px; font-size: 0.8rem; width: auto; background: var(--admin-purple);"
+                            ${points < 100 ? 'disabled title="يحتاج 100 نقطة على الأقل"' : ''}>
+                            تحويل لنقاط
+                        </button>
+                    </td>
                 `;
                 tableBody.appendChild(tr);
             });
+        }
+
+        function redeemPoints(phone) {
+            const encryptedCustomers = localStorage.getItem('misk_customers_vault');
+            const customers = DataVault.decrypt(encryptedCustomers) || [];
+            const cust = customers.find(c => c.phone === phone);
+
+            if (cust && (cust.points || 0) >= 100) {
+                if (confirm(`هل تريد تحويل 100 نقطة من حساب ${cust.name} إلى قسيمة شراء بقيمة 10 شيكل؟`)) {
+                    cust.points -= 100;
+                    localStorage.setItem('misk_customers_vault', DataVault.encrypt(customers));
+                    const coupon = 'LOYAL-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+                    alert(`تم تحويل النقاط بنجاح!\nكود القسيمة: ${coupon}\nأعطِ هذا الكود للعميل ليستخدمه في طلبه القادم.`);
+                    renderCustomers();
+                }
+            } else {
+                alert('عذراً، لا يمتلك العميل نقاط كافية (الحد الأدنى 100 نقطة).');
+            }
         }
 
         function renderOrders() {
