@@ -97,6 +97,8 @@ function injectHeader() {
             }
             if (settings.name) {
                 logoImgs.forEach(img => img.alt = settings.name);
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) searchInput.placeholder = `ابحث في ${settings.name}`;
             }
         }
 

@@ -469,9 +469,86 @@ dots.forEach((dot, index) => {
     });
 });
 
+// --- Apply Global Settings ---
+function applyGlobalSettings() {
+    const savedSettings = localStorage.getItem('misk_settings');
+    if (!savedSettings) return;
+
+    const settings = JSON.parse(savedSettings);
+
+    // 1. Meta Tags (SEO)
+    if (settings.metaTitle) {
+        // If it's the home page, use the full meta title, else prefix it
+        if (window.location.pathname.endsWith('index.html') || window.location.pathname === '/' || window.location.pathname === '' || window.location.pathname.includes('index.html')) {
+            document.title = settings.metaTitle;
+        } else if (!window.location.pathname.includes('product.html')) {
+            // For other pages, we usually want "Page Name | Store Name"
+            if (!document.title.includes(settings.name)) {
+                const currentTitle = document.title.split('|')[0].trim();
+                document.title = `${currentTitle} | ${settings.name}`;
+            }
+        }
+    }
+
+    if (settings.metaDescription) {
+        // Only set global meta description if the page doesn't have a specific one (e.g. product page)
+        if (!window.location.pathname.includes('product.html')) {
+            let metaDesc = document.querySelector('meta[name="description"]');
+            if (!metaDesc) {
+                metaDesc = document.createElement('meta');
+                metaDesc.name = "description";
+                document.head.appendChild(metaDesc);
+            }
+            metaDesc.content = settings.metaDescription;
+        }
+    }
+
+    if (settings.metaKeywords) {
+        let metaKeywords = document.querySelector('meta[name="keywords"]');
+        if (!metaKeywords) {
+            metaKeywords = document.createElement('meta');
+            metaKeywords.name = "keywords";
+            document.head.appendChild(metaKeywords);
+        }
+        metaKeywords.content = settings.metaKeywords;
+    }
+
+    // 2. Footer Updates
+    const footerName = document.querySelector('footer .footer-col h3');
+    if (footerName && settings.name) footerName.textContent = settings.name;
+
+    const footerDesc = document.querySelector('footer .footer-col p');
+    if (footerDesc && settings.description) footerDesc.textContent = settings.description;
+
+    const copyright = document.querySelector('.copyright');
+    if (copyright && settings.name) {
+        copyright.textContent = `© ${new Date().getFullYear()} ${settings.name}. جميع الحقوق محفوظة`;
+    }
+
+    // 3. Social & WhatsApp
+    const socialLinks = document.querySelector('.social-links');
+    if (socialLinks) {
+        socialLinks.innerHTML = '';
+        if (settings.instagram) {
+            socialLinks.insertAdjacentHTML('beforeend', `<a href="${settings.instagram}" target="_blank"><i class="fab fa-instagram"></i></a>`);
+        }
+        if (settings.facebook) {
+            socialLinks.insertAdjacentHTML('beforeend', `<a href="${settings.facebook}" target="_blank"><i class="fab fa-facebook"></i></a>`);
+        }
+        if (settings.whatsapp) {
+            const cleanWa = settings.whatsapp.replace(/\D/g, '');
+            socialLinks.insertAdjacentHTML('beforeend', `<a href="https://wa.me/${cleanWa}" target="_blank"><i class="fab fa-whatsapp"></i></a>`);
+        }
+        if (settings.tiktok) {
+            socialLinks.insertAdjacentHTML('beforeend', `<a href="${settings.tiktok}" target="_blank"><i class="fab fa-tiktok"></i></a>`);
+        }
+    }
+}
+
 // Initialization
 startSlideShow();
 updateCartUI(); // Ensure UI reflects localStorage state on load
+applyGlobalSettings(); // Apply store-wide settings
 
 // --- Search Functionality ---
 
@@ -639,7 +716,9 @@ function initProductPage() {
     if (!prod) return;
 
     // Update Meta
-    document.title = `${prod.name} | مسك بيوتي`;
+    const savedSettings = localStorage.getItem('misk_settings');
+    const storeName = savedSettings ? JSON.parse(savedSettings).name : "مسك بيوتي";
+    document.title = `${prod.name} | ${storeName}`;
     if (prod.metaDesc) {
         let meta = document.querySelector('meta[name="description"]');
         if (!meta) {

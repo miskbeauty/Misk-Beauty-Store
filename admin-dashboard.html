@@ -254,9 +254,31 @@
                                 placeholder="https://facebook.com/...">
                         </div>
                         <div class="admin-form-group full-width">
-                            <label>وصف المتجر (يظهر في التذييل ومحركات البحث)</label>
+                            <label>وصف المتجر (يظهر في التذييل)</label>
                             <textarea id="set-store-desc" class="admin-input" style="min-height: 80px;"
-                                placeholder="اكتب وصفاً مختصراً لمتجرك..."></textarea>
+                                placeholder="اكتب وصفاً مختصراً لمتجرك في التذييل..."></textarea>
+                        </div>
+
+                        <div class="full-width"
+                            style="margin-top: 20px; border-top: 2px solid #f0f0f0; padding-top: 20px;">
+                            <h4 style="color: var(--admin-purple); margin-bottom: 15px;">إعدادات الأرشفة والـ SEO
+                                (Advanced SEO)</h4>
+                        </div>
+
+                        <div class="admin-form-group full-width">
+                            <label>عنوان المتجر الافتراضي (Meta Title)</label>
+                            <input type="text" id="set-meta-title" class="admin-input"
+                                placeholder="مثلاً: مسك بيوتي | لمنتجات العناية والجمال">
+                        </div>
+                        <div class="admin-form-group full-width">
+                            <label>وصف المتجر لمحركات البحث (Meta Description)</label>
+                            <textarea id="set-meta-desc" class="admin-input" style="min-height: 80px;"
+                                placeholder="اكتب وصفاً جذاباً يظهر في نتائج البحث..."></textarea>
+                        </div>
+                        <div class="admin-form-group full-width">
+                            <label>الكلمات المفتاحية (SEO Keywords)</label>
+                            <input type="text" id="set-meta-keywords" class="admin-input"
+                                placeholder="مسك, عطور, تجميل, عناية, فلسطين">
                         </div>
                     </div>
 
@@ -892,7 +914,10 @@
             tiktok: "",
             facebook: "",
             logo: null,
-            freeShippingThreshold: 300
+            freeShippingThreshold: 300,
+            metaTitle: "مسك بيوتي | Misk Beauty",
+            metaDescription: "أفضل العطور ومنتجات العناية والجمال في مكان واحد.",
+            metaKeywords: "عطور, مسك, تجميل, عناية"
         };
 
         function renderSettings() {
@@ -905,7 +930,9 @@
             document.getElementById('set-instagram').value = storeSettings.instagram || "";
             document.getElementById('set-tiktok').value = storeSettings.tiktok || "";
             document.getElementById('set-facebook').value = storeSettings.facebook || "";
-            document.getElementById('set-free-shipping-threshold').value = storeSettings.freeShippingThreshold || 300;
+            document.getElementById('set-meta-title').value = storeSettings.metaTitle || "";
+            document.getElementById('set-meta-desc').value = storeSettings.metaDescription || "";
+            document.getElementById('set-meta-keywords').value = storeSettings.metaKeywords || "";
 
             if (storeSettings.logo) {
                 document.getElementById('logo-preview').innerHTML = `<img src="${storeSettings.logo}" style="max-height: 80px; border-radius: 8px;">`;
@@ -932,6 +959,9 @@
             storeSettings.tiktok = document.getElementById('set-tiktok').value;
             storeSettings.facebook = document.getElementById('set-facebook').value;
             storeSettings.freeShippingThreshold = parseInt(document.getElementById('set-free-shipping-threshold').value);
+            storeSettings.metaTitle = document.getElementById('set-meta-title').value;
+            storeSettings.metaDescription = document.getElementById('set-meta-desc').value;
+            storeSettings.metaKeywords = document.getElementById('set-meta-keywords').value;
 
             localStorage.setItem('misk_settings', JSON.stringify(storeSettings));
             alert('تم حفظ الإعدادات بنجاح وسيتم تطبيقها في الموقع.');
