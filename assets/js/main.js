@@ -3,6 +3,19 @@
  * Focused on Security, Validation, and Premium UX
  */
 
+// --- Data Protection Helper ---
+const DataVault = {
+    encrypt: (data) => btoa(encodeURIComponent(JSON.stringify(data))), // Basic obfuscation for demo
+    decrypt: (secret) => {
+        if (!secret) return null;
+        try {
+            return JSON.parse(decodeURIComponent(atob(secret)));
+        } catch (e) {
+            return null;
+        }
+    }
+};
+
 // Cart State - Load from LocalStorage if exists
 let cart = JSON.parse(localStorage.getItem('misk_cart')) || [];
 
@@ -388,6 +401,47 @@ function handleCheckoutSubmit(e) {
             waBtn.href = `https://wa.me/${storeWa.replace('+', '')}?text=${encodeURIComponent(orderMsg)}`;
         }
 
+        // --- Data Protection: Encrypt and Persist Order & Customer ---
+        const encryptedOrders = localStorage.getItem('misk_orders_vault');
+        const orders = DataVault.decrypt(encryptedOrders) || [];
+
+        const newOrder = {
+            id: Date.now().toString().slice(-5),
+            date: new Date().toISOString().split('T')[0],
+            customer: fullName,
+            whatsapp: phone,
+            city: region + ", " + city,
+            address: address,
+            total: grandTotalEl.textContent + " شيكل",
+            status: "waiting"
+        };
+
+        orders.push(newOrder);
+        localStorage.setItem('misk_orders_vault', DataVault.encrypt(orders));
+
+        // Update Customers tab data
+        const encryptedCustomers = localStorage.getItem('misk_customers_vault');
+        const customers = DataVault.decrypt(encryptedCustomers) || [];
+
+        let customer = customers.find(c => c.phone === phone);
+        const orderAmount = parseInt(grandTotalEl.textContent) || 0;
+
+        if (customer) {
+            customer.totalSpend += orderAmount;
+            customer.orderCount += 1;
+            customer.lastOrderDate = newOrder.date;
+            customer.name = fullName;
+        } else {
+            customers.push({
+                name: fullName,
+                phone: phone,
+                totalSpend: orderAmount,
+                orderCount: 1,
+                lastOrderDate: newOrder.date
+            });
+        }
+        localStorage.setItem('misk_customers_vault', DataVault.encrypt(customers));
+
         // Clear Cart
         cart = [];
         saveCart();
@@ -541,6 +595,18 @@ function applyGlobalSettings() {
         }
         if (settings.tiktok) {
             socialLinks.insertAdjacentHTML('beforeend', `<a href="${settings.tiktok}" target="_blank"><i class="fab fa-tiktok"></i></a>`);
+        }
+    }
+
+    // 4. Legal Links in Footer
+    const footerLinksUl = document.querySelector('footer .footer-links');
+    if (footerLinksUl) {
+        // Only append if they don't exist to avoid duplicates
+        if (settings.privacyPolicy && !footerLinksUl.innerHTML.includes('type=privacy')) {
+            footerLinksUl.insertAdjacentHTML('beforeend', `<li><a href="legal.html?type=privacy">سياسة الخصوصية</a></li>`);
+        }
+        if (settings.termsOfUse && !footerLinksUl.innerHTML.includes('type=terms')) {
+            footerLinksUl.insertAdjacentHTML('beforeend', `<li><a href="legal.html?type=terms">شروط الاستخدام</a></li>`);
         }
     }
 }

@@ -40,8 +40,8 @@
                         <span>إدارة التصنيفات</span>
                     </a>
                 </li>
-                <li class="menu-item">
-                    <a href="#">
+                <li class="menu-item" id="menu-customers">
+                    <a href="#" onclick="switchTab('customers')">
                         <i class="fas fa-users"></i>
                         <span>العملاء</span>
                     </a>
@@ -206,6 +206,29 @@
                 </div>
             </section>
 
+            <!-- Customers Management Table -->
+            <section id="customers-section" class="admin-card hidden">
+                <div class="card-header">
+                    <h3 style="font-weight: 700;">إدارة العملاء</h3>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>اسم العميل</th>
+                                <th>رقم الهاتف</th>
+                                <th>إجمالي الإنفاق (شيكل)</th>
+                                <th>عدد الطلبات</th>
+                                <th>آخر طلب</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customers-table-body">
+                            <!-- Data populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
             <!-- Settings Section -->
             <section id="settings-section" class="admin-card hidden">
                 <div class="card-header">
@@ -279,6 +302,20 @@
                             <label>الكلمات المفتاحية (SEO Keywords)</label>
                             <input type="text" id="set-meta-keywords" class="admin-input"
                                 placeholder="مسك, عطور, تجميل, عناية, فلسطين">
+                        </div>
+
+                        <div class="full-width"
+                            style="margin-top: 20px; border-top: 2px solid #f0f0f0; padding-top: 20px;">
+                            <h4 style="color: var(--admin-purple); margin-bottom: 15px;">إدارة المحتوى القانوني (Legal
+                                Pages)</h4>
+                        </div>
+                        <div class="admin-form-group full-width">
+                            <label>سياسة الخصوصية (Privacy Policy)</label>
+                            <div id="privacy-editor-container" style="height: 150px; background: #fff;"></div>
+                        </div>
+                        <div class="admin-form-group full-width">
+                            <label>شروط الاستخدام (Terms of Use)</label>
+                            <div id="terms-editor-container" style="height: 150px; background: #fff;"></div>
                         </div>
                     </div>
 
@@ -528,15 +565,17 @@
     <!-- Quill.js scripts -->
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <script>
-        // Global variables for Advanced Mode
         let quill;
-        let catQuill; // New Quill for categories
+        let catQuill;
+        let privacyQuill;
+        let termsQuill;
         let uploadedImagesBase64 = [];
         let catImageBase64 = null;
         let mockCategories = [];
+        let mockCustomers = [];
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Init Product Quill
+            // ... (Init Product & Category Quills)
             quill = new Quill('#editor-container', {
                 theme: 'snow',
                 modules: {
@@ -550,7 +589,6 @@
                 placeholder: 'اكتب وصف المنتج هنا...'
             });
 
-            // Init Category Quill
             catQuill = new Quill('#cat-editor-container', {
                 theme: 'snow',
                 modules: {
@@ -562,7 +600,37 @@
                 },
                 placeholder: 'المحتوى الذي سيظهر في رأس الصفحة...'
             });
+
+            // Init Legal Quills
+            privacyQuill = new Quill('#privacy-editor-container', {
+                theme: 'snow',
+                modules: {
+                    toolbar: [['bold', 'italic', 'underline'], [{ 'list': 'bullet' }], ['clean']]
+                },
+                placeholder: 'اكتب سياسة الخصوصية هنا...'
+            });
+
+            termsQuill = new Quill('#terms-editor-container', {
+                theme: 'snow',
+                modules: {
+                    toolbar: [['bold', 'italic', 'underline'], [{ 'list': 'bullet' }], ['clean']]
+                },
+                placeholder: 'اكتب شروط الاستخدام هنا...'
+            });
         });
+
+        // --- Data Protection Helper ---
+        const DataVault = {
+            encrypt: (data) => btoa(encodeURIComponent(JSON.stringify(data))), // Basic obfuscation for demo
+            decrypt: (secret) => {
+                if (!secret) return null;
+                try {
+                    return JSON.parse(decodeURIComponent(atob(secret)));
+                } catch (e) {
+                    return null;
+                }
+            }
+        };
 
         // --- Multi-Image Logic ---
         function previewImages(input) {
@@ -671,26 +739,62 @@
 
         // --- Core Functions ---
         function switchTab(tab) {
-            const sections = ['orders-section', 'products-section', 'categories-section', 'settings-section'];
-            const menuItems = ['menu-orders', 'menu-products', 'menu-categories', 'menu-settings'];
+            const sections = ['orders-section', 'products-section', 'categories-section', 'customers-section', 'settings-section'];
+            const menuItems = ['menu-orders', 'menu-products', 'menu-categories', 'menu-customers', 'menu-settings'];
 
             sections.forEach(s => document.getElementById(s).classList.add('hidden'));
             menuItems.forEach(m => document.getElementById(m).classList.remove('active'));
 
             document.getElementById(`${tab}-section`).classList.remove('hidden');
-            document.getElementById(`menu-${tab}`).classList.add('active');
+            if (document.getElementById(`menu-${tab}`)) {
+                document.getElementById(`menu-${tab}`).classList.add('active');
+            }
 
             if (tab === 'orders') renderOrders();
             if (tab === 'products') renderProducts();
             if (tab === 'categories') renderCategories();
+            if (tab === 'customers') renderCustomers();
             if (tab === 'settings') renderSettings();
+        }
+
+        function renderCustomers() {
+            const tableBody = document.getElementById('customers-table-body');
+            if (!tableBody) return;
+            tableBody.innerHTML = '';
+
+            const encryptedCustomers = localStorage.getItem('misk_customers_vault');
+            const customers = DataVault.decrypt(encryptedCustomers) || [];
+
+            if (customers.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">لا يوجد عملاء متاحين حالياً.</td></tr>';
+                return;
+            }
+
+            // Sort by total spend descending
+            customers.sort((a, b) => b.totalSpend - a.totalSpend);
+
+            customers.forEach(cust => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${cust.name}</td>
+                    <td>${cust.phone}</td>
+                    <td>${cust.totalSpend} شيكل</td>
+                    <td>${cust.orderCount}</td>
+                    <td>${cust.lastOrderDate}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
         }
 
         function renderOrders() {
             const tableBody = document.getElementById('orders-table-body');
             if (!tableBody) return;
             tableBody.innerHTML = '';
-            mockOrders.forEach(order => {
+
+            const encryptedOrders = localStorage.getItem('misk_orders_vault');
+            const orders = DataVault.decrypt(encryptedOrders) || mockOrders;
+
+            orders.forEach(order => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>#${order.id}</td>
@@ -917,7 +1021,9 @@
             freeShippingThreshold: 300,
             metaTitle: "مسك بيوتي | Misk Beauty",
             metaDescription: "أفضل العطور ومنتجات العناية والجمال في مكان واحد.",
-            metaKeywords: "عطور, مسك, تجميل, عناية"
+            metaKeywords: "عطور, مسك, تجميل, عناية",
+            privacyPolicy: "",
+            termsOfUse: ""
         };
 
         function renderSettings() {
@@ -933,6 +1039,9 @@
             document.getElementById('set-meta-title').value = storeSettings.metaTitle || "";
             document.getElementById('set-meta-desc').value = storeSettings.metaDescription || "";
             document.getElementById('set-meta-keywords').value = storeSettings.metaKeywords || "";
+
+            if (privacyQuill) privacyQuill.clipboard.dangerouslyPasteHTML(storeSettings.privacyPolicy || "");
+            if (termsQuill) termsQuill.clipboard.dangerouslyPasteHTML(storeSettings.termsOfUse || "");
 
             if (storeSettings.logo) {
                 document.getElementById('logo-preview').innerHTML = `<img src="${storeSettings.logo}" style="max-height: 80px; border-radius: 8px;">`;
@@ -962,6 +1071,8 @@
             storeSettings.metaTitle = document.getElementById('set-meta-title').value;
             storeSettings.metaDescription = document.getElementById('set-meta-desc').value;
             storeSettings.metaKeywords = document.getElementById('set-meta-keywords').value;
+            storeSettings.privacyPolicy = privacyQuill.root.innerHTML;
+            storeSettings.termsOfUse = termsQuill.root.innerHTML;
 
             localStorage.setItem('misk_settings', JSON.stringify(storeSettings));
             alert('تم حفظ الإعدادات بنجاح وسيتم تطبيقها في الموقع.');
