@@ -1638,3 +1638,124 @@ footer {
         max-width: 70%;
     }
 }
+
+/* Product Reviews Section */
+.product-reviews-section {
+    padding: 60px 0;
+    border-top: 1px solid #eee;
+}
+
+.reviews-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+}
+
+.avg-rating-box {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.avg-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+}
+
+.star-rating {
+    display: flex;
+    gap: 5px;
+    color: #ffd700;
+}
+
+.star-rating.interactive i {
+    cursor: pointer;
+    font-size: 1.5rem;
+}
+
+/* Review Form */
+.review-form-container {
+    background: #fff;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 50px;
+}
+
+.review-form-group {
+    margin-bottom: 20px;
+}
+
+.review-form-group label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.review-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    font-family: inherit;
+}
+
+/* Review Cards */
+.reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.review-card {
+    background: #fff;
+    padding: 25px;
+    border-radius: 15px;
+    border: 1px solid #f0f0f0;
+}
+
+.review-card-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.reviewer-name {
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+.review-date {
+    font-size: 0.85rem;
+    color: #888;
+}
+
+.badge-verified {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 3px 10px;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-right: 10px;
+}
+
+.review-images {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.review-images img {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    object-fit: cover;
+    cursor: pointer;
+}
+
+.star-rating i.far {
+    color: #ccc;
+}

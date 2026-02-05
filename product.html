@@ -103,6 +103,69 @@
             </div>
         </section>
 
+        <!-- Product Reviews Section -->
+        <section class="container product-reviews-section">
+            <div class="reviews-header">
+                <div class="avg-rating-box">
+                    <span class="avg-number" id="avg-rating-value">0.0</span>
+                    <div class="avg-stars">
+                        <div class="star-rating" id="avg-stars-display">
+                            <i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i
+                                class="far fa-star"></i><i class="far fa-star"></i>
+                        </div>
+                        <span style="font-size: 0.9rem; color: #666;" id="review-count-text">(0 تقييمات)</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-primary" id="btn-write-review" onclick="toggleReviewForm()">
+                    <i class="fas fa-pen-nib"></i> أضف تقييمك
+                </button>
+            </div>
+
+            <!-- Review Submission Form (Hidden by default) -->
+            <div id="review-form-container" class="review-form-container hidden">
+                <h3 style="margin-bottom: 25px; color: var(--primary-dark);">اكتب مراجعتك للمنتج</h3>
+                <form id="product-review-form" onsubmit="handleReviewSubmit(event)">
+                    <div class="review-form-group">
+                        <label>تقييمك للمنتج:</label>
+                        <div class="star-rating interactive" id="form-star-rating">
+                            <i class="far fa-star" data-rating="1"></i>
+                            <i class="far fa-star" data-rating="2"></i>
+                            <i class="far fa-star" data-rating="3"></i>
+                            <i class="far fa-star" data-rating="4"></i>
+                            <i class="far fa-star" data-rating="5"></i>
+                        </div>
+                        <input type="hidden" id="review-rating-value" required>
+                    </div>
+
+                    <div class="review-form-group">
+                        <label>رأيك بالتفصيل:</label>
+                        <textarea id="review-text" class="review-input" rows="4"
+                            placeholder="اكتب مراجعتك هنا، رأيك يهمنا ويساعد الآخرين..." required></textarea>
+                    </div>
+
+                    <div class="review-form-group">
+                        <label>أضف صور للمنتج (اختياري):</label>
+                        <input type="file" id="review-images-input" class="review-input" accept="image/*" multiple
+                            onchange="previewReviewImages(this)">
+                        <div id="review-images-preview" class="review-images" style="margin-top: 15px;"></div>
+                    </div>
+
+                    <div style="display: flex; gap: 15px;">
+                        <button type="submit" class="btn-primary" style="padding: 12px 30px;">إرسال التقييم</button>
+                        <button type="button" class="btn-cancel" onclick="toggleReviewForm()"
+                            style="background: #f0f0f0; border: none; padding: 12px 30px; border-radius: 12px; cursor: pointer;">إلغاء</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Reviews List -->
+            <div class="reviews-list" id="reviews-list-container">
+                <!-- Data populated by JS -->
+                <p style="text-align: center; color: #888; padding: 40px 0;">لا توجد تقييمات لهذا المنتج بعد. كن أول من
+                    يضيف تقييمه!</p>
+            </div>
+        </section>
+
         <!-- Upselling Slider -->
         <section class="related-products">
             <div class="section-title">

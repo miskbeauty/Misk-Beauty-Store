@@ -46,6 +46,12 @@
                         <span>العملاء</span>
                     </a>
                 </li>
+                <li class="menu-item" id="menu-reviews">
+                    <a href="#" onclick="switchTab('reviews')">
+                        <i class="fas fa-star"></i>
+                        <span>التقييمات والمراجعات</span>
+                    </a>
+                </li>
                 <li class="menu-item" id="menu-settings">
                     <a href="#" onclick="switchTab('settings')">
                         <i class="fas fa-cog"></i>
@@ -232,6 +238,31 @@
                 </div>
             </section>
 
+            <!-- Reviews Moderation Table -->
+            <section id="reviews-section" class="admin-card hidden">
+                <div class="card-header">
+                    <h3 style="font-weight: 700;">إدارة التقييمات</h3>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>المنتج</th>
+                                <th>العميل</th>
+                                <th>التقييم</th>
+                                <th>التعليق</th>
+                                <th>الصور</th>
+                                <th>الحالة</th>
+                                <th>العمليات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reviews-table-body">
+                            <!-- Data populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
             <!-- Settings Section -->
             <section id="settings-section" class="admin-card hidden">
                 <div class="card-header">
@@ -293,6 +324,10 @@
                         <div class="admin-form-group">
                             <label>مدة صلاحية النقاط (بالأيام)</label>
                             <input type="number" id="set-points-expiry" class="admin-input" placeholder="365">
+                        </div>
+                        <div class="admin-form-group">
+                            <label>نقاط مكافأة التقييم</label>
+                            <input type="number" id="set-points-review" class="admin-input" placeholder="50">
                         </div>
 
                         <div class="full-width"
@@ -752,8 +787,8 @@
 
         // --- Core Functions ---
         function switchTab(tab) {
-            const sections = ['orders-section', 'products-section', 'categories-section', 'customers-section', 'settings-section'];
-            const menuItems = ['menu-orders', 'menu-products', 'menu-categories', 'menu-customers', 'menu-settings'];
+            const sections = ['orders-section', 'products-section', 'categories-section', 'customers-section', 'reviews-section', 'settings-section'];
+            const menuItems = ['menu-orders', 'menu-products', 'menu-categories', 'menu-customers', 'menu-reviews', 'menu-settings'];
 
             sections.forEach(s => document.getElementById(s).classList.add('hidden'));
             menuItems.forEach(m => document.getElementById(m).classList.remove('active'));
@@ -767,6 +802,7 @@
             if (tab === 'products') renderProducts();
             if (tab === 'categories') renderCategories();
             if (tab === 'customers') renderCustomers();
+            if (tab === 'reviews') renderReviewsModeration();
             if (tab === 'settings') renderSettings();
         }
 
@@ -798,6 +834,120 @@
                 console.log(`تم تنظيف نقاط منتهية للعميل ${cust.name}`);
             }
             return cust;
+        }
+
+        function renderReviewsModeration() {
+            const tableBody = document.getElementById('reviews-table-body');
+            if (!tableBody) return;
+            tableBody.innerHTML = '';
+
+            const encryptedReviews = localStorage.getItem('misk_reviews_vault');
+            const reviews = DataVault.decrypt(encryptedReviews) || [];
+
+            if (reviews.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">لا توجد تقييمات حالياً.</td></tr>';
+                return;
+            }
+
+            // Sort by pending first, then date desc
+            reviews.sort((a, b) => {
+                if (a.status === 'pending' && b.status !== 'pending') return -1;
+                if (a.status !== 'pending' && b.status === 'pending') return 1;
+                return new Date(b.date) - new Date(a.date);
+            });
+
+            reviews.forEach((rev, index) => {
+                const tr = document.createElement('tr');
+                const stars = '⭐'.repeat(rev.rating);
+                const product = mockProducts.find(p => p.id == rev.productId);
+                const productName = product ? product.name : 'منتج غير معروف';
+
+                let imageGallery = '';
+                if (rev.images && rev.images.length > 0) {
+                    imageGallery = rev.images.map(img => `<img src="${img}" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover; margin-left: 5px;">`).join('');
+                } else {
+                    imageGallery = '<span style="color: #ccc;">بدون صور</span>';
+                }
+
+                const statusClass = rev.status === 'approved' ? 'status-paid' : (rev.status === 'rejected' ? 'status-cancelled' : 'status-waiting');
+                const statusLabel = rev.status === 'approved' ? 'معتمد' : (rev.status === 'rejected' ? 'مرفوض' : 'قيد الانتظار');
+
+                tr.innerHTML = `
+                    <td>${productName}</td>
+                    <td>${rev.userName}<br><small style="color: #888;">${rev.userPhone}</small></td>
+                    <td>${stars}</td>
+                    <td style="max-width: 200px; white-space: normal;">${rev.text}</td>
+                    <td>${imageGallery}</td>
+                    <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+                    <td>
+                        ${rev.status === 'pending' ? `
+                            <button onclick="approveReview('${rev.id}')" class="btn-admin-login" style="padding: 5px 10px; font-size: 0.8rem; width: auto; background: #4CAF50;">قَبول</button>
+                            <button onclick="rejectReview('${rev.id}')" class="btn-cancel" style="padding: 5px 10px; font-size: 0.8rem; width: auto; background: #e91e63; color: white; border: none;">رفض</button>
+                        ` : `
+                            <button onclick="deleteReview('${rev.id}')" style="background:none; border:none; cursor:pointer; color: #d32f2f;"><i class="fas fa-trash"></i></button>
+                        `}
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function approveReview(reviewId) {
+            const encryptedReviews = localStorage.getItem('misk_reviews_vault');
+            const reviews = DataVault.decrypt(encryptedReviews) || [];
+            const revIndex = reviews.findIndex(r => r.id == reviewId);
+
+            if (revIndex === -1) return;
+            const rev = reviews[revIndex];
+
+            // 1. Mark as approved
+            rev.status = 'approved';
+            localStorage.setItem('misk_reviews_vault', DataVault.encrypt(reviews));
+
+            // 2. Grant Loyalty Points
+            const savedSettings = localStorage.getItem('misk_settings');
+            const settings = savedSettings ? JSON.parse(savedSettings) : {};
+            const pointsReward = settings.pointsPerReview || 50;
+
+            const encryptedUsers = localStorage.getItem('misk_users_vault');
+            const users = DataVault.decrypt(encryptedUsers) || [];
+            const user = users.find(u => u.phone === rev.userPhone);
+
+            if (user) {
+                user.points = (user.points || 0) + pointsReward;
+                if (!user.pointsHistory) user.pointsHistory = [];
+                user.pointsHistory.push({
+                    amount: pointsReward,
+                    date: new Date().toISOString().split('T')[0],
+                    reason: `مكافأة تقييم منتج: ${rev.productId}`
+                });
+                localStorage.setItem('misk_users_vault', DataVault.encrypt(users));
+                console.log(`تم منح ${pointsReward} نقطة للمستخدم ${user.name}`);
+            }
+
+            alert('تم اعتماد التقييم ومنح العميل النقاط بنجاح.');
+            renderReviewsModeration();
+        }
+
+        function rejectReview(reviewId) {
+            if (!confirm('هل أنت متأكد من رفض هذا التقييم؟')) return;
+            const encryptedReviews = localStorage.getItem('misk_reviews_vault');
+            const reviews = DataVault.decrypt(encryptedReviews) || [];
+            const rev = reviews.find(r => r.id == reviewId);
+            if (rev) {
+                rev.status = 'rejected';
+                localStorage.setItem('misk_reviews_vault', DataVault.encrypt(reviews));
+                renderReviewsModeration();
+            }
+        }
+
+        function deleteReview(reviewId) {
+            if (!confirm('هل أنت متأكد من حذف هذا التقييم نهائياً؟')) return;
+            const encryptedReviews = localStorage.getItem('misk_reviews_vault');
+            const reviews = DataVault.decrypt(encryptedReviews) || [];
+            const filtered = reviews.filter(r => r.id != reviewId);
+            localStorage.setItem('misk_reviews_vault', DataVault.encrypt(filtered));
+            renderReviewsModeration();
         }
 
         function getExpiringSoonStatus(cust, expiryDays) {
@@ -1152,7 +1302,8 @@
             metaKeywords: "عطور, مسك, تجميل, عناية",
             privacyPolicy: "",
             termsOfUse: "",
-            pointsExpiryDays: 365
+            pointsExpiryDays: 365,
+            pointsPerReview: 50
         };
 
         function renderSettings() {
@@ -1169,6 +1320,7 @@
             document.getElementById('set-meta-desc').value = storeSettings.metaDescription || "";
             document.getElementById('set-meta-keywords').value = storeSettings.metaKeywords || "";
             document.getElementById('set-points-expiry').value = storeSettings.pointsExpiryDays || 365;
+            document.getElementById('set-points-review').value = storeSettings.pointsPerReview || 50;
 
             if (privacyQuill) privacyQuill.clipboard.dangerouslyPasteHTML(storeSettings.privacyPolicy || "");
             if (termsQuill) termsQuill.clipboard.dangerouslyPasteHTML(storeSettings.termsOfUse || "");
@@ -1202,6 +1354,7 @@
             storeSettings.metaDescription = document.getElementById('set-meta-desc').value;
             storeSettings.metaKeywords = document.getElementById('set-meta-keywords').value;
             storeSettings.pointsExpiryDays = parseInt(document.getElementById('set-points-expiry').value) || 365;
+            storeSettings.pointsPerReview = parseInt(document.getElementById('set-points-review').value) || 50;
             storeSettings.privacyPolicy = privacyQuill.root.innerHTML;
             storeSettings.termsOfUse = termsQuill.root.innerHTML;
 

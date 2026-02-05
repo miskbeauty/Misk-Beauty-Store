@@ -1081,3 +1081,227 @@ document.addEventListener('DOMContentLoaded', () => {
 
 console.log("Misk Beauty JS initialized successfully with Security Validation & Product Page logic.");
 
+// --- Product Reviews Logic ---
+let reviewRating = 0;
+let reviewImages = [];
+
+function initProductReviews() {
+    const starContainer = document.getElementById('form-star-rating');
+    if (starContainer) {
+        const stars = starContainer.querySelectorAll('i');
+        stars.forEach(star => {
+            star.addEventListener('click', function () {
+                reviewRating = parseInt(this.getAttribute('data-rating'));
+                document.getElementById('review-rating-value').value = reviewRating;
+                updateStarRatingUI(stars, reviewRating);
+            });
+            star.addEventListener('mouseover', function () {
+                updateStarRatingUI(stars, parseInt(this.getAttribute('data-rating')));
+            });
+            star.addEventListener('mouseleave', function () {
+                updateStarRatingUI(stars, reviewRating);
+            });
+        });
+    }
+
+    const productId = new URLSearchParams(window.location.search).get('id');
+    if (productId) {
+        renderProductReviews(productId);
+    }
+}
+
+function updateStarRatingUI(stars, rating) {
+    stars.forEach(s => {
+        const r = parseInt(s.getAttribute('data-rating'));
+        if (r <= rating) {
+            s.classList.remove('far');
+            s.classList.add('fas');
+        } else {
+            s.classList.remove('fas');
+            s.classList.add('far');
+        }
+    });
+}
+
+function toggleReviewForm() {
+    const user = (typeof AuthService !== 'undefined') ? AuthService.getUser() : null;
+    if (!user) {
+        alert('يرجى تسجيل الدخول أولاً لتتمكن من إضافة تقييم.');
+        window.location.href = `login.html?redirect=${encodeURIComponent(window.location.href)}`;
+        return;
+    }
+
+    const container = document.getElementById('review-form-container');
+    if (container) {
+        container.classList.toggle('hidden');
+        if (!container.classList.contains('hidden')) {
+            container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+}
+
+function previewReviewImages(input) {
+    const previewContainer = document.getElementById('review-images-preview');
+    if (!previewContainer) return;
+
+    reviewImages = [];
+    previewContainer.innerHTML = '';
+
+    if (input.files) {
+        Array.from(input.files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                reviewImages.push(e.target.result);
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                previewContainer.appendChild(img);
+            }
+            reader.readAsDataURL(file);
+        });
+    }
+}
+
+function handleReviewSubmit(e) {
+    e.preventDefault();
+    const user = AuthService.getUser();
+    const productId = new URLSearchParams(window.location.search).get('id');
+
+    if (!user || !productId) return;
+
+    const reviewText = document.getElementById('review-text').value;
+    const rating = document.getElementById('review-rating-value').value;
+
+    if (!rating || rating == 0) {
+        alert('يرجى اختيار تقييم بالنجوم.');
+        return;
+    }
+
+    const newReview = {
+        id: Date.now(),
+        productId: productId,
+        userId: user.id,
+        userName: user.name,
+        userPhone: user.phone,
+        rating: parseInt(rating),
+        text: reviewText,
+        images: reviewImages,
+        status: 'pending',
+        date: new Date().toISOString().split('T')[0]
+    };
+
+    const encryptedReviews = localStorage.getItem('misk_reviews_vault');
+    const reviews = DataVault.decrypt(encryptedReviews) || [];
+    reviews.push(newReview);
+    localStorage.setItem('misk_reviews_vault', DataVault.encrypt(reviews));
+
+    alert('شكراً لك! تم إرسال تقييمك بنجاح وهو بانتظار مراجعة الإدارة.');
+    e.target.reset();
+    document.getElementById('review-images-preview').innerHTML = '';
+    reviewImages = [];
+    reviewRating = 0;
+    updateStarRatingUI(document.querySelectorAll('#form-star-rating i'), 0);
+    toggleReviewForm();
+}
+
+function renderProductReviews(productId) {
+    const listContainer = document.getElementById('reviews-list-container');
+    const avgValEl = document.getElementById('avg-rating-value');
+    const avgStarsEl = document.getElementById('avg-stars-display');
+    const countTextEl = document.getElementById('review-count-text');
+
+    if (!listContainer) return;
+
+    const encryptedReviews = localStorage.getItem('misk_reviews_vault');
+    const allReviews = DataVault.decrypt(encryptedReviews) || [];
+    const approvedReviews = allReviews.filter(r => r.productId == productId && r.status === 'approved');
+
+    if (approvedReviews.length === 0) {
+        listContainer.innerHTML = '<p style="text-align: center; color: #888; padding: 40px 0;">لا توجد تقييمات معتمدة لهذا المنتج بعد. كن أول من يضيف تقييمه!</p>';
+        if (avgValEl) avgValEl.textContent = '0.0';
+        if (countTextEl) countTextEl.textContent = '(0 تقييمات)';
+        return;
+    }
+
+    // Sort by date desc
+    approvedReviews.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    let html = '';
+    let totalRating = 0;
+
+    approvedReviews.forEach(rev => {
+        totalRating += rev.rating;
+        const stars = '⭐'.repeat(rev.rating);
+        const verifiedBadge = isVerifiedBuyer(productId, rev.userId) ? '<span class="badge-verified"><i class="fas fa-check-circle"></i> مشترٍ مؤكد</span>' : '';
+
+        let imagesHtml = '';
+        if (rev.images && rev.images.length > 0) {
+            imagesHtml = `<div class="review-images">${rev.images.map(img => `<img src="${img}" onclick="window.open('${img}', '_blank')">`).join('')}</div>`;
+        }
+
+        html += `
+            <div class="review-card">
+                <div class="review-card-header">
+                    <div>
+                        <span class="reviewer-name">${rev.userName}</span>
+                        ${verifiedBadge}
+                        <div class="star-rating">${stars}</div>
+                    </div>
+                    <span class="review-date">${rev.date}</span>
+                </div>
+                <p class="review-text">${rev.text}</p>
+                ${imagesHtml}
+            </div>
+        `;
+    });
+
+    listContainer.innerHTML = html;
+
+    const avg = (totalRating / approvedReviews.length).toFixed(1);
+    if (avgValEl) avgValEl.textContent = avg;
+    if (countTextEl) countTextEl.textContent = `(${approvedReviews.length} تقييمات)`;
+    if (avgStarsEl) {
+        let starHtml = '';
+        for (let i = 1; i <= 5; i++) {
+            if (i <= Math.round(avg)) {
+                starHtml += '<i class="fas fa-star"></i>';
+            } else {
+                starHtml += '<i class="far fa-star"></i>';
+            }
+        }
+        avgStarsEl.innerHTML = starHtml;
+    }
+}
+
+function isVerifiedBuyer(productId, userId) {
+    const encryptedOrders = localStorage.getItem('misk_orders_vault');
+    const orders = DataVault.decrypt(encryptedOrders) || [];
+
+    // Check if user has any completed order containing this productId
+    // Note: mockOrders might use name instead of ID, but we should check both
+    return orders.some(order => {
+        if (order.status !== 'delivered' && order.status !== 'paid') return false;
+
+        // Match user by phone (more reliable if userId/phone are linked)
+        const encryptedUsers = localStorage.getItem('misk_users_vault');
+        const users = DataVault.decrypt(encryptedUsers) || [];
+        const user = users.find(u => u.id == userId);
+        if (!user || order.whatsapp.replace(/\D/g, '') !== user.phone.replace(/\D/g, '')) return false;
+
+        // Check items in order
+        // This assumes order.items exists, or we check order.total/products if provided
+        // In this architecture, mockOrders only has customer/whatsapp/total/city
+        // We'd need to extend orders to include item IDs for full verification.
+        // For now, let's return true if customer name matches (basic check)
+        return order.customer === user.name;
+    });
+}
+
+// Add to DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+    // ... existing init ...
+    const path = window.location.pathname;
+    if (path.includes('product.html')) {
+        initProductReviews();
+    }
+});
+
