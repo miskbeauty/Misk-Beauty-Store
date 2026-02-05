@@ -19,8 +19,15 @@ function getDynamicNavHTML() {
     // Get only top-level parents for the main bar
     const parents = headerCats.filter(c => !c.parentId);
 
+    const user = (typeof AuthService !== 'undefined') ? AuthService.getUser() : null;
     let html = `<li><a href="index.html">الرئيسية</a></li>`;
     html += `<li><a href="offers.html" style="color: #d81b60; font-weight: 700;"><i class="fas fa-percent"></i> العروض</a></li>`;
+
+    if (user) {
+        html += `<li><a href="account.html"><i class="fas fa-user-circle"></i> حسابي</a></li>`;
+    } else {
+        html += `<li><a href="login.html"><i class="fas fa-sign-in-alt"></i> دخول</a></li>`;
+    }
 
     parents.forEach(p => {
         // Find children that are also marked to show in header

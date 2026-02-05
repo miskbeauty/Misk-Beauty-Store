@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول | مسك بيوتي</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Outfit:wght@300;400;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .auth-container {
+            max-width: 450px;
+            margin: 80px auto;
+            padding: 40px;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .auth-title {
+            color: var(--primary-color);
+            margin-bottom: 30px;
+            font-size: 1.8rem;
+        }
+
+        .auth-form-group {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        .auth-form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .auth-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-family: inherit;
+        }
+
+        .btn-auth {
+            width: 100%;
+            padding: 15px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-auth:hover {
+            background: var(--primary-color);
+        }
+
+        .auth-footer {
+            margin-top: 25px;
+            font-size: 0.9rem;
+        }
+
+        .auth-footer a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <header></header>
+
+    <main class="container">
+        <div class="auth-container">
+            <h1 class="auth-title">تسجيل الدخول</h1>
+            <form id="loginForm">
+                <div class="auth-form-group">
+                    <label>رقم الهاتف</label>
+                    <input type="text" id="phone" class="auth-input" placeholder="05xxxxxxxx" required>
+                </div>
+                <div class="auth-form-group">
+                    <label>كلمة المرور</label>
+                    <input type="password" id="password" class="auth-input" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-auth">دخول</button>
+            </form>
+            <div class="auth-footer">
+                ليس لديك حساب؟ <a href="register.html">سجل الآن</a>
+            </div>
+        </div>
+    </main>
+
+    <footer></footer>
+
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/header.js"></script>
+    <script src="assets/js/main.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+
+            const result = AuthService.login(phone, password);
+            if (result.success) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const redirect = urlParams.get('redirect') || 'index.html';
+                window.location.href = redirect;
+            } else {
+                alert(result.message);
+            }
+        });
+    </script>
+</body>
+
+</html>

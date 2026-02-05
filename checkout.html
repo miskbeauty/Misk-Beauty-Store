@@ -187,6 +187,7 @@
 
 <body>
     <header></header>
+    <script src="assets/js/auth.js"></script>
     <script src="assets/js/header.js"></script>
 
     <main class="container checkout-page">
@@ -258,6 +259,25 @@
 
                     <div id="checkoutItemsList" class="summary-items-list">
                         <!-- Injected by JS -->
+                    </div>
+
+                    <!-- Loyalty Points Redemption (Members Only) -->
+                    <div id="loyalty-redemption-box"
+                        style="display: none; background: #fff9f9; padding: 15px; border: 1px dashed #fce4ec; border-radius: 12px; margin-bottom: 20px;">
+                        <div style="font-size: 0.95rem; font-weight: 600; color: #880E4F; margin-bottom: 8px;">
+                            <i class="fas fa-gem"></i> مكافآت مسك بيوتي
+                        </div>
+                        <div id="points-status-text" style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">
+                            لديك <span id="current-user-points">0</span> نقطة.
+                        </div>
+                        <button type="button" id="btn-redeem-checkout" onclick="applyPointRedemption()"
+                            style="width: 100%; padding: 8px; background: #6a1b9a; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">
+                            استبدال 100 نقطة بـ 10 شيكل خصم
+                        </button>
+                        <div id="applied-points-msg"
+                            style="display: none; color: #4CAF50; font-size: 0.85rem; font-weight: 700; margin-top: 5px;">
+                            <i class="fas fa-check"></i> تم تطبيق خصم 10 شيكل!
+                        </div>
                     </div>
 
                     <div class="total-row">

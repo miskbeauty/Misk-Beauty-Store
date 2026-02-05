@@ -310,6 +310,12 @@ function renderCheckoutSummary() {
     const shippingEl = document.getElementById('checkoutShipping');
     const grandTotalEl = document.getElementById('checkoutGrandTotal');
 
+    // Loyalty Redemption Elements
+    const redemptionBox = document.getElementById('loyalty-redemption-box');
+    const userPointsSpan = document.getElementById('current-user-points');
+    const redeemBtn = document.getElementById('btn-redeem-checkout');
+    const appliedMsg = document.getElementById('applied-points-msg');
+
     if (!listContainer) return;
 
     listContainer.innerHTML = '';
@@ -419,30 +425,63 @@ function handleCheckoutSubmit(e) {
         orders.push(newOrder);
         localStorage.setItem('misk_orders_vault', DataVault.encrypt(orders));
 
-        // Update Customers tab data
+        // Update Loyalty System (Exclusive to Registered Users)
+        const loggedUser = (typeof AuthService !== 'undefined') ? AuthService.getUser() : null;
+        if (loggedUser) {
+            const orderAmountLoyalty = parseInt(grandTotalEl.textContent) || 0;
+
+            // Deduct points if redeemed
+            if (pointsRedeemed) {
+                let pointsToDeduct = 100;
+                // FIFO Deduction logic (already implemented in admin, adding here for consistency)
+                if (!loggedUser.pointsHistory) loggedUser.pointsHistory = [];
+                loggedUser.pointsHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                while (pointsToDeduct > 0 && loggedUser.pointsHistory.length > 0) {
+                    const oldest = loggedUser.pointsHistory[0];
+                    if (oldest.amount > pointsToDeduct) {
+                        oldest.amount -= pointsToDeduct;
+                        pointsToDeduct = 0;
+                    } else {
+                        pointsToDeduct -= oldest.amount;
+                        loggedUser.pointsHistory.shift();
+                    }
+                }
+                loggedUser.points = Math.max(0, (loggedUser.points || 0) - 100);
+            }
+
+            loggedUser.totalSpend = (loggedUser.totalSpend || 0) + orderAmountLoyalty;
+            loggedUser.points = (loggedUser.points || 0) + orderAmountLoyalty;
+            if (!loggedUser.pointsHistory) loggedUser.pointsHistory = [];
+            loggedUser.pointsHistory.push({ amount: orderAmountLoyalty, date: newOrder.date });
+            loggedUser.orderCount = (loggedUser.orderCount || 0) + 1;
+            loggedUser.lastOrderDate = newOrder.date;
+
+            AuthService.updateUser(loggedUser);
+            console.log('Member: Points updated.');
+        }
+
+        // Update Global Customers Table (For Admin Visibility)
         const encryptedCustomers = localStorage.getItem('misk_customers_vault');
         const customers = DataVault.decrypt(encryptedCustomers) || [];
 
         let customer = customers.find(c => c.phone === phone);
-        const orderAmount = parseInt(grandTotalEl.textContent) || 0;
+        const orderAmountAtCheckout = parseInt(grandTotalEl.textContent) || 0;
 
         if (customer) {
-            customer.totalSpend += orderAmount;
-            customer.points = (customer.points || 0) + orderAmount; // 1 ILS = 1 Point
-            if (!customer.pointsHistory) customer.pointsHistory = [];
-            customer.pointsHistory.push({ amount: orderAmount, date: newOrder.date });
+            customer.totalSpend += orderAmountAtCheckout;
             customer.orderCount += 1;
             customer.lastOrderDate = newOrder.date;
             customer.name = fullName;
+            customer.isRegistered = !!loggedUser;
         } else {
             customers.push({
                 name: fullName,
                 phone: phone,
-                totalSpend: orderAmount,
-                points: orderAmount,
-                pointsHistory: [{ amount: orderAmount, date: newOrder.date }],
+                totalSpend: orderAmountAtCheckout,
                 orderCount: 1,
-                lastOrderDate: newOrder.date
+                lastOrderDate: newOrder.date,
+                isRegistered: !!loggedUser
             });
         }
         localStorage.setItem('misk_customers_vault', DataVault.encrypt(customers));
@@ -603,7 +642,14 @@ function applyGlobalSettings() {
         }
     }
 
-    // 4. Legal Links in Footer
+    // 4. Guest Teaser & Auth UI
+    const user = (typeof AuthService !== 'undefined') ? AuthService.getUser() : null;
+    const teaser = document.getElementById('loyalty-teaser');
+    if (teaser && user) {
+        teaser.style.display = 'none';
+    }
+
+    // 5. Legal Links in Footer
     const footerLinksUl = document.querySelector('footer .footer-links');
     if (footerLinksUl) {
         // Only append if they don't exist to avoid duplicates

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حسابي | مسك بيوتي</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Outfit:wght@300;400;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .account-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 30px;
+            margin: 50px 0;
+        }
+
+        .account-sidebar {
+            background: #fff;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            height: fit-content;
+        }
+
+        .account-nav {
+            list-style: none;
+            padding: 0;
+        }
+
+        .account-nav-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+
+        .account-nav-item:hover,
+        .account-nav-item.active {
+            color: var(--accent-color);
+            background: #fffafa;
+        }
+
+        .account-content {
+            background: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .reward-card {
+            background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 100%);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .reward-points {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .tier-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+
+        .tier-bronze {
+            background: #fdf6e7;
+            color: #a0522d;
+        }
+
+        .tier-silver {
+            background: #f5f5f5;
+            color: #707070;
+        }
+
+        .tier-gold {
+            background: #fff9e6;
+            color: #d4af37;
+            border: 1px solid #d4af37;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .history-table th,
+        .history-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            text-align: right;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <header></header>
+
+    <main class="container">
+        <div class="account-grid">
+            <aside class="account-sidebar">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <i class="fas fa-user-circle" style="font-size: 4rem; color: #eee;"></i>
+                    <h3 id="userNameDisplay" style="margin-top: 10px;">العميل</h3>
+                </div>
+                <ul class="account-nav">
+                    <li class="account-nav-item active" onclick="switchAccountTab('rewards')"><i class="fas fa-gem"></i>
+                        مكافأتي</li>
+                    <li class="account-nav-item" onclick="switchAccountTab('profile')"><i class="fas fa-user"></i> الملف
+                        الشخصي</li>
+                    <li class="account-nav-item" style="color: #ff5252;" onclick="AuthService.logout()"><i
+                            class="fas fa-sign-out-alt"></i> تسجيل الخروج</li>
+                </ul>
+            </aside>
+
+            <section class="account-content">
+                <div id="rewards-tab">
+                    <h2 style="margin-bottom: 20px;">نظام الولاء والمكافآت</h2>
+                    <div class="reward-card">
+                        <div style="font-size: 1.1rem; color: #666;">رصيد نقاطك الحالي</div>
+                        <div class="reward-points" id="userPoints">0</div>
+                        <div id="userTier"></div>
+                    </div>
+
+                    <h3>سجل النقاط وتواريخ الانتهاء</h3>
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>التاريخ</th>
+                                <th>عدد النقاط</th>
+                                <th>تاريخ الانتهاء المتوقع</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pointsHistory">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="profile-tab" class="hidden">
+                    <h2 style="margin-bottom: 20px;">الملف الشخصي</h2>
+                    <p>الاسم: <span id="profName"></span></p>
+                    <p>الهاتف: <span id="profPhone"></span></p>
+                    <p>تاريخ الانضمام: <span id="profJoined"></span></p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer></footer>
+
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/header.js"></script>
+    <script src="assets/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = AuthService.getUser();
+            if (!user) {
+                window.location.href = 'login.html?redirect=account.html';
+                return;
+            }
+
+            document.getElementById('userNameDisplay').textContent = user.name;
+            document.getElementById('userPoints').textContent = user.points || 0;
+
+            // Tier Logic
+            const tierEl = document.getElementById('userTier');
+            const points = user.points || 0;
+            if (points > 1500) {
+                tierEl.innerHTML = `<span class="tier-badge tier-gold">عضو ذهبي VIP</span>`;
+            } else if (points > 500) {
+                tierEl.innerHTML = `<span class="tier-badge tier-silver">عضو فضي</span>`;
+            } else {
+                tierEl.innerHTML = `<span class="tier-badge tier-bronze">عضو برونزي</span>`;
+            }
+
+            // Expiry Logic
+            const settings = JSON.parse(localStorage.getItem('misk_settings') || '{}');
+            const expiryDays = settings.pointsExpiryDays || 365;
+            const historyBody = document.getElementById('pointsHistory');
+
+            if (user.pointsHistory && user.pointsHistory.length > 0) {
+                user.pointsHistory.forEach(p => {
+                    const tr = document.createElement('tr');
+                    const earnedDate = new Date(p.date);
+                    const expiryDate = new Date(earnedDate);
+                    expiryDate.setDate(expiryDate.getDate() + expiryDays);
+
+                    const isExpired = new Date() > expiryDate;
+
+                    tr.innerHTML = `
+                        <td>${p.date}</td>
+                        <td>${p.amount} نقطة</td>
+                        <td>${expiryDate.toISOString().split('T')[0]}</td>
+                        <td style="color: ${isExpired ? 'red' : 'green'}">${isExpired ? 'منتهية' : 'نشطة'}</td>
+                    `;
+                    historyBody.appendChild(tr);
+                });
+            } else {
+                historyBody.innerHTML = `<tr><td colspan="4" style="text-align: center;">لا يوجد سجل نقاط حالياً.</td></tr>`;
+            }
+
+            // Profile info
+            document.getElementById('profName').textContent = user.name;
+            document.getElementById('profPhone').textContent = user.phone;
+            document.getElementById('profJoined').textContent = user.joinedDate || 'غير معروف';
+        });
+
+        function switchAccountTab(tab) {
+            document.getElementById('rewards-tab').classList.add('hidden');
+            document.getElementById('profile-tab').classList.add('hidden');
+            document.querySelectorAll('.account-nav-item').forEach(item => item.classList.remove('active'));
+
+            document.getElementById(tab + '-tab').classList.remove('hidden');
+            event.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+
+</html>
