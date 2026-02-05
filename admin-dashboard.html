@@ -52,6 +52,12 @@
                         <span>التقييمات والمراجعات</span>
                     </a>
                 </li>
+                <li class="menu-item" id="menu-analytics">
+                    <a href="#" onclick="switchTab('analytics')">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>التقارير والإحصائيات</span>
+                    </a>
+                </li>
                 <li class="menu-item" id="menu-settings">
                     <a href="#" onclick="switchTab('settings')">
                         <i class="fas fa-cog"></i>
@@ -260,6 +266,89 @@
                             <!-- Data populated by JS -->
                         </tbody>
                     </table>
+                </div>
+            </section>
+
+            <!-- Analytics & Reports Section -->
+            <section id="analytics-section" class="admin-card hidden">
+                <div class="card-header">
+                    <h3 style="font-weight: 700;">التقارير والإحصائيات</h3>
+                    <div class="header-actions">
+                        <button onclick="exportSalesDataCSV()" class="btn-admin-login"
+                            style="padding: 8px 15px; font-size: 0.9rem; width: auto; box-shadow: none; background: #2e7d32;">
+                            <i class="fas fa-file-excel"></i> تصدير البيانات (CSV)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Cards Grid -->
+                <div class="stats-grid" style="margin-bottom: 30px;">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-purple">
+                            <i class="fas fa-hand-holding-usd"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h4>إجمالي المبيعات</h4>
+                            <span id="ana-total-revenue">0 شيكل</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-pink">
+                            <i class="fas fa-shopping-basket"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h4>إجمالي الطلبات</h4>
+                            <span id="ana-order-count">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-gold">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h4>متوسط قيمة الطلب</h4>
+                            <span id="ana-aov">0 شيكل</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="details-grid">
+                    <!-- Top Selling Products -->
+                    <div class="admin-card" style="box-shadow: none; border: 1px solid #eee;">
+                        <h4 style="margin-bottom: 15px; color: var(--admin-purple);"><i class="fas fa-trophy"></i>
+                            الأكثر مبيعاً (منتجات)</h4>
+                        <ul id="ana-top-products" style="list-style: none; padding: 0;">
+                            <!-- Data populated by JS -->
+                        </ul>
+                    </div>
+
+                    <!-- Category Performance -->
+                    <div class="admin-card" style="box-shadow: none; border: 1px solid #eee;">
+                        <h4 style="margin-bottom: 15px; color: var(--admin-purple);"><i class="fas fa-chart-pie"></i>
+                            مبيعات التصنيفات</h4>
+                        <ul id="ana-top-categories" style="list-style: none; padding: 0;">
+                            <!-- Data populated by JS -->
+                        </ul>
+                    </div>
+
+                    <!-- Loyalty Insights -->
+                    <div class="admin-card full-width"
+                        style="box-shadow: none; border: 1px solid #eee; margin-top: 20px;">
+                        <h4 style="margin-bottom: 15px; color: var(--admin-purple);"><i class="fas fa-gift"></i> تقارير
+                            نظام الولاء</h4>
+                        <div
+                            style="display: flex; gap: 40px; align-items: center; justify-content: center; padding: 20px;">
+                            <div style="text-align: center;">
+                                <p style="color: #888; margin-bottom: 5px;">النقاط المكتسبة</p>
+                                <h3 id="ana-points-earned" style="color: #6a1b9a;">0</h3>
+                            </div>
+                            <div style="font-size: 2rem; color: #eee;">|</div>
+                            <div style="text-align: center;">
+                                <p style="color: #888; margin-bottom: 5px;">النقاط المستبدلة</p>
+                                <h3 id="ana-points-redeemed" style="color: #d81b60;">0</h3>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -787,22 +876,30 @@
 
         // --- Core Functions ---
         function switchTab(tab) {
-            const sections = ['orders-section', 'products-section', 'categories-section', 'customers-section', 'reviews-section', 'settings-section'];
-            const menuItems = ['menu-orders', 'menu-products', 'menu-categories', 'menu-customers', 'menu-reviews', 'menu-settings'];
+            const sections = ['orders-section', 'products-section', 'categories-section', 'customers-section', 'reviews-section', 'analytics-section', 'settings-section'];
+            const menuItems = ['menu-orders', 'menu-products', 'menu-categories', 'menu-customers', 'menu-reviews', 'menu-analytics', 'menu-settings'];
 
-            sections.forEach(s => document.getElementById(s).classList.add('hidden'));
-            menuItems.forEach(m => document.getElementById(m).classList.remove('active'));
+            sections.forEach(s => {
+                const el = document.getElementById(s);
+                if (el) el.classList.add('hidden');
+            });
+            menuItems.forEach(m => {
+                const el = document.getElementById(m);
+                if (el) el.classList.remove('active');
+            });
 
-            document.getElementById(`${tab}-section`).classList.remove('hidden');
-            if (document.getElementById(`menu-${tab}`)) {
-                document.getElementById(`menu-${tab}`).classList.add('active');
-            }
+            const targetSection = document.getElementById(`${tab}-section`);
+            const targetMenu = document.getElementById(`menu-${tab}`);
+
+            if (targetSection) targetSection.classList.remove('hidden');
+            if (targetMenu) targetMenu.classList.add('active');
 
             if (tab === 'orders') renderOrders();
             if (tab === 'products') renderProducts();
             if (tab === 'categories') renderCategories();
             if (tab === 'customers') renderCustomers();
             if (tab === 'reviews') renderReviewsModeration();
+            if (tab === 'analytics') renderAnalytics();
             if (tab === 'settings') renderSettings();
         }
 
@@ -1305,6 +1402,116 @@
             pointsExpiryDays: 365,
             pointsPerReview: 50
         };
+
+        function renderAnalytics() {
+            const encryptedOrders = localStorage.getItem('misk_orders_vault');
+            const orders = DataVault.decrypt(encryptedOrders) || [];
+
+            // Collect all orders including mock data if vault is empty
+            let allOrders = orders;
+            if (orders.length === 0) allOrders = mockOrders;
+
+            let totalRevenue = 0;
+            let orderCount = allOrders.length;
+            let productSales = {}; // {name: {qty, revenue}}
+            let categorySales = {}; // {name: revenue}
+
+            allOrders.forEach(order => {
+                const revenueStr = order.total.replace(/[^\d.]/g, '');
+                const revenue = parseFloat(revenueStr) || 0;
+                totalRevenue += revenue;
+
+                if (order.items) {
+                    order.items.forEach(item => {
+                        // Product Tally
+                        if (!productSales[item.name]) productSales[item.name] = { qty: 0, revenue: 0 };
+                        productSales[item.name].qty += item.qty;
+                        productSales[item.name].revenue += (item.price * item.qty);
+
+                        // Category Tally
+                        const cat = item.category || 'عام';
+                        if (!categorySales[cat]) categorySales[cat] = 0;
+                        categorySales[cat] += (item.price * item.qty);
+                    });
+                }
+            });
+
+            const aov = orderCount > 0 ? (totalRevenue / orderCount).toFixed(1) : 0;
+
+            // Update Stat Cards
+            document.getElementById('ana-total-revenue').textContent = `${totalRevenue.toLocaleString()} شيكل`;
+            document.getElementById('ana-order-count').textContent = orderCount;
+            document.getElementById('ana-aov').textContent = `${aov} شيكل`;
+
+            // Render Top Products
+            const topProductsList = document.getElementById('ana-top-products');
+            const sortedProducts = Object.entries(productSales)
+                .sort((a, b) => b[1].qty - a[1].qty)
+                .slice(0, 5);
+
+            topProductsList.innerHTML = sortedProducts.length > 0
+                ? sortedProducts.map(([name, data]) => `
+                    <li style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f9f9f9;">
+                        <span>${name}</span>
+                        <span style="font-weight: 700; color: #6a1b9a;">${data.qty} قطعة</span>
+                    </li>
+                `).join('')
+                : '<li style="color: #888; text-align: center; padding: 10px;">لا توجد بيانات تفصيلية متوفرة حالياً.</li>';
+
+            // Render Category Performance
+            const topCategoriesList = document.getElementById('ana-top-categories');
+            const sortedCategories = Object.entries(categorySales)
+                .sort((a, b) => b[1] - a[1]);
+
+            topCategoriesList.innerHTML = sortedCategories.length > 0
+                ? sortedCategories.map(([name, rev]) => `
+                    <li style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f9f9f9;">
+                        <span>${name}</span>
+                        <span style="font-weight: 700;">${rev} شيكل</span>
+                    </li>
+                `).join('')
+                : '<li style="color: #888; text-align: center; padding: 10px;">لا توجد بيانات تفصيلية متوفرة حالياً.</li>';
+
+            // Loyalty Insights
+            const encryptedUsers = localStorage.getItem('misk_users_vault');
+            const users = DataVault.decrypt(encryptedUsers) || [];
+            let pointsEarned = 0;
+            let pointsRedeemed = 0;
+
+            users.forEach(u => {
+                if (u.pointsHistory) {
+                    u.pointsHistory.forEach(h => {
+                        if (h.amount > 0) pointsEarned += h.amount;
+                    });
+                }
+                pointsRedeemed += (u.redeemedTotal || 0);
+            });
+
+            document.getElementById('ana-points-earned').textContent = pointsEarned;
+            document.getElementById('ana-points-redeemed').textContent = pointsRedeemed;
+        }
+
+        function exportSalesDataCSV() {
+            const encryptedOrders = localStorage.getItem('misk_orders_vault');
+            const orders = DataVault.decrypt(encryptedOrders) || [];
+
+            if (orders.length === 0) {
+                alert('لا يوجد طلبات في الوقت الحالي لتصديرها.');
+                return;
+            }
+
+            let csv = 'ID,Date,Customer,Phone,City,Address,Total,Status\n';
+            orders.forEach(o => {
+                csv += `"${o.id}","${o.date}","${o.customer}","${o.whatsapp}","${o.city}","${o.address}","${o.total}","${o.status}"\n`;
+            });
+
+            const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `تقرير_مبيعات_مسك_${new Date().toISOString().split('T')[0]}.csv`);
+            link.click();
+        }
 
         function renderSettings() {
             const saved = localStorage.getItem('misk_settings');

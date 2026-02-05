@@ -68,7 +68,7 @@ function validateProduct(id, name, price) {
 
 // --- Cart Core Functions ---
 
-function addToCart(id, name, price, image = 'assets/images/1745215944148877862.png', variant = null) {
+function addToCart(id, name, price, image = 'assets/images/1745215944148877862.png', variant = null, category = 'عام') {
     console.log(`جارِ إضافة المنتج: ${name}`);
 
     // Data Validation
@@ -84,7 +84,7 @@ function addToCart(id, name, price, image = 'assets/images/1745215944148877862.p
     if (existingItem) {
         existingItem.quantity += 1;
     } else {
-        cart.push({ id, name, price, quantity: 1, image, variant });
+        cart.push({ id, name, price, quantity: 1, image, variant, category });
     }
 
     saveCart();
@@ -419,6 +419,13 @@ function handleCheckoutSubmit(e) {
             city: region + ", " + city,
             address: address,
             total: grandTotalEl.textContent + " شيكل",
+            items: cart.map(item => ({
+                id: item.id,
+                name: item.name,
+                price: item.price,
+                qty: item.quantity,
+                category: item.category || 'عام'
+            })),
             status: "waiting"
         };
 
@@ -448,6 +455,15 @@ function handleCheckoutSubmit(e) {
                     }
                 }
                 loggedUser.points = Math.max(0, (loggedUser.points || 0) - 100);
+                loggedUser.redeemedTotal = (loggedUser.redeemedTotal || 0) + 100;
+
+                // Create a history entry for the redemption
+                if (!loggedUser.pointsHistory) loggedUser.pointsHistory = [];
+                loggedUser.pointsHistory.push({
+                    amount: -100,
+                    date: new Date().toISOString().split('T')[0],
+                    reason: "استبدال نقاط بخصم عند الدفع"
+                });
             }
 
             loggedUser.totalSpend = (loggedUser.totalSpend || 0) + orderAmountLoyalty;
@@ -751,7 +767,7 @@ function getProductCardHTML(prod) {
                 <div class="product-actions">
                     <button class="btn-quick-view" onclick="location.href='product.html?id=${prod.id}'"><i class="fas fa-eye"></i></button>
                     <button class="btn-add-cart"
-                        onclick="addToCart(${prod.id}, '${prod.name}', ${prod.price}, '${primaryImage}')">
+                        onclick="addToCart(${prod.id}, '${prod.name}', ${prod.price}, '${primaryImage}', null, '${prod.category}')">
                         <i class="fas fa-shopping-cart"></i>
                     </button>
                 </div>
@@ -992,7 +1008,7 @@ function initProductPage() {
             }
 
             for (let i = 0; i < qty; i++) {
-                addToCart(prod.id, prod.name, finalPrice, prod.images[0], finalVariant);
+                addToCart(prod.id, prod.name, finalPrice, prod.images[0], finalVariant, prod.category);
             }
         };
     }
