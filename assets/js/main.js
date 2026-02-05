@@ -429,6 +429,8 @@ function handleCheckoutSubmit(e) {
         if (customer) {
             customer.totalSpend += orderAmount;
             customer.points = (customer.points || 0) + orderAmount; // 1 ILS = 1 Point
+            if (!customer.pointsHistory) customer.pointsHistory = [];
+            customer.pointsHistory.push({ amount: orderAmount, date: newOrder.date });
             customer.orderCount += 1;
             customer.lastOrderDate = newOrder.date;
             customer.name = fullName;
@@ -438,6 +440,7 @@ function handleCheckoutSubmit(e) {
                 phone: phone,
                 totalSpend: orderAmount,
                 points: orderAmount,
+                pointsHistory: [{ amount: orderAmount, date: newOrder.date }],
                 orderCount: 1,
                 lastOrderDate: newOrder.date
             });

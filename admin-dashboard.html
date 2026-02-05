@@ -286,6 +286,16 @@
 
                         <div class="full-width"
                             style="margin-top: 20px; border-top: 2px solid #f0f0f0; padding-top: 20px;">
+                            <h4 style="color: var(--admin-purple); margin-bottom: 15px;">إعدادات نظام الولاء (Loyalty
+                                Settings)</h4>
+                        </div>
+                        <div class="admin-form-group">
+                            <label>مدة صلاحية النقاط (بالأيام)</label>
+                            <input type="number" id="set-points-expiry" class="admin-input" placeholder="365">
+                        </div>
+
+                        <div class="full-width"
+                            style="margin-top: 20px; border-top: 2px solid #f0f0f0; padding-top: 20px;">
                             <h4 style="color: var(--admin-purple); margin-bottom: 15px;">إعدادات الأرشفة والـ SEO
                                 (Advanced SEO)</h4>
                         </div>
@@ -765,17 +775,72 @@
             return { label: 'برونزي', class: 'status-bronze' };
         }
 
+        // --- Points Expiration & Cleanup ---
+        function cleanupCustomerPoints(cust, expiryDays) {
+            if (!cust.pointsHistory || !expiryDays) return cust;
+
+            const now = new Date();
+            const originalPoints = cust.points || 0;
+
+            // Filter out expired points
+            cust.pointsHistory = cust.pointsHistory.filter(p => {
+                const earnedDate = new Date(p.date);
+                const diffTime = Math.abs(now - earnedDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return diffDays <= expiryDays;
+            });
+
+            // Recalculate total points
+            cust.points = cust.pointsHistory.reduce((sum, p) => sum + p.amount, 0);
+
+            if (cust.points !== originalPoints) {
+                console.log(`تم تنظيف نقاط منتهية للعميل ${cust.name}`);
+            }
+            return cust;
+        }
+
+        function getExpiringSoonStatus(cust, expiryDays) {
+            if (!cust.pointsHistory || !expiryDays) return false;
+            const now = new Date();
+            const threshold = 30; // 30 days alert
+
+            return cust.pointsHistory.some(p => {
+                const earnedDate = new Date(p.date);
+                const diffTime = Math.abs(now - earnedDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const daysLeft = expiryDays - diffDays;
+                return daysLeft >= 0 && daysLeft <= threshold;
+            });
+        }
+
         function renderCustomers() {
             const tableBody = document.getElementById('customers-table-body');
             if (!tableBody) return;
             tableBody.innerHTML = '';
 
             const encryptedCustomers = localStorage.getItem('misk_customers_vault');
-            const customers = DataVault.decrypt(encryptedCustomers) || [];
+            let customers = DataVault.decrypt(encryptedCustomers) || [];
+
+            const savedSettings = localStorage.getItem('misk_settings');
+            const settings = savedSettings ? JSON.parse(savedSettings) : {};
+            const expiryDays = settings.pointsExpiryDays || 365;
 
             if (customers.length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">لا يوجد عملاء متاحين حالياً.</td></tr>';
                 return;
+            }
+
+            // Cleanup & Update
+            let updated = false;
+            customers = customers.map(c => {
+                const oldPoints = c.points;
+                const cleaned = cleanupCustomerPoints(c, expiryDays);
+                if (cleaned.points !== oldPoints) updated = true;
+                return cleaned;
+            });
+
+            if (updated) {
+                localStorage.setItem('misk_customers_vault', DataVault.encrypt(customers));
             }
 
             // Sort by total spend descending
@@ -784,12 +849,17 @@
             customers.forEach(cust => {
                 const points = cust.points || 0;
                 const status = getLoyaltyStatus(points);
+                const expiringSoon = getExpiringSoonStatus(cust, expiryDays);
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${cust.name}</td>
                     <td>${cust.phone}</td>
                     <td><span class="status-badge ${status.class}">${status.label}</span></td>
-                    <td style="font-weight: bold; color: var(--admin-purple);">${points} نقطة</td>
+                    <td style="font-weight: bold; color: var(--admin-purple); position: relative;">
+                        ${points} نقطة
+                        ${expiringSoon ? `<i class="fas fa-exclamation-triangle" title="توجد نقاط ستنتهي خلال 30 يوماً" style="color: #ff9800; margin-right: 5px; cursor: help;"></i>` : ''}
+                    </td>
                     <td>${cust.totalSpend} شيكل</td>
                     <td>${cust.lastOrderDate}</td>
                     <td>
@@ -811,7 +881,27 @@
 
             if (cust && (cust.points || 0) >= 100) {
                 if (confirm(`هل تريد تحويل 100 نقطة من حساب ${cust.name} إلى قسيمة شراء بقيمة 10 شيكل؟`)) {
-                    cust.points -= 100;
+                    // FIFO Deduction
+                    let pointsToDeduct = 100;
+                    if (!cust.pointsHistory) cust.pointsHistory = [{ amount: cust.points, date: new Date().toISOString().split('T')[0] }];
+
+                    // Sort history by date (oldest first)
+                    cust.pointsHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                    while (pointsToDeduct > 0 && cust.pointsHistory.length > 0) {
+                        const oldest = cust.pointsHistory[0];
+                        if (oldest.amount > pointsToDeduct) {
+                            oldest.amount -= pointsToDeduct;
+                            pointsToDeduct = 0;
+                        } else {
+                            pointsToDeduct -= oldest.amount;
+                            cust.pointsHistory.shift();
+                        }
+                    }
+
+                    // Recalculate total points
+                    cust.points = cust.pointsHistory.reduce((sum, p) => sum + p.amount, 0);
+
                     localStorage.setItem('misk_customers_vault', DataVault.encrypt(customers));
                     const coupon = 'LOYAL-' + Math.random().toString(36).substr(2, 6).toUpperCase();
                     alert(`تم تحويل النقاط بنجاح!\nكود القسيمة: ${coupon}\nأعطِ هذا الكود للعميل ليستخدمه في طلبه القادم.`);
@@ -1059,7 +1149,8 @@
             metaDescription: "أفضل العطور ومنتجات العناية والجمال في مكان واحد.",
             metaKeywords: "عطور, مسك, تجميل, عناية",
             privacyPolicy: "",
-            termsOfUse: ""
+            termsOfUse: "",
+            pointsExpiryDays: 365
         };
 
         function renderSettings() {
@@ -1075,6 +1166,7 @@
             document.getElementById('set-meta-title').value = storeSettings.metaTitle || "";
             document.getElementById('set-meta-desc').value = storeSettings.metaDescription || "";
             document.getElementById('set-meta-keywords').value = storeSettings.metaKeywords || "";
+            document.getElementById('set-points-expiry').value = storeSettings.pointsExpiryDays || 365;
 
             if (privacyQuill) privacyQuill.clipboard.dangerouslyPasteHTML(storeSettings.privacyPolicy || "");
             if (termsQuill) termsQuill.clipboard.dangerouslyPasteHTML(storeSettings.termsOfUse || "");
@@ -1107,6 +1199,7 @@
             storeSettings.metaTitle = document.getElementById('set-meta-title').value;
             storeSettings.metaDescription = document.getElementById('set-meta-desc').value;
             storeSettings.metaKeywords = document.getElementById('set-meta-keywords').value;
+            storeSettings.pointsExpiryDays = parseInt(document.getElementById('set-points-expiry').value) || 365;
             storeSettings.privacyPolicy = privacyQuill.root.innerHTML;
             storeSettings.termsOfUse = termsQuill.root.innerHTML;
 
