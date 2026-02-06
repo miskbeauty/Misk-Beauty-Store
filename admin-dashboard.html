@@ -529,6 +529,10 @@
                         <input type="text" id="page-slug" required placeholder="مثلاً: about-us">
                     </div>
                 </div>
+                <div class="form-group" style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="page-is-active" style="width: auto;">
+                    <label for="page-is-active" style="margin-bottom: 0;">عرض هذه الصفحة في الموقع (نشط)</label>
+                </div>
                 <div class="form-group" style="margin-top: 15px;">
                     <label>محتوى الصفحة</label>
                     <div id="page-editor" style="height: 300px; background: white;"></div>
@@ -1389,8 +1393,10 @@
         // --- Page Management Logic ---
         let pageQuill;
         let mockPages = JSON.parse(localStorage.getItem('misk_pages')) || [
-            { id: 1, title: 'من نحن', slug: 'about-us', content: '<p>نحن متجر مسك بيوتي المتخصص في أرقى العطور ومنتجات العناية.</p>' },
-            { id: 2, title: 'الأسئلة الشائعة', slug: 'faq', content: '<p>هنا تجد إجابات على أكثر الأسئلة شيوعاً.</p>' }
+            { id: 1, title: 'من نحن', slug: 'about-us', content: '<p>نحن متجر مسك بيوتي المتخصص في أرقى العطور ومنتجات العناية.</p>', isActive: true },
+            { id: 2, title: 'الأسئلة الشائعة', slug: 'faq', content: '<p>هنا تجد إجابات على أكثر الأسئلة شيوعاً.</p>', isActive: true },
+            { id: 3, title: 'سياسة الخصوصية', slug: 'privacy', content: '<p>تحترم مسك بيوتي خصوصيتكم وتلتزم بحمايتها.</p>', isActive: true },
+            { id: 4, title: 'سياسة الإرجاع', slug: 'returns', content: '<p>يمكن إرجاع المنتجات خلال 7 أيام من الاستلام بشرط أن تكون بحالتها الأصلية.</p>', isActive: true }
         ];
 
         function renderPages() {
@@ -1403,6 +1409,7 @@
                 tr.innerHTML = `
                     <td>${page.title}</td>
                     <td>/page.html?slug=${page.slug}</td>
+                    <td>${page.isActive ? '<span class="status-badge" style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 5px; font-size: 0.8rem;">نشط</span>' : '<span class="status-badge" style="background: #f5f5f5; color: #666; padding: 4px 8px; border-radius: 5px; font-size: 0.8rem;">مسودة</span>'}</td>
                     <td>
                         <button onclick="openPageModal(${page.id})" style="background:none; border:none; cursor:pointer; color: #2e7d32; margin-left: 10px;">
                             <i class="fas fa-edit"></i>
@@ -1428,6 +1435,7 @@
                 if (page) {
                     document.getElementById('page-title').value = page.title;
                     document.getElementById('page-slug').value = page.slug;
+                    document.getElementById('page-is-active').checked = page.isActive || false;
                     pageQuill.clipboard.dangerouslyPasteHTML(page.content || '');
                 }
             }
@@ -1441,6 +1449,7 @@
                 id: id ? parseInt(id) : Date.now(),
                 title: document.getElementById('page-title').value,
                 slug: document.getElementById('page-slug').value,
+                isActive: document.getElementById('page-is-active').checked,
                 content: pageQuill.root.innerHTML
             };
 

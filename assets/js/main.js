@@ -695,7 +695,9 @@ function applyGlobalSettings() {
         if (savedPages) {
             const pages = JSON.parse(savedPages);
             pages.forEach(p => {
-                linksHtml += `<li><a href="page.html?slug=${p.slug}">${p.title}</a></li>`;
+                if (p.isActive) {
+                    linksHtml += `<li><a href="page.html?slug=${p.slug}">${p.title}</a></li>`;
+                }
             });
         }
 
