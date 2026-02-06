@@ -117,7 +117,7 @@ function updateQuantity(id, delta) {
 
 function updateCartUI() {
     // Clear and redraw
-    cartItemsContainer.innerHTML = '';
+    if (cartItemsContainer) cartItemsContainer.innerHTML = '';
     let total = 0;
     let count = 0;
 
@@ -125,32 +125,34 @@ function updateCartUI() {
         total += item.price * item.quantity;
         count += item.quantity;
 
-        const cartItem = document.createElement('div');
-        cartItem.className = 'cart-item';
-        let variantText = '';
-        if (item.variant) {
-            variantText = Object.entries(item.variant).map(([k, v]) => `<span style="font-size: 0.75rem; color: #888;">${k}: ${v}</span>`).join(' | ');
-        }
-        cartItem.innerHTML = `
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
-                <div style="display: flex; align-items: center;">
-                    <img src="${item.image}" class="cart-item-img" alt="${item.name}">
-                    <div>
-                        <h4 style="margin: 0; font-size: 0.95rem;">${escapeHTML(item.name)}</h4>
-                        ${variantText ? `<div style="margin-top: 2px;">${variantText}</div>` : ''}
-                        <p style="color: #6a1b9a; margin: 5px 0; font-size: 0.85rem;">${item.price} شيكل × ${item.quantity}</p>
+        if (cartItemsContainer) {
+            const cartItem = document.createElement('div');
+            cartItem.className = 'cart-item';
+            let variantText = '';
+            if (item.variant) {
+                variantText = Object.entries(item.variant).map(([k, v]) => `<span style="font-size: 0.75rem; color: #888;">${k}: ${v}</span>`).join(' | ');
+            }
+            cartItem.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <div style="display: flex; align-items: center;">
+                        <img src="${item.image}" class="cart-item-img" alt="${item.name}">
+                        <div>
+                            <h4 style="margin: 0; font-size: 0.95rem;">${escapeHTML(item.name)}</h4>
+                            ${variantText ? `<div style="margin-top: 2px;">${variantText}</div>` : ''}
+                            <p style="color: #6a1b9a; margin: 5px 0; font-size: 0.85rem;">${item.price} شيكل × ${item.quantity}</p>
+                        </div>
                     </div>
+                    <button onclick="removeFromCart(${item.id})" style="background: none; border: none; color: #880E4F; cursor: pointer; padding: 5px;">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
-                <button onclick="removeFromCart(${item.id})" style="background: none; border: none; color: #880E4F; cursor: pointer; padding: 5px;">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        `;
-        cartItemsContainer.appendChild(cartItem);
+            `;
+            cartItemsContainer.appendChild(cartItem);
+        }
     });
 
-    cartCount.textContent = count;
-    cartTotal.textContent = total;
+    if (cartCount) cartCount.textContent = count;
+    if (cartTotal) cartTotal.textContent = total;
 
     // Update new widget
     const isEmpty = cart.length === 0;
@@ -176,16 +178,21 @@ function updateCartUI() {
     if (widgetCartCountText) {
         if (isEmpty) {
             widgetCartCountText.textContent = "السلة فارغة";
-            widgetCartCountText.style.display = 'inline';
         } else {
             widgetCartCountText.textContent = `${count} منتجات`;
-            widgetCartCountText.style.display = 'inline';
         }
+        widgetCartCountText.style.display = 'inline';
+    }
+
+    // Update total text in widget if it exists
+    if (widgetCartTotalText) {
+        widgetCartTotalText.textContent = `${total} شيكل`;
+        widgetCartTotalText.style.display = isEmpty ? 'none' : 'inline';
     }
 
     // --- Cart Page Specific Rendering ---
-    const cartPageItems = document.getElementById('cartPageItems');
-    if (cartPageItems) {
+    const cartPageItemsList = document.getElementById('cartPageItems');
+    if (cartPageItemsList) {
         renderFullCart();
     }
 
@@ -371,6 +378,7 @@ function updateCheckoutShipping() {
 function handleCheckoutSubmit(e) {
     if (e) e.preventDefault();
 
+    const grandTotalEl = document.getElementById('checkoutGrandTotal');
     // Basic validation
     const fullName = document.getElementById('fullName').value.trim();
     const phone = document.getElementById('phone').value.trim();
