@@ -652,6 +652,16 @@ function applyGlobalSettings() {
         if (settings.whatsapp) {
             const cleanWa = settings.whatsapp.replace(/\D/g, '');
             socialLinks.insertAdjacentHTML('beforeend', `<a href="https://wa.me/${cleanWa}" target="_blank"><i class="fab fa-whatsapp"></i></a>`);
+
+            // Add Floating WA Button if it doesn't exist
+            if (!document.querySelector('.floating-wa-btn')) {
+                const waFloat = document.createElement('a');
+                waFloat.href = `https://wa.me/${cleanWa}`;
+                waFloat.target = "_blank";
+                waFloat.className = "floating-wa-btn";
+                waFloat.innerHTML = `<i class="fab fa-whatsapp"></i>`;
+                document.body.appendChild(waFloat);
+            }
         }
         if (settings.tiktok) {
             socialLinks.insertAdjacentHTML('beforeend', `<a href="${settings.tiktok}" target="_blank"><i class="fab fa-tiktok"></i></a>`);
@@ -665,16 +675,31 @@ function applyGlobalSettings() {
         teaser.style.display = 'none';
     }
 
-    // 5. Legal Links in Footer
+    // 5. Legal & Custom Links in Footer
     const footerLinksUl = document.querySelector('footer .footer-links');
     if (footerLinksUl) {
-        // Only append if they don't exist to avoid duplicates
-        if (settings.privacyPolicy && !footerLinksUl.innerHTML.includes('type=privacy')) {
-            footerLinksUl.insertAdjacentHTML('beforeend', `<li><a href="legal.html?type=privacy">سياسة الخصوصية</a></li>`);
+        // Clear previous dynamic links to avoid duplicates but keep standard ones if they are hardcoded
+        // In our case, we will rebuild the list if settings or pages change
+        let linksHtml = '';
+
+        // Custom Pages from Dynamic Builder
+        const savedPages = localStorage.getItem('misk_pages');
+        if (savedPages) {
+            const pages = JSON.parse(savedPages);
+            pages.forEach(p => {
+                linksHtml += `<li><a href="page.html?slug=${p.slug}">${p.title}</a></li>`;
+            });
         }
-        if (settings.termsOfUse && !footerLinksUl.innerHTML.includes('type=terms')) {
-            footerLinksUl.insertAdjacentHTML('beforeend', `<li><a href="legal.html?type=terms">شروط الاستخدام</a></li>`);
+
+        // Standard Legal Links
+        if (settings.privacyPolicy && !linksHtml.includes('type=privacy')) {
+            linksHtml += `<li><a href="legal.html?type=privacy">سياسة الخصوصية</a></li>`;
         }
+        if (settings.termsOfUse && !linksHtml.includes('type=terms')) {
+            linksHtml += `<li><a href="legal.html?type=terms">شروط الاستخدام</a></li>`;
+        }
+
+        footerLinksUl.innerHTML = linksHtml;
     }
 }
 
@@ -851,7 +876,10 @@ function initProductPage() {
     // Update Meta
     const savedSettings = localStorage.getItem('misk_settings');
     const storeName = savedSettings ? JSON.parse(savedSettings).name : "مسك بيوتي";
-    document.title = `${prod.name} | ${storeName}`;
+
+    // SEO Enhancement: Use product-specific meta title if available
+    document.title = prod.metaTitle ? prod.metaTitle : `${prod.name} | ${storeName}`;
+
     if (prod.metaDesc) {
         let meta = document.querySelector('meta[name="description"]');
         if (!meta) {

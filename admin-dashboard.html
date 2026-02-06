@@ -52,6 +52,12 @@
                         <span>التقييمات والمراجعات</span>
                     </a>
                 </li>
+                <li class="menu-item" id="menu-pages">
+                    <a href="#" onclick="switchTab('pages')">
+                        <i class="fas fa-file-alt"></i>
+                        <span>إدارة الصفحات</span>
+                    </a>
+                </li>
                 <li class="menu-item" id="menu-analytics">
                     <a href="#" onclick="switchTab('analytics')">
                         <i class="fas fa-chart-bar"></i>
@@ -507,6 +513,34 @@
         </div>
     </div>
 
+    <!-- Page Modal -->
+    <div id="page-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="page-modal-title" style="margin-bottom: 20px; color: #6a1b9a;">إضافة صفحة جديدة</h2>
+            <form id="page-form" onsubmit="handlePageSubmit(event)">
+                <input type="hidden" id="page-id">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="page-title">عنوان الصفحة</label>
+                        <input type="text" id="page-title" required placeholder="مثلاً: من نحن">
+                    </div>
+                    <div class="form-group">
+                        <label for="page-slug">الرابط البديل (Slug)</label>
+                        <input type="text" id="page-slug" required placeholder="مثلاً: about-us">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>محتوى الصفحة</label>
+                    <div id="page-editor" style="height: 300px; background: white;"></div>
+                </div>
+                <div class="modal-footer" style="margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('page-modal')">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ الصفحة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Product Modal (Add/Edit) -->
     <div id="product-modal" class="modal-overlay">
         <!-- ... existing product modal content ... -->
@@ -524,6 +558,11 @@
                             <label>اسم المنتج</label>
                             <input type="text" id="prod-name" class="admin-input" required
                                 placeholder="مثلاً: عطر مسك فاخر">
+                        </div>
+                        <div class="admin-form-group">
+                            <label>عنوان الميتا (Meta Title)</label>
+                            <input type="text" id="prod-meta-title" class="admin-input"
+                                placeholder="مثلاً: عطر مسك فاخر | متجر مسك">
                         </div>
                         <div class="admin-form-group">
                             <label>رابط SEO (Slug)</label>
@@ -1347,6 +1386,86 @@
             document.getElementById('category-modal').style.display = 'flex';
         }
 
+        // --- Page Management Logic ---
+        let pageQuill;
+        let mockPages = JSON.parse(localStorage.getItem('misk_pages')) || [
+            { id: 1, title: 'من نحن', slug: 'about-us', content: '<p>نحن متجر مسك بيوتي المتخصص في أرقى العطور ومنتجات العناية.</p>' },
+            { id: 2, title: 'الأسئلة الشائعة', slug: 'faq', content: '<p>هنا تجد إجابات على أكثر الأسئلة شيوعاً.</p>' }
+        ];
+
+        function renderPages() {
+            const tableBody = document.getElementById('pages-table-body');
+            if (!tableBody) return;
+            tableBody.innerHTML = '';
+
+            mockPages.forEach(page => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${page.title}</td>
+                    <td>/page.html?slug=${page.slug}</td>
+                    <td>
+                        <button onclick="openPageModal(${page.id})" style="background:none; border:none; cursor:pointer; color: #2e7d32; margin-left: 10px;">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deletePage(${page.id})" style="background:none; border:none; cursor:pointer; color: #d32f2f;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function openPageModal(id = null) {
+            const form = document.getElementById('page-form');
+            form.reset();
+            document.getElementById('page-id').value = id || '';
+            document.getElementById('page-modal-title').innerText = id ? 'تعديل الصفحة' : 'إضافة صفحة جديدة';
+            pageQuill.setContents([]);
+
+            if (id) {
+                const page = mockPages.find(p => p.id == id);
+                if (page) {
+                    document.getElementById('page-title').value = page.title;
+                    document.getElementById('page-slug').value = page.slug;
+                    pageQuill.clipboard.dangerouslyPasteHTML(page.content || '');
+                }
+            }
+            document.getElementById('page-modal').style.display = 'flex';
+        }
+
+        function handlePageSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('page-id').value;
+            const newPage = {
+                id: id ? parseInt(id) : Date.now(),
+                title: document.getElementById('page-title').value,
+                slug: document.getElementById('page-slug').value,
+                content: pageQuill.root.innerHTML
+            };
+
+            if (id) {
+                const index = mockPages.findIndex(p => p.id == parseInt(id));
+                mockPages[index] = newPage;
+                alert('تم تحديث الصفحة بنجاح');
+            } else {
+                mockPages.push(newPage);
+                alert('تم إضافة الصفحة بنجاح');
+            }
+
+            localStorage.setItem('misk_pages', JSON.stringify(mockPages));
+            closeModal('page-modal');
+            renderPages();
+        }
+
+        function deletePage(id) {
+            if (confirm('هل أنت متأكد من حذف هذه الصفحة؟')) {
+                mockPages = mockPages.filter(p => p.id !== id);
+                localStorage.setItem('misk_pages', JSON.stringify(mockPages));
+                renderPages();
+            }
+        }
+
         function handleCategorySubmit(e) {
             e.preventDefault();
             const id = document.getElementById('category-id').value;
@@ -1623,6 +1742,7 @@
                 if (prod) {
                     document.getElementById('prod-name').value = prod.name;
                     document.getElementById('prod-slug').value = prod.slug || '';
+                    document.getElementById('prod-meta-title').value = prod.metaTitle || '';
                     document.getElementById('prod-meta-desc').value = prod.metaDesc || '';
                     document.getElementById('prod-original-price').value = prod.originalPrice || '';
                     document.getElementById('prod-price').value = prod.price;
@@ -1665,6 +1785,7 @@
                 id: id ? parseInt(id) : Date.now(),
                 name: document.getElementById('prod-name').value,
                 slug: document.getElementById('prod-slug').value,
+                metaTitle: document.getElementById('prod-meta-title').value,
                 metaDesc: document.getElementById('prod-meta-desc').value,
                 originalPrice: document.getElementById('prod-original-price').value ? parseInt(document.getElementById('prod-original-price').value) : null,
                 price: parseInt(document.getElementById('prod-price').value),
@@ -1759,6 +1880,23 @@
         renderOrders();
         renderProducts();
         renderCategories();
+        renderPages();
+
+        // Initialize Page Editor
+        pageQuill = new Quill('#page-editor', {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'align': [] }],
+                    ['link', 'image'],
+                    ['clean']
+                ]
+            }
+        });
     </script>
 </body>
 

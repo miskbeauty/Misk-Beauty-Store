@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحميل... | مسك بيوتي</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .page-content-wrapper {
+            background: #fff;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.05);
+            margin: 40px auto;
+            max-width: 900px;
+            min-height: 400px;
+            line-height: 1.8;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--primary-pink);
+        }
+
+        .page-header h1 {
+            color: var(--primary-purple);
+            font-size: 2.2rem;
+            font-weight: 700;
+        }
+
+        .page-body {
+            color: #444;
+            font-size: 1.1rem;
+        }
+
+        .page-body img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <header></header>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/header.js"></script>
+
+    <main class="container">
+        <div class="page-content-wrapper">
+            <div class="page-header">
+                <h1 id="dynamicPageTitle">جاري التحميل...</h1>
+            </div>
+            <div id="dynamicPageBody" class="page-body">
+                <p style="text-align: center; color: #888;">جاري تحميل محتوى الصفحة...</p>
+            </div>
+        </div>
+    </main>
+
+    <footer></footer>
+
+    <script src="assets/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const slug = urlParams.get('slug');
+            const titleEl = document.getElementById('dynamicPageTitle');
+            const bodyEl = document.getElementById('dynamicPageBody');
+
+            const savedPages = localStorage.getItem('misk_pages');
+            const savedSettings = localStorage.getItem('misk_settings');
+            const storeName = savedSettings ? JSON.parse(savedSettings).name : "مسك بيوتي";
+
+            if (savedPages) {
+                const pages = JSON.parse(savedPages);
+                const page = pages.find(p => p.slug === slug);
+
+                if (page) {
+                    titleEl.textContent = page.title;
+                    bodyEl.innerHTML = page.content || '<p>لا يوجد محتوى لهذه الصفحة حالياً.</p>';
+                    document.title = `${page.title} | ${storeName}`;
+                } else {
+                    titleEl.textContent = 'الصفحة غير موجودة';
+                    bodyEl.innerHTML = '<p style="text-align: center;">نعتذر، الصفحة التي تبحث عنها غير متوفرة حالياً.</p>';
+                    document.title = `404 | ${storeName}`;
+                }
+            } else {
+                titleEl.textContent = 'خطأ في التحميل';
+                bodyEl.innerHTML = '<p style="text-align: center;">حدث خطأ أثناء تحميل محتوى الصفحة.</p>';
+            }
+        });
+    </script>
+</body>
+
+</html>
