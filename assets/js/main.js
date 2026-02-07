@@ -16,6 +16,15 @@ const DataVault = {
     }
 };
 
+// --- Cloudinary Helper ---
+const CloudinaryHelper = {
+    optimize: (url, width = 800) => {
+        if (!url || !url.includes('cloudinary.com')) return url;
+        // Apply automatic formatting and quality optimization
+        return url.replace('/upload/', `/upload/f_auto,q_auto,w_${width}/`);
+    }
+};
+
 // Cart State - Load from LocalStorage if exists
 let cart = JSON.parse(localStorage.getItem('misk_cart')) || [];
 
@@ -375,11 +384,10 @@ function updateCheckoutShipping() {
     }
 }
 
-function handleCheckoutSubmit(e) {
+async function handleCheckoutSubmit(e) {
     if (e) e.preventDefault();
 
     const grandTotalEl = document.getElementById('checkoutGrandTotal');
-    // Basic validation
     const fullName = document.getElementById('fullName').value.trim();
     const phone = document.getElementById('phone').value.trim();
     const region = document.getElementById('checkoutCity').value;
@@ -396,127 +404,66 @@ function handleCheckoutSubmit(e) {
         return;
     }
 
-    // Success Action
     const checkoutContent = document.getElementById('checkoutContent');
     const successSection = document.getElementById('successSection');
 
-    if (checkoutContent && successSection) {
-        checkoutContent.style.display = 'none';
-        successSection.style.display = 'block';
+    // 1. Prepare Order Data
+    const loggedUser = (typeof AuthService !== 'undefined') ? await AuthService.getUser() : null;
 
-        // Update WhatsApp Order Link if button exists
-        const waBtn = document.getElementById('waOrderBtn');
-        if (waBtn) {
-            let storeWa = "+970599000000";
-            const settings = JSON.parse(localStorage.getItem('misk_settings'));
-            if (settings && settings.whatsapp) storeWa = settings.whatsapp;
+    const newOrder = {
+        id: Date.now().toString().slice(-5),
+        date: new Date().toISOString().split('T')[0],
+        customer: fullName,
+        whatsapp: phone,
+        city: region + ", " + city,
+        address: address,
+        total: grandTotalEl.textContent + " شيكل",
+        items: cart.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            qty: item.quantity,
+            category: item.category || 'عام'
+        })),
+        userId: loggedUser ? (loggedUser._id || loggedUser.id) : null,
+        status: "waiting"
+    };
 
-            const orderMsg = `مرحباً مسك بيوتي، أود تأكيد طلبي:\nالاسم: ${fullName}\nالعنوان: ${address}, ${city}\nالإجمالي: ${grandTotalEl.textContent} شيكل`;
-            waBtn.href = `https://wa.me/${storeWa.replace('+', '')}?text=${encodeURIComponent(orderMsg)}`;
-        }
+    try {
+        // 2. Submit to API
+        const response = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newOrder)
+        });
 
-        // --- Data Protection: Encrypt and Persist Order & Customer ---
-        const encryptedOrders = localStorage.getItem('misk_orders_vault');
-        const orders = DataVault.decrypt(encryptedOrders) || [];
+        if (response.ok) {
+            if (checkoutContent && successSection) {
+                checkoutContent.style.display = 'none';
+                successSection.style.display = 'block';
 
-        const newOrder = {
-            id: Date.now().toString().slice(-5),
-            date: new Date().toISOString().split('T')[0],
-            customer: fullName,
-            whatsapp: phone,
-            city: region + ", " + city,
-            address: address,
-            total: grandTotalEl.textContent + " شيكل",
-            items: cart.map(item => ({
-                id: item.id,
-                name: item.name,
-                price: item.price,
-                qty: item.quantity,
-                category: item.category || 'عام'
-            })),
-            status: "waiting"
-        };
+                const waBtn = document.getElementById('waOrderBtn');
+                if (waBtn) {
+                    let storeWa = "+970599000000";
+                    const settings = JSON.parse(localStorage.getItem('misk_settings'));
+                    if (settings && settings.whatsapp) storeWa = settings.whatsapp;
 
-        orders.push(newOrder);
-        localStorage.setItem('misk_orders_vault', DataVault.encrypt(orders));
-
-        // Update Loyalty System (Exclusive to Registered Users)
-        const loggedUser = (typeof AuthService !== 'undefined') ? AuthService.getUser() : null;
-        if (loggedUser) {
-            const orderAmountLoyalty = parseInt(grandTotalEl.textContent) || 0;
-
-            // Deduct points if redeemed
-            if (pointsRedeemed) {
-                let pointsToDeduct = 100;
-                // FIFO Deduction logic (already implemented in admin, adding here for consistency)
-                if (!loggedUser.pointsHistory) loggedUser.pointsHistory = [];
-                loggedUser.pointsHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-                while (pointsToDeduct > 0 && loggedUser.pointsHistory.length > 0) {
-                    const oldest = loggedUser.pointsHistory[0];
-                    if (oldest.amount > pointsToDeduct) {
-                        oldest.amount -= pointsToDeduct;
-                        pointsToDeduct = 0;
-                    } else {
-                        pointsToDeduct -= oldest.amount;
-                        loggedUser.pointsHistory.shift();
-                    }
+                    const orderMsg = `مرحباً مسك بيوتي، أود تأكيد طلبي:\nالاسم: ${fullName}\nالعنوان: ${address}, ${city}\nالإجمالي: ${grandTotalEl.textContent} شيكل`;
+                    waBtn.href = `https://wa.me/${storeWa.replace('+', '')}?text=${encodeURIComponent(orderMsg)}`;
                 }
-                loggedUser.points = Math.max(0, (loggedUser.points || 0) - 100);
-                loggedUser.redeemedTotal = (loggedUser.redeemedTotal || 0) + 100;
 
-                // Create a history entry for the redemption
-                if (!loggedUser.pointsHistory) loggedUser.pointsHistory = [];
-                loggedUser.pointsHistory.push({
-                    amount: -100,
-                    date: new Date().toISOString().split('T')[0],
-                    reason: "استبدال نقاط بخصم عند الدفع"
-                });
+                // Clear Cart
+                cart = [];
+                saveCart();
+                updateCartUI();
+                window.scrollTo(0, 0);
             }
-
-            loggedUser.totalSpend = (loggedUser.totalSpend || 0) + orderAmountLoyalty;
-            loggedUser.points = (loggedUser.points || 0) + orderAmountLoyalty;
-            if (!loggedUser.pointsHistory) loggedUser.pointsHistory = [];
-            loggedUser.pointsHistory.push({ amount: orderAmountLoyalty, date: newOrder.date });
-            loggedUser.orderCount = (loggedUser.orderCount || 0) + 1;
-            loggedUser.lastOrderDate = newOrder.date;
-
-            AuthService.updateUser(loggedUser);
-            console.log('Member: Points updated.');
-        }
-
-        // Update Global Customers Table (For Admin Visibility)
-        const encryptedCustomers = localStorage.getItem('misk_customers_vault');
-        const customers = DataVault.decrypt(encryptedCustomers) || [];
-
-        let customer = customers.find(c => c.phone === phone);
-        const orderAmountAtCheckout = parseInt(grandTotalEl.textContent) || 0;
-
-        if (customer) {
-            customer.totalSpend += orderAmountAtCheckout;
-            customer.orderCount += 1;
-            customer.lastOrderDate = newOrder.date;
-            customer.name = fullName;
-            customer.isRegistered = !!loggedUser;
         } else {
-            customers.push({
-                name: fullName,
-                phone: phone,
-                totalSpend: orderAmountAtCheckout,
-                orderCount: 1,
-                lastOrderDate: newOrder.date,
-                isRegistered: !!loggedUser
-            });
+            alert("فشل في إرسال الطلب. يرجى المحاولة مرة أخرى.");
         }
-        localStorage.setItem('misk_customers_vault', DataVault.encrypt(customers));
-
-        // Clear Cart
-        cart = [];
-        saveCart();
-        updateCartUI();
-
-        // Scroll to top
-        window.scrollTo(0, 0);
+    } catch (error) {
+        console.error('Order error:', error);
+        alert("حدث خطأ في الاتصال بالخدمة.");
     }
 }
 
@@ -761,7 +708,18 @@ document.addEventListener('click', (e) => {
 
 // --- Advanced Product Data Management ---
 
-function loadProducts() {
+async function loadProducts() {
+    try {
+        const response = await fetch('/api/products');
+        const data = await response.json();
+        if (data.success && data.products.length > 0) {
+            return data.products;
+        }
+    } catch (e) {
+        console.warn("فشل تحميل المنتجات من الخادم، يتم استخدام البيانات المحلية المؤقتة.");
+    }
+
+    // Fallback if API fails or is empty
     let products = JSON.parse(localStorage.getItem('misk_products'));
     if (!products || products.length === 0) {
         products = [
@@ -769,18 +727,10 @@ function loadProducts() {
                 id: 1,
                 name: "عطر مسك إيطالي فاخر",
                 slug: "premium-italian-musk",
-                metaDesc: "عطر مسك فاخر يدوم طويلاً",
                 category: "عطور",
-                subCategory: "عطور رجالية",
-                priority: 10,
                 price: 150,
-                stock: 24,
-                images: ["https://images.unsplash.com/photo-1541643600914-78b084683601?q=80&w=800&auto=format&fit=crop"],
-                desc: "<p>عطر مسك إيطالي فاخر يدوم طويلاً.</p>",
-                variants: [
-                    { label: "50 مل", price: 150, stock: 10, sku: "M-50" },
-                    { label: "100 مل", price: 280, stock: 5, sku: "M-100" }
-                ]
+                images: ["assets/images/1745215944148877862.png"],
+                desc: "<p>عطر مسك إيطالي فاخر يدوم طويلاً.</p>"
             }
         ];
     }
@@ -788,7 +738,7 @@ function loadProducts() {
 }
 
 function getProductCardHTML(prod) {
-    const primaryImage = prod.images && prod.images[0] ? prod.images[0] : 'https://placehold.co/400x400?text=No+Image';
+    const primaryImage = prod.images && prod.images[0] ? CloudinaryHelper.optimize(prod.images[0]) : 'https://placehold.co/400x400?text=No+Image';
     const hasDiscount = prod.originalPrice && prod.originalPrice > prod.price;
     const discountPercent = hasDiscount ? Math.round(((prod.originalPrice - prod.price) / prod.originalPrice) * 100) : 0;
 
@@ -821,11 +771,11 @@ function getProductCardHTML(prod) {
     `;
 }
 
-function renderProductGrid(containerId) {
+async function renderProductGrid(containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    let products = loadProducts();
+    let products = await loadProducts();
 
     // Automatic Category Filtering based on URL Parameters
     const urlParams = new URLSearchParams(window.location.search);
@@ -874,13 +824,13 @@ function renderProductGrid(containerId) {
 
 // --- Single Product Page (Advanced) ---
 
-function initProductPage() {
+async function initProductPage() {
     const urlParams = new URLSearchParams(window.location.search);
     const prodId = parseInt(urlParams.get('id'));
     if (!prodId) return;
 
-    const products = loadProducts();
-    const prod = products.find(p => p.id === prodId);
+    const products = await loadProducts();
+    const prod = products.find(p => p.id === prodId || p._id === prodId);
     if (!prod) return;
 
     // Update Meta
