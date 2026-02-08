@@ -64,7 +64,8 @@ const nextBtn = document.querySelector('.slider-arrow.next');
  * Prevents malicious data injection
  */
 function validateProduct(id, name, price) {
-    if (typeof id !== 'number' || isNaN(id)) return false;
+    if (!id) return false;
+    if (typeof name !== 'string' || name.trim().length === 0 || name.length > 100) return false;
     if (typeof name !== 'string' || name.trim().length === 0 || name.length > 100) return false;
     if (typeof price !== 'number' || isNaN(price) || price < 0) return false;
 
@@ -88,7 +89,8 @@ function addToCart(id, name, price, image = 'assets/images/1745215944148877862.p
     }
 
     // Include variant in uniqueness check if applicable
-    const existingItem = cart.find(item => item.id === id && JSON.stringify(item.variant) === JSON.stringify(variant));
+    // Include variant in uniqueness check if applicable
+    const existingItem = cart.find(item => (item._id || item.id) === (id._id || id.id || id) && JSON.stringify(item.variant) === JSON.stringify(variant));
 
     if (existingItem) {
         existingItem.quantity += 1;
@@ -741,7 +743,11 @@ async function loadProducts() {
     try {
         const response = await fetch('/api/products');
         const data = await response.json();
-        if (data.success && data.products && data.products.length > 0) {
+        if (data.success && data.products) {
+            // Even if empty, we trust the API result more than legacy storage
+            if (data.products.length > 0) {
+                localStorage.setItem('misk_products', JSON.stringify(data.products));
+            }
             return data.products;
         }
     } catch (e) {
@@ -799,25 +805,26 @@ function getProductCardHTML(prod) {
     const primaryImage = prod.images && prod.images[0] ? CloudinaryHelper.optimize(prod.images[0]) : 'https://placehold.co/400x400?text=No+Image';
     const hasDiscount = prod.originalPrice && prod.originalPrice > prod.price;
     const discountPercent = hasDiscount ? Math.round(((prod.originalPrice - prod.price) / prod.originalPrice) * 100) : 0;
+    const currentId = prod._id || prod.id;
 
     return `
-        <div class="product-card" data-id="${prod.id}" data-name="${prod.name}" data-price="${prod.price}">
+        <div class="product-card" data-id="${currentId}" data-name="${prod.name}" data-price="${prod.price}">
             ${hasDiscount ? `<span class="badge-sale">-${discountPercent}%</span>` : ''}
             <div class="product-image">
-                <a href="product.html?id=${prod.id}">
+                <a href="product.html?id=${currentId}">
                     <img src="${primaryImage}" alt="${prod.name}">
                 </a>
                 <div class="product-actions">
-                    <button class="btn-quick-view" onclick="location.href='product.html?id=${prod.id}'"><i class="fas fa-eye"></i></button>
+                    <button class="btn-quick-view" onclick="location.href='product.html?id=${currentId}'"><i class="fas fa-eye"></i></button>
                     <button class="btn-add-cart"
-                        onclick="addToCart(${prod.id}, '${prod.name}', ${prod.price}, '${primaryImage}', null, '${prod.category}')">
+                        onclick="addToCart('${currentId}', '${prod.name}', ${prod.price}, '${primaryImage}', null, '${prod.category}')">
                         <i class="fas fa-shopping-cart"></i>
                     </button>
                 </div>
             </div>
             <div class="product-info">
                 <div class="product-category-small">${prod.subCategory || prod.category}</div>
-                <a href="product.html?id=${prod.id}">
+                <a href="product.html?id=${currentId}">
                     <h3>${prod.name}</h3>
                 </a>
                 <div class="price-wrapper" style="margin-bottom: 0;">
@@ -884,11 +891,11 @@ async function renderProductGrid(containerId) {
 
 async function initProductPage() {
     const urlParams = new URLSearchParams(window.location.search);
-    const prodId = parseInt(urlParams.get('id'));
+    const prodId = urlParams.get('id');
     if (!prodId) return;
 
     const products = await loadProducts();
-    const prod = products.find(p => p.id === prodId || p._id === prodId);
+    const prod = products.find(p => (p._id || p.id).toString() === prodId.toString());
     if (!prod) return;
 
     // Update Meta

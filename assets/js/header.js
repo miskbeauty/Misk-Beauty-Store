@@ -31,7 +31,8 @@ function getDynamicNavHTML() {
 
     parents.forEach(p => {
         // Find children that are also marked to show in header
-        const children = headerCats.filter(c => c.parentId == p.id);
+        const pId = p._id || p.id;
+        const children = headerCats.filter(c => c.parentId && c.parentId == pId);
 
         if (children.length > 0) {
             html += `
