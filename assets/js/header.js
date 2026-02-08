@@ -11,7 +11,7 @@ function getDynamicNavHTML() {
     }
 
     // Filter categories to show in header
-    const headerCats = categories.filter(c => c.showInHeader === 'true');
+    const headerCats = (categories || []).filter(c => String(c.showInHeader) === 'true' || c.showInHeader === true);
 
     // Sort all by priority descending
     headerCats.sort((a, b) => (b.priority || 0) - (a.priority || 0));

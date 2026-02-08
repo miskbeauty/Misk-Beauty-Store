@@ -744,32 +744,19 @@ async function loadProducts() {
         const response = await fetch('/api/products');
         const data = await response.json();
         if (data.success && data.products) {
-            // Even if empty, we trust the API result more than legacy storage
-            if (data.products.length > 0) {
-                localStorage.setItem('misk_products', JSON.stringify(data.products));
-            }
+            // Always sync fresh data to LocalStorage to avoid stale mocks
+            localStorage.setItem('misk_products', JSON.stringify(data.products));
             return data.products;
         }
     } catch (e) {
         console.warn("فشل تحميل المنتجات من الخادم، يتم استخدام البيانات المحلية المؤقتة.");
     }
 
-    // Fallback if API fails or is empty
-    let products = JSON.parse(localStorage.getItem('misk_products'));
-    if (!products || products.length === 0) {
-        products = [
-            {
-                id: 1,
-                name: "عطر مسك إيطالي فاخر",
-                slug: "premium-italian-musk",
-                category: "عطور",
-                price: 150,
-                images: ["assets/images/1745215944148877862.png"],
-                desc: "<p>عطر مسك إيطالي فاخر يدوم طويلاً.</p>"
-            }
-        ];
-    }
-    return products;
+    // Fallback if API fails
+    const localProducts = localStorage.getItem('misk_products');
+    if (localProducts) return JSON.parse(localProducts);
+
+    return []; // Return empty if absolutely nothing found
 }
 
 async function loadCategories() {
@@ -783,7 +770,8 @@ async function loadCategories() {
     } catch (e) {
         console.warn("Error loading categories from API:", e);
     }
-    return JSON.parse(localStorage.getItem('misk_categories')) || [];
+    const localCats = localStorage.getItem('misk_categories');
+    return localCats ? JSON.parse(localCats) : [];
 }
 
 async function loadSettings() {

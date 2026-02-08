@@ -19,7 +19,7 @@ module.exports = async (req, res) => {
             const product = req.body;
             // Remove any empty or legacy IDs to let MongoDB generate fresh _id
             delete product._id;
-            if (!product.id || isNaN(product.id)) delete product.id;
+            if (product.id && (isNaN(product.id) || product.id === '')) delete product.id;
 
             const result = await products.insertOne(product);
             res.status(201).json({ success: true, productId: result.insertedId });

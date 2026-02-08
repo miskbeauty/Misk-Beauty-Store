@@ -22,13 +22,12 @@ module.exports = async (req, res) => {
             if (category.id && isNaN(category.id)) delete category.id;
 
             // Fix: parentId might be numeric or string (ObjectId)
-            if (category.parentId) {
-                if (!isNaN(category.parentId)) {
+            if (category.parentId && category.parentId !== 'null' && category.parentId !== "") {
+                if (!isNaN(category.parentId) && typeof category.parentId !== 'boolean') {
                     category.parentId = parseInt(category.parentId);
-                } else {
-                    // Keep as string if it's an ObjectId
-                    category.parentId = category.parentId;
                 }
+            } else {
+                category.parentId = null;
             }
 
             const result = await categories.insertOne(category);
@@ -59,10 +58,12 @@ module.exports = async (req, res) => {
             delete updateData.id;
 
             // Fix parentId in updateData
-            if (updateData.parentId) {
-                if (!isNaN(updateData.parentId)) {
+            if (updateData.parentId && updateData.parentId !== 'null' && updateData.parentId !== "") {
+                if (!isNaN(updateData.parentId) && typeof updateData.parentId !== 'boolean') {
                     updateData.parentId = parseInt(updateData.parentId);
                 }
+            } else {
+                updateData.parentId = null;
             }
 
             const result = await categories.updateOne(filter, { $set: updateData });

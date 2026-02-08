@@ -1341,6 +1341,7 @@
                 const data = await response.json();
                 if (data.success) {
                     mockCategories = data.categories;
+                    console.log("Categories loaded from API:", mockCategories);
                 }
             } catch (e) {
                 console.warn("API Fetch failed, using local storage fallback for categories:", e);
@@ -1375,13 +1376,14 @@
                 const currentCatId = cat._id || cat.id;
                 const parentName = cat.parentId ? (mockCategories.find(c => (c._id || c.id) == cat.parentId)?.name || '-') : 'رئيسي';
                 const tr = document.createElement('tr');
+                const isShown = String(cat.showInHeader) === 'true' || cat.showInHeader === true;
                 tr.innerHTML = `
                     <td><img src="${cat.image || 'https://placehold.co/40x40?text=Cat'}" style="width: 40px; height: 40px; border-radius: 5px; object-fit: cover;"></td>
                     <td style="${cat.isChild ? 'padding-right: 30px;' : 'font-weight: bold;'}">
                         ${cat.isChild ? '<i class="fas fa-level-down-alt fa-rotate-180" style="color: #ccc; margin-left: 5px;"></i>' : ''} ${cat.name}
                     </td>
                     <td>${parentName}</td>
-                    <td>${cat.showInHeader == 'true' ? '<span style="color: green;">نعم</span>' : '<span style="color: red;">لا</span>'}</td>
+                    <td>${isShown ? '<span style="color: green;">نعم</span>' : '<span style="color: red;">لا</span>'}</td>
                     <td>${cat.priority || 0}</td>
                     <td>
                         <button onclick="openCategoryModal(${cat.id || "'" + cat._id + "'"})" style="background:none; border:none; cursor:pointer; color: #2e7d32; margin-left: 10px;">
@@ -1408,7 +1410,13 @@
             // Populate Parent Dropdown
             const parentSelect = document.getElementById('cat-parent');
             parentSelect.innerHTML = '<option value="">بدون (تصنيف رئيسي)</option>';
-            mockCategories.filter(c => !c.parentId && (c.id != id && c._id != id)).forEach(p => {
+
+            // Permissive filter for parents: not having a parentId, or parentId is null/empty/string-null
+            mockCategories.filter(c => {
+                const hasNoParent = !c.parentId || c.parentId === 'null' || c.parentId === "";
+                const isNotSelf = (c.id != id && c._id != id);
+                return hasNoParent && isNotSelf;
+            }).forEach(p => {
                 const pId = p._id || p.id;
                 parentSelect.innerHTML += `<option value="${pId}">${p.name}</option>`;
             });
