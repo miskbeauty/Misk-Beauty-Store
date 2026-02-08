@@ -1278,16 +1278,32 @@
 
         // --- Product Management Logic ---
 
-        function renderProducts() {
+        async function renderProducts() {
             const tableBody = document.getElementById('products-table-body');
             if (!tableBody) return;
-            tableBody.innerHTML = '';
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</td></tr>';
 
             // Update Product Form Category Dropdowns based on dynamic categories
             updateProductCategoryDropdowns();
 
+            try {
+                const response = await fetch('/api/products');
+                const data = await response.json();
+                if (data.success) {
+                    mockProducts = data.products;
+                }
+            } catch (e) {
+                console.error("Error fetching products:", e);
+            }
+
             const sortedProducts = [...mockProducts].sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
+            if (sortedProducts.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">لا يوجد منتجات متاحة.</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = '';
             sortedProducts.forEach(prod => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -1300,10 +1316,10 @@
                     </td>
                     <td>${prod.stock}</td>
                     <td>
-                        <button onclick="openProductModal(${prod.id})" style="background:none; border:none; cursor:pointer; color: #2e7d32; margin-left: 10px;">
+                        <button onclick="openProductModal(${prod.id || "'" + prod._id + "'"})" style="background:none; border:none; cursor:pointer; color: #2e7d32; margin-left: 10px;">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button onclick="deleteProduct(${prod.id})" style="background:none; border:none; cursor:pointer; color: #d32f2f;">
+                        <button onclick="deleteProduct(${prod.id || "'" + prod._id + "'"})" style="background:none; border:none; cursor:pointer; color: #d32f2f;">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -1313,10 +1329,20 @@
         }
 
         // --- Category Management Logic ---
-        function renderCategories() {
+        async function renderCategories() {
             const tableBody = document.getElementById('categories-table-body');
             if (!tableBody) return;
-            tableBody.innerHTML = '';
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</td></tr>';
+
+            try {
+                const response = await fetch('/api/categories');
+                const data = await response.json();
+                if (data.success) {
+                    mockCategories = data.categories;
+                }
+            } catch (e) {
+                console.error("Error fetching categories:", e);
+            }
 
             // Hierarchical sorting (Parents first, then their children)
             const sortedCategories = [];
@@ -1333,6 +1359,12 @@
                 });
             });
 
+            if (sortedCategories.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">لا يوجد تصنيفات متاحة.</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = '';
             sortedCategories.forEach(cat => {
                 const parentName = cat.parentId ? (mockCategories.find(c => c.id == cat.parentId)?.name || '-') : 'رئيسي';
                 const tr = document.createElement('tr');
@@ -1345,10 +1377,10 @@
                     <td>${cat.showInHeader == 'true' ? '<span style="color: green;">نعم</span>' : '<span style="color: red;">لا</span>'}</td>
                     <td>${cat.priority || 0}</td>
                     <td>
-                        <button onclick="openCategoryModal(${cat.id})" style="background:none; border:none; cursor:pointer; color: #2e7d32; margin-left: 10px;">
+                        <button onclick="openCategoryModal(${cat.id || "'" + cat._id + "'"})" style="background:none; border:none; cursor:pointer; color: #2e7d32; margin-left: 10px;">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button onclick="deleteCategory(${cat.id})" style="background:none; border:none; cursor:pointer; color: #d32f2f;">
+                        <button onclick="deleteCategory(${cat.id || "'" + cat._id + "'"})" style="background:none; border:none; cursor:pointer; color: #d32f2f;">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -1369,12 +1401,12 @@
             // Populate Parent Dropdown
             const parentSelect = document.getElementById('cat-parent');
             parentSelect.innerHTML = '<option value="">بدون (تصنيف رئيسي)</option>';
-            mockCategories.filter(c => !c.parentId && c.id != id).forEach(p => {
+            mockCategories.filter(c => !c.parentId && (c.id != id && c._id != id)).forEach(p => {
                 parentSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`;
             });
 
             if (id) {
-                const cat = mockCategories.find(c => c.id == id);
+                const cat = mockCategories.find(c => c.id == id || c._id == id);
                 if (cat) {
                     document.getElementById('cat-name').value = cat.name;
                     document.getElementById('cat-parent').value = cat.parentId || '';
@@ -1399,11 +1431,27 @@
             { id: 4, title: 'سياسة الإرجاع', slug: 'returns', content: '<p>يمكن إرجاع المنتجات خلال 7 أيام من الاستلام بشرط أن تكون بحالتها الأصلية.</p>', isActive: true }
         ];
 
-        function renderPages() {
+        async function renderPages() {
             const tableBody = document.getElementById('pages-table-body');
             if (!tableBody) return;
-            tableBody.innerHTML = '';
+            tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</td></tr>';
 
+            try {
+                const response = await fetch('/api/pages');
+                const data = await response.json();
+                if (data.success) {
+                    mockPages = data.pages;
+                }
+            } catch (e) {
+                console.error("Error fetching pages:", e);
+            }
+
+            if (mockPages.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;">لا يوجد صفحات متاحة.</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = '';
             mockPages.forEach(page => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -1411,10 +1459,10 @@
                     <td>/page.html?slug=${page.slug}</td>
                     <td>${page.isActive ? '<span class="status-badge" style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 5px; font-size: 0.8rem;">نشط</span>' : '<span class="status-badge" style="background: #f5f5f5; color: #666; padding: 4px 8px; border-radius: 5px; font-size: 0.8rem;">مسودة</span>'}</td>
                     <td>
-                        <button onclick="openPageModal(${page.id})" style="background:none; border:none; cursor:pointer; color: #2e7d32; margin-left: 10px;">
+                        <button onclick="openPageModal(${page.id || "'" + page._id + "'"})" style="background:none; border:none; cursor:pointer; color: #2e7d32; margin-left: 10px;">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button onclick="deletePage(${page.id})" style="background:none; border:none; cursor:pointer; color: #d32f2f;">
+                        <button onclick="deletePage(${page.id || "'" + page._id + "'"})" style="background:none; border:none; cursor:pointer; color: #d32f2f;">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -1431,7 +1479,7 @@
             pageQuill.setContents([]);
 
             if (id) {
-                const page = mockPages.find(p => p.id == id);
+                const page = mockPages.find(p => p.id == id || p._id == id);
                 if (page) {
                     document.getElementById('page-title').value = page.title;
                     document.getElementById('page-slug').value = page.slug;
@@ -1442,44 +1490,61 @@
             document.getElementById('page-modal').style.display = 'flex';
         }
 
-        function handlePageSubmit(e) {
+        async function handlePageSubmit(e) {
             e.preventDefault();
             const id = document.getElementById('page-id').value;
             const newPage = {
-                id: id ? parseInt(id) : Date.now(),
+                id: id && !isNaN(id) ? parseInt(id) : undefined,
+                _id: id && isNaN(id) ? id : undefined,
                 title: document.getElementById('page-title').value,
                 slug: document.getElementById('page-slug').value,
                 isActive: document.getElementById('page-is-active').checked,
                 content: pageQuill.root.innerHTML
             };
 
-            if (id) {
-                const index = mockPages.findIndex(p => p.id == parseInt(id));
-                mockPages[index] = newPage;
-                alert('تم تحديث الصفحة بنجاح');
-            } else {
-                mockPages.push(newPage);
-                alert('تم إضافة الصفحة بنجاح');
-            }
+            try {
+                const method = id ? 'PUT' : 'POST';
+                const response = await fetch('/api/pages', {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newPage)
+                });
 
-            localStorage.setItem('misk_pages', JSON.stringify(mockPages));
-            closeModal('page-modal');
-            renderPages();
+                if (response.ok) {
+                    alert(id ? 'تم تحديث الصفحة بنجاح' : 'تم إضافة الصفحة بنجاح');
+                    closeModal('page-modal');
+                    renderPages();
+                } else {
+                    alert('خطأ في حفظ الصفحة');
+                }
+            } catch (e) {
+                console.error("Error saving page:", e);
+                alert('فشل الاتصال بالخادم');
+            }
         }
 
-        function deletePage(id) {
+        async function deletePage(id) {
             if (confirm('هل أنت متأكد من حذف هذه الصفحة؟')) {
-                mockPages = mockPages.filter(p => p.id !== id);
-                localStorage.setItem('misk_pages', JSON.stringify(mockPages));
-                renderPages();
+                try {
+                    const response = await fetch(`/api/pages?id=${id}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        renderPages();
+                    } else {
+                        alert('خطأ في حذف الصفحة');
+                    }
+                } catch (e) {
+                    console.error("Error deleting page:", e);
+                    alert('فشل الاتصال بالخادم');
+                }
             }
         }
 
-        function handleCategorySubmit(e) {
+        async function handleCategorySubmit(e) {
             e.preventDefault();
             const id = document.getElementById('category-id').value;
             const newCat = {
-                id: id ? parseInt(id) : Date.now(),
+                id: id && !isNaN(id) ? parseInt(id) : undefined,
+                _id: id && isNaN(id) ? id : undefined,
                 name: document.getElementById('cat-name').value,
                 parentId: document.getElementById('cat-parent').value ? parseInt(document.getElementById('cat-parent').value) : null,
                 priority: parseInt(document.getElementById('cat-priority').value) || 0,
@@ -1488,27 +1553,42 @@
                 staticHeader: catQuill.root.innerHTML
             };
 
-            if (id) {
-                const index = mockCategories.findIndex(c => c.id == parseInt(id));
-                mockCategories[index] = newCat;
-            } else {
-                mockCategories.push(newCat);
-            }
+            try {
+                const method = id ? 'PUT' : 'POST';
+                const response = await fetch('/api/categories', {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newCat)
+                });
 
-            localStorage.setItem('misk_categories', JSON.stringify(mockCategories));
-            closeModal('category-modal');
-            renderCategories();
+                if (response.ok) {
+                    alert(id ? 'تم تحديث التصنيف بنجاح' : 'تم إضافة التصنيف بنجاح');
+                    closeModal('category-modal');
+                    renderCategories();
+                    updateProductCategoryDropdowns();
+                } else {
+                    alert('خطأ في حفظ التصنيف');
+                }
+            } catch (e) {
+                console.error("Error saving category:", e);
+                alert('فشل الاتصال بالخادم');
+            }
         }
 
-        function deleteCategory(id) {
+        async function deleteCategory(id) {
             if (confirm('هل أنت متأكد من حذف هذا التصنيف؟ سيتم فك ارتباط الفروع به.')) {
-                mockCategories = mockCategories.filter(c => c.id != id);
-                // Also update children to have no parent
-                mockCategories.forEach(c => {
-                    if (c.parentId == id) c.parentId = null;
-                });
-                localStorage.setItem('misk_categories', JSON.stringify(mockCategories));
-                renderCategories();
+                try {
+                    const response = await fetch(`/api/categories?id=${id}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        renderCategories();
+                        updateProductCategoryDropdowns();
+                    } else {
+                        alert('خطأ في حذف التصنيف');
+                    }
+                } catch (e) {
+                    console.error("Error deleting category:", e);
+                    alert('فشل الاتصال بالخادم');
+                }
             }
         }
 
@@ -1641,9 +1721,16 @@
             link.click();
         }
 
-        function renderSettings() {
-            const saved = localStorage.getItem('misk_settings');
-            if (saved) storeSettings = JSON.parse(saved);
+        async function renderSettings() {
+            try {
+                const response = await fetch('/api/settings');
+                const data = await response.json();
+                if (data.success && data.settings) {
+                    storeSettings = data.settings;
+                }
+            } catch (e) {
+                console.error("Error fetching settings:", e);
+            }
 
             document.getElementById('set-store-name').value = storeSettings.name || "";
             document.getElementById('set-whatsapp').value = storeSettings.whatsapp || "";
@@ -1676,25 +1763,43 @@
             }
         }
 
-        function handleSettingsSubmit(e) {
+        async function handleSettingsSubmit(e) {
             e.preventDefault();
-            storeSettings.name = document.getElementById('set-store-name').value;
-            storeSettings.whatsapp = document.getElementById('set-whatsapp').value;
-            storeSettings.description = document.getElementById('set-store-desc').value;
-            storeSettings.instagram = document.getElementById('set-instagram').value;
-            storeSettings.tiktok = document.getElementById('set-tiktok').value;
-            storeSettings.facebook = document.getElementById('set-facebook').value;
-            storeSettings.freeShippingThreshold = parseInt(document.getElementById('set-free-shipping-threshold').value);
-            storeSettings.metaTitle = document.getElementById('set-meta-title').value;
-            storeSettings.metaDescription = document.getElementById('set-meta-desc').value;
-            storeSettings.metaKeywords = document.getElementById('set-meta-keywords').value;
-            storeSettings.pointsExpiryDays = parseInt(document.getElementById('set-points-expiry').value) || 365;
-            storeSettings.pointsPerReview = parseInt(document.getElementById('set-points-review').value) || 50;
-            storeSettings.privacyPolicy = privacyQuill.root.innerHTML;
-            storeSettings.termsOfUse = termsQuill.root.innerHTML;
+            const updated = {
+                ...storeSettings,
+                name: document.getElementById('set-store-name').value,
+                whatsapp: document.getElementById('set-whatsapp').value,
+                description: document.getElementById('set-store-desc').value,
+                instagram: document.getElementById('set-instagram').value,
+                tiktok: document.getElementById('set-tiktok').value,
+                facebook: document.getElementById('set-facebook').value,
+                freeShippingThreshold: parseInt(document.getElementById('set-free-shipping-threshold').value) || 0,
+                metaTitle: document.getElementById('set-meta-title').value,
+                metaDescription: document.getElementById('set-meta-desc').value,
+                metaKeywords: document.getElementById('set-meta-keywords').value,
+                pointsExpiryDays: parseInt(document.getElementById('set-points-expiry').value) || 365,
+                pointsPerReview: parseInt(document.getElementById('set-points-review').value) || 50,
+                privacyPolicy: privacyQuill.root.innerHTML,
+                termsOfUse: termsQuill.root.innerHTML
+            };
 
-            localStorage.setItem('misk_settings', JSON.stringify(storeSettings));
-            alert('تم حفظ الإعدادات بنجاح وسيتم تطبيقها في الموقع.');
+            try {
+                const response = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updated)
+                });
+
+                if (response.ok) {
+                    storeSettings = updated;
+                    alert('تم حفظ الإعدادات بنجاح وسيتم تطبيقها في الموقع.');
+                } else {
+                    alert('خطأ في حفظ الإعدادات');
+                }
+            } catch (e) {
+                console.error("Error saving settings:", e);
+                alert('فشل الاتصال بالخادم');
+            }
         }
 
         function updateProductCategoryDropdowns() {
@@ -1747,7 +1852,7 @@
             quill.setContents([]);
 
             if (id) {
-                const prod = mockProducts.find(p => p.id === id);
+                const prod = mockProducts.find(p => p.id == id || p._id == id);
                 if (prod) {
                     document.getElementById('prod-name').value = prod.name;
                     document.getElementById('prod-slug').value = prod.slug || '';
@@ -1787,11 +1892,12 @@
             document.getElementById('product-modal').style.display = 'flex';
         }
 
-        function handleProductSubmit(e) {
+        async function handleProductSubmit(e) {
             e.preventDefault();
             const id = document.getElementById('product-id').value;
             const newProd = {
-                id: id ? parseInt(id) : Date.now(),
+                id: id && !isNaN(id) ? parseInt(id) : undefined,
+                _id: id && isNaN(id) ? id : undefined,
                 name: document.getElementById('prod-name').value,
                 slug: document.getElementById('prod-slug').value,
                 metaTitle: document.getElementById('prod-meta-title').value,
@@ -1807,27 +1913,40 @@
                 desc: quill.root.innerHTML
             };
 
-            if (id) {
-                const index = mockProducts.findIndex(p => p.id === parseInt(id));
-                mockProducts[index] = newProd;
-                alert('تم التحديث بنجاح');
-            } else {
-                mockProducts.push(newProd);
-                alert('تم الإضافة بنجاح');
+            try {
+                const method = id ? 'PUT' : 'POST';
+                const response = await fetch('/api/products', {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newProd)
+                });
+
+                if (response.ok) {
+                    alert(id ? 'تم التحديث بنجاح' : 'تم الإضافة بنجاح');
+                    closeModal('product-modal');
+                    renderProducts();
+                } else {
+                    alert('خطأ في حفظ المنتج');
+                }
+            } catch (e) {
+                console.error("Error saving product:", e);
+                alert('فشل الاتصال بالخادم');
             }
-
-            // --- PERSISTENCE ---
-            localStorage.setItem('misk_products', JSON.stringify(mockProducts));
-
-            closeModal('product-modal');
-            renderProducts();
         }
 
-        function deleteProduct(id) {
+        async function deleteProduct(id) {
             if (confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
-                mockProducts = mockProducts.filter(p => p.id !== id);
-                localStorage.setItem('misk_products', JSON.stringify(mockProducts));
-                renderProducts();
+                try {
+                    const response = await fetch(`/api/products?id=${id}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        renderProducts();
+                    } else {
+                        alert('خطأ في حذف المنتج');
+                    }
+                } catch (e) {
+                    console.error("Error deleting product:", e);
+                    alert('فشل الاتصال بالخادم');
+                }
             }
         }
 
@@ -1860,36 +1979,30 @@
         }
 
         // Initialize
-        window.onclick = function (event) {
-            if (event.target.classList.contains('modal-overlay')) {
-                event.target.style.display = 'none';
+        async function initDashboard() {
+            verifyAdminSession();
+
+            // Load essential data from API
+            try {
+                const [catRes, setRes] = await Promise.all([
+                    fetch('/api/categories').then(r => r.json()),
+                    fetch('/api/settings').then(r => r.json())
+                ]);
+
+                if (catRes.success) mockCategories = catRes.categories;
+                if (setRes.success && setRes.settings) storeSettings = setRes.settings;
+
+            } catch (e) {
+                console.error("Initialization error:", e);
             }
+
+            renderOrders();
+            renderProducts();
+            renderCategories();
+            renderPages();
         }
 
-        // Load persisted data
-        const savedProds = localStorage.getItem('misk_products');
-        if (savedProds) mockProducts = JSON.parse(savedProds);
-
-        const savedCats = localStorage.getItem('misk_categories');
-        if (savedCats) {
-            mockCategories = JSON.parse(savedCats);
-        } else {
-            // Initial Seed if empty
-            mockCategories = [
-                { id: 1, name: "عناية وجمال", parentId: null, priority: 10, showInHeader: "true", image: null, staticHeader: "" },
-                { id: 2, name: "عطور", parentId: null, priority: 9, showInHeader: "true", image: null, staticHeader: "" },
-                { id: 3, name: "مكياج", parentId: 1, priority: 0, showInHeader: "true", image: null, staticHeader: "" },
-                { id: 4, name: "Perfumes", parentId: null, priority: 8, showInHeader: "true", image: null, staticHeader: "<h1>Perfumes Section</h1><p>Explore our exclusive collection of premium perfumes.</p>" },
-                { id: 5, name: "French Perfumes", parentId: 4, priority: 0, showInHeader: "true", image: null, staticHeader: "<h1>French Perfumes</h1><p>The finest scents from Paris.</p>" }
-            ];
-            localStorage.setItem('misk_categories', JSON.stringify(mockCategories));
-        }
-
-        verifyAdminSession();
-        renderOrders();
-        renderProducts();
-        renderCategories();
-        renderPages();
+        initDashboard();
 
         // Initialize Page Editor
         pageQuill = new Quill('#page-editor', {

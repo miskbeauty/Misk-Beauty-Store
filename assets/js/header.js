@@ -116,5 +116,8 @@ function injectHeader() {
     }
 }
 
-// Execute immediately
+// Export to window so main.js can re-inject after loading fresh API data
+window.injectHeader = injectHeader;
+
+// Execute immediately for initial render from cache
 injectHeader();

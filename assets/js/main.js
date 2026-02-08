@@ -660,10 +660,39 @@ function applyGlobalSettings() {
     }
 }
 
-// Initialization
-startSlideShow();
-updateCartUI(); // Ensure UI reflects localStorage state on load
-applyGlobalSettings(); // Apply store-wide settings
+// Final Initialization
+async function initSite() {
+    startSlideShow();
+    updateCartUI();
+
+    // Load categories and settings from API
+    await Promise.all([loadSettings(), loadCategories()]);
+
+    // Initial apply from cache while waiting or if API failed
+    applyGlobalSettings();
+
+    // Re-trigger header injection to reflect new category data
+    if (window.injectHeader) {
+        window.injectHeader();
+    }
+
+    const path = window.location.pathname;
+
+    // Page-specific initialization
+    if (path.includes('product.html')) {
+        if (typeof initProductPage === 'function') await initProductPage();
+        if (typeof initProductReviews === 'function') initProductReviews();
+    }
+
+    // Check if we are on index/category page
+    if (document.getElementById('productGrid') || document.getElementById('featuredProductsGrid') || document.getElementById('offersGrid')) {
+        renderProductGrid('productGrid');
+        renderProductGrid('featuredProductsGrid');
+        renderProductGrid('offersGrid');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', initSite);
 
 // --- Search Functionality ---
 
@@ -712,7 +741,7 @@ async function loadProducts() {
     try {
         const response = await fetch('/api/products');
         const data = await response.json();
-        if (data.success && data.products.length > 0) {
+        if (data.success && data.products && data.products.length > 0) {
             return data.products;
         }
     } catch (e) {
@@ -735,6 +764,35 @@ async function loadProducts() {
         ];
     }
     return products;
+}
+
+async function loadCategories() {
+    try {
+        const response = await fetch('/api/categories');
+        const data = await response.json();
+        if (data.success && data.categories) {
+            localStorage.setItem('misk_categories', JSON.stringify(data.categories));
+            return data.categories;
+        }
+    } catch (e) {
+        console.warn("Error loading categories from API:", e);
+    }
+    return JSON.parse(localStorage.getItem('misk_categories')) || [];
+}
+
+async function loadSettings() {
+    try {
+        const response = await fetch('/api/settings');
+        const data = await response.json();
+        if (data.success && data.settings) {
+            localStorage.setItem('misk_settings', JSON.stringify(data.settings));
+            applyGlobalSettings(); // Re-apply with fresh data
+            return data.settings;
+        }
+    } catch (e) {
+        console.warn("Error loading settings from API:", e);
+    }
+    return JSON.parse(localStorage.getItem('misk_settings')) || {};
 }
 
 function getProductCardHTML(prod) {
@@ -1300,12 +1358,5 @@ function isVerifiedBuyer(productId, userId) {
     });
 }
 
-// Add to DOMContentLoaded
-document.addEventListener('DOMContentLoaded', () => {
-    // ... existing init ...
-    const path = window.location.pathname;
-    if (path.includes('product.html')) {
-        initProductReviews();
-    }
-});
+// Initialized via initSite on DOMContentLoaded
 
