@@ -1283,9 +1283,6 @@
             if (!tableBody) return;
             tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</td></tr>';
 
-            // Update Product Form Category Dropdowns based on dynamic categories
-            updateProductCategoryDropdowns();
-
             try {
                 const response = await fetch('/api/products');
                 const data = await response.json();
@@ -1293,8 +1290,13 @@
                     mockProducts = data.products;
                 }
             } catch (e) {
-                console.error("Error fetching products:", e);
+                console.warn("API Fetch failed, using local storage fallback for products:", e);
+                const localData = localStorage.getItem('misk_products');
+                if (localData) mockProducts = JSON.parse(localData);
             }
+
+            // Update Product Form Category Dropdowns based on current categories (even if empty)
+            updateProductCategoryDropdowns();
 
             const sortedProducts = [...mockProducts].sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
@@ -1341,7 +1343,9 @@
                     mockCategories = data.categories;
                 }
             } catch (e) {
-                console.error("Error fetching categories:", e);
+                console.warn("API Fetch failed, using local storage fallback for categories:", e);
+                const localData = localStorage.getItem('misk_categories');
+                if (localData) mockCategories = JSON.parse(localData);
             }
 
             // Hierarchical sorting (Parents first, then their children)
@@ -1351,7 +1355,9 @@
 
             parents.forEach(p => {
                 sortedCategories.push(p);
-                const children = mockCategories.filter(c => c.parentId == p.id);
+                const pId = p._id || p.id;
+                // Fix: Exact comparison to avoid null == undefined matching parents
+                const children = mockCategories.filter(c => c.parentId && c.parentId == pId);
                 children.sort((a, b) => (b.priority || 0) - (a.priority || 0));
                 children.forEach(c => {
                     c.isChild = true;
@@ -1987,16 +1993,21 @@
 
             // Load essential data from API
             try {
-                const [catRes, setRes] = await Promise.all([
-                    fetch('/api/categories').then(r => r.json()),
-                    fetch('/api/settings').then(r => r.json())
-                ]);
+                const catRes = await fetch('/api/categories').then(r => r.json()).catch(err => ({ success: false, error: err }));
+                const setRes = await fetch('/api/settings').then(r => r.json()).catch(err => ({ success: false, error: err }));
 
-                if (catRes.success) mockCategories = catRes.categories;
-                if (setRes.success && setRes.settings) storeSettings = setRes.settings;
+                if (catRes.success) {
+                    mockCategories = catRes.categories;
+                } else if (localStorage.getItem('misk_categories')) {
+                    mockCategories = JSON.parse(localStorage.getItem('misk_categories'));
+                }
+
+                if (setRes.success && setRes.settings) {
+                    storeSettings = setRes.settings;
+                }
 
             } catch (e) {
-                console.error("Initialization error:", e);
+                console.warn("Initialization data fetch partially failed:", e);
             }
 
             renderOrders();

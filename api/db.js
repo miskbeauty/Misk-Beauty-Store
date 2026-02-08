@@ -7,14 +7,23 @@ async function connectToDatabase() {
         return cachedDb;
     }
 
-    const client = await MongoClient.connect(process.env.MONGODB_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    });
+    if (!process.env.MONGODB_URI) {
+        console.error("MONGODB_URI is not defined in environment variables");
+        throw new Error("Missing MONGODB_URI");
+    }
 
-    const db = client.db('misk_beauty');
-    cachedDb = db;
-    return db;
+    try {
+        const client = await MongoClient.connect(process.env.MONGODB_URI);
+        // Use DB_NAME from env or default to 'misk_beauty'
+        const dbName = process.env.DB_NAME || 'misk_beauty';
+        const db = client.db(dbName);
+        console.log(`Connected to MongoDB database: ${dbName}`);
+        cachedDb = db;
+        return db;
+    } catch (e) {
+        console.error("MongoDB connection error:", e);
+        throw e;
+    }
 }
 
 module.exports = connectToDatabase;
