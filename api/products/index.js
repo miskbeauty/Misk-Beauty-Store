@@ -15,9 +15,12 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'POST') {
-        // Admin check logic should be here
         try {
             const product = req.body;
+            // Remove any empty or legacy IDs to let MongoDB generate fresh _id
+            delete product._id;
+            if (!product.id || isNaN(product.id)) delete product.id;
+
             const result = await products.insertOne(product);
             res.status(201).json({ success: true, productId: result.insertedId });
         } catch (e) {
@@ -27,10 +30,35 @@ module.exports = async (req, res) => {
 
     if (req.method === 'PUT') {
         try {
-            const { id, ...updateData } = req.body;
-            await products.updateOne({ _id: new ObjectId(id) }, { $set: updateData });
+            const { id, _id, ...updateData } = req.body;
+
+            let filter = {};
+            if (_id) {
+                filter = { _id: new ObjectId(_id) };
+            } else if (id) {
+                // Support both numeric ID and ObjectId passed as 'id'
+                if (!isNaN(id)) {
+                    filter = { id: parseInt(id) };
+                } else {
+                    filter = { _id: new ObjectId(id) };
+                }
+            }
+
+            if (Object.keys(filter).length === 0) {
+                return res.status(400).json({ message: 'Invalid ID provided' });
+            }
+
+            // Cleanup updateData to prevent saving IDs as values
+            delete updateData._id;
+            delete updateData.id;
+
+            const result = await products.updateOne(filter, { $set: updateData });
+            if (result.matchedCount === 0) {
+                return res.status(404).json({ message: 'Product not found' });
+            }
             res.status(200).json({ success: true });
         } catch (e) {
+            console.error("PUT Error:", e);
             res.status(500).json({ message: 'Error updating product' });
         }
     }
@@ -38,7 +66,15 @@ module.exports = async (req, res) => {
     if (req.method === 'DELETE') {
         try {
             const { id } = req.query;
-            await products.deleteOne({ _id: new ObjectId(id) });
+            if (!id) return res.status(400).json({ message: 'Missing ID' });
+
+            let deleteResult;
+            if (!isNaN(id)) {
+                deleteResult = await products.deleteOne({ id: parseInt(id) });
+            } else {
+                deleteResult = await products.deleteOne({ _id: new ObjectId(id) });
+            }
+
             res.status(200).json({ success: true });
         } catch (e) {
             res.status(500).json({ message: 'Error deleting product' });

@@ -17,9 +17,19 @@ module.exports = async (req, res) => {
     if (req.method === 'POST') {
         try {
             const category = req.body;
-            // Ensure ID is numeric if it's coming from dashboard as numeric
-            if (category.id) category.id = parseInt(category.id);
-            if (category.parentId) category.parentId = parseInt(category.parentId);
+            // Clean up and standardize
+            delete category._id;
+            if (category.id && isNaN(category.id)) delete category.id;
+
+            // Fix: parentId might be numeric or string (ObjectId)
+            if (category.parentId) {
+                if (!isNaN(category.parentId)) {
+                    category.parentId = parseInt(category.parentId);
+                } else {
+                    // Keep as string if it's an ObjectId
+                    category.parentId = category.parentId;
+                }
+            }
 
             const result = await categories.insertOne(category);
             res.status(201).json({ success: true, categoryId: result.insertedId });
@@ -35,14 +45,33 @@ module.exports = async (req, res) => {
             if (_id) {
                 filter = { _id: new ObjectId(_id) };
             } else if (id) {
-                filter = { id: parseInt(id) };
+                if (!isNaN(id)) {
+                    filter = { id: parseInt(id) };
+                } else {
+                    filter = { _id: new ObjectId(id) };
+                }
             } else {
                 return res.status(400).json({ message: 'Missing ID' });
             }
 
-            await categories.updateOne(filter, { $set: updateData });
+            // Clean up updateData
+            delete updateData._id;
+            delete updateData.id;
+
+            // Fix parentId in updateData
+            if (updateData.parentId) {
+                if (!isNaN(updateData.parentId)) {
+                    updateData.parentId = parseInt(updateData.parentId);
+                }
+            }
+
+            const result = await categories.updateOne(filter, { $set: updateData });
+            if (result.matchedCount === 0) {
+                return res.status(404).json({ message: 'Category not found' });
+            }
             res.status(200).json({ success: true });
         } catch (e) {
+            console.error("PUT Error:", e);
             res.status(500).json({ message: 'Error updating category' });
         }
     }
@@ -52,9 +81,10 @@ module.exports = async (req, res) => {
             const { id } = req.query;
             if (!id) return res.status(400).json({ message: 'Missing ID' });
 
-            // Try numeric ID first (from dashboard) then Mongo sub ID
-            let deleteResult = await categories.deleteOne({ id: parseInt(id) });
-            if (deleteResult.deletedCount === 0) {
+            let deleteResult;
+            if (!isNaN(id)) {
+                deleteResult = await categories.deleteOne({ id: parseInt(id) });
+            } else {
                 deleteResult = await categories.deleteOne({ _id: new ObjectId(id) });
             }
 

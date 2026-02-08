@@ -1366,7 +1366,8 @@
 
             tableBody.innerHTML = '';
             sortedCategories.forEach(cat => {
-                const parentName = cat.parentId ? (mockCategories.find(c => c.id == cat.parentId)?.name || '-') : 'رئيسي';
+                const currentCatId = cat._id || cat.id;
+                const parentName = cat.parentId ? (mockCategories.find(c => (c._id || c.id) == cat.parentId)?.name || '-') : 'رئيسي';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><img src="${cat.image || 'https://placehold.co/40x40?text=Cat'}" style="width: 40px; height: 40px; border-radius: 5px; object-fit: cover;"></td>
@@ -1402,7 +1403,8 @@
             const parentSelect = document.getElementById('cat-parent');
             parentSelect.innerHTML = '<option value="">بدون (تصنيف رئيسي)</option>';
             mockCategories.filter(c => !c.parentId && (c.id != id && c._id != id)).forEach(p => {
-                parentSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+                const pId = p._id || p.id;
+                parentSelect.innerHTML += `<option value="${pId}">${p.name}</option>`;
             });
 
             if (id) {
@@ -1546,7 +1548,7 @@
                 id: id && !isNaN(id) ? parseInt(id) : undefined,
                 _id: id && isNaN(id) ? id : undefined,
                 name: document.getElementById('cat-name').value,
-                parentId: document.getElementById('cat-parent').value ? parseInt(document.getElementById('cat-parent').value) : null,
+                parentId: document.getElementById('cat-parent').value || null,
                 priority: parseInt(document.getElementById('cat-priority').value) || 0,
                 showInHeader: document.getElementById('cat-show-header').value,
                 image: catImageBase64,
@@ -1814,8 +1816,8 @@
             const parents = mockCategories.filter(c => !c.parentId);
             parents.forEach(p => {
                 mainSel.innerHTML += `<option value="${p.name}">${p.name}</option>`;
-
-                const children = mockCategories.filter(c => c.parentId == p.id);
+                const pId = p._id || p.id;
+                const children = mockCategories.filter(c => c.parentId == pId);
                 if (children.length > 0) {
                     let group = `<optgroup label="${p.name}">`;
                     children.forEach(c => {
@@ -1832,7 +1834,8 @@
             const subVal = document.getElementById('prod-sub-category').value;
             const subCatObj = mockCategories.find(c => c.name == subVal && c.parentId);
             if (subCatObj) {
-                const parentCat = mockCategories.find(c => c.id == subCatObj.parentId);
+                const searchId = subCatObj.parentId;
+                const parentCat = mockCategories.find(c => (c._id || c.id) == searchId);
                 if (parentCat) {
                     document.getElementById('prod-category').value = parentCat.name;
                 }
