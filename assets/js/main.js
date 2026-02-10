@@ -622,6 +622,17 @@ function applyGlobalSettings() {
         if (settings.tiktok) {
             socialLinks.insertAdjacentHTML('beforeend', `<a href="${settings.tiktok}" target="_blank"><i class="fab fa-tiktok"></i></a>`);
         }
+
+        // Add phone number after social links if not already present
+        if (!document.getElementById('footer-phone')) {
+            const phoneEl = document.createElement('p');
+            phoneEl.id = 'footer-phone';
+            phoneEl.style.marginTop = '15px';
+            phoneEl.style.fontSize = '1rem';
+            phoneEl.style.fontWeight = '500';
+            phoneEl.innerHTML = `<i class="fas fa-phone-alt" style="margin-left: 8px; color: var(--primary-color);"></i> جوال رقم: 0599600611`;
+            socialLinks.parentNode.appendChild(phoneEl);
+        }
     }
 
     // 4. Guest Teaser & Auth UI
