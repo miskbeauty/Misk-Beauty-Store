@@ -5,6 +5,11 @@ module.exports = async (req, res) => {
     const db = await connectToDatabase();
     const products = db.collection('products');
 
+    // Prevent caching for all methods
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     if (req.method === 'GET') {
         try {
             const allProducts = await products.find({}).sort({ priority: -1 }).toArray();

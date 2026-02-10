@@ -4,6 +4,11 @@ module.exports = async (req, res) => {
     const db = await connectToDatabase();
     const settings = db.collection('settings');
 
+    // Prevent caching for all methods
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     if (req.method === 'GET') {
         try {
             // We only expect one settings document

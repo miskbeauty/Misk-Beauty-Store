@@ -49,7 +49,6 @@ const miniCartTotal = document.getElementById('miniCartTotal');
 // Search Elements
 const searchInput = document.getElementById('searchInput');
 const noResultsMessage = document.getElementById('noResultsMessage');
-const productCards = document.querySelectorAll('.product-card');
 
 // Slider Elements
 const slides = document.querySelectorAll('.slide');
@@ -703,7 +702,10 @@ if (searchInput) {
         const searchTerm = e.target.value.toLowerCase().trim();
         let anyVisible = false;
 
-        productCards.forEach(card => {
+        // Re-query cards every time to ensure we catch dynamically added products
+        const currentCards = document.querySelectorAll('.product-card');
+
+        currentCards.forEach(card => {
             const productName = card.getAttribute('data-name').toLowerCase();
             if (productName.includes(searchTerm)) {
                 card.style.display = 'block';
@@ -741,7 +743,7 @@ document.addEventListener('click', (e) => {
 
 async function loadProducts() {
     try {
-        const response = await fetch('/api/products');
+        const response = await fetch(`/api/products?t=${Date.now()}`);
         const data = await response.json();
         if (data.success && data.products) {
             // Always sync fresh data to LocalStorage to avoid stale mocks
@@ -761,7 +763,7 @@ async function loadProducts() {
 
 async function loadCategories() {
     try {
-        const response = await fetch('/api/categories');
+        const response = await fetch(`/api/categories?t=${Date.now()}`);
         const data = await response.json();
         if (data.success && data.categories) {
             localStorage.setItem('misk_categories', JSON.stringify(data.categories));
@@ -776,7 +778,7 @@ async function loadCategories() {
 
 async function loadSettings() {
     try {
-        const response = await fetch('/api/settings');
+        const response = await fetch(`/api/settings?t=${Date.now()}`);
         const data = await response.json();
         if (data.success && data.settings) {
             localStorage.setItem('misk_settings', JSON.stringify(data.settings));
