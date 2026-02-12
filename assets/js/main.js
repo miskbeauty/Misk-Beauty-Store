@@ -663,33 +663,43 @@ function applyGlobalSettings() {
 
 // Final Initialization
 async function initSite() {
-    startSlideShow();
-    updateCartUI();
+    try {
+        console.log("Site initialization started...");
+        startSlideShow();
+        updateCartUI();
 
-    // Load categories and settings from API
-    await Promise.all([loadSettings(), loadCategories()]);
+        // Load categories and settings from API
+        await Promise.all([loadSettings(), loadCategories()]);
 
-    // Initial apply from cache while waiting or if API failed
-    applyGlobalSettings();
+        // Initial apply from cache while waiting or if API failed
+        applyGlobalSettings();
 
-    // Re-trigger header injection to reflect new category data
-    if (window.injectHeader) {
-        window.injectHeader();
-    }
+        // Re-trigger header injection to reflect new category data
+        if (window.injectHeader) {
+            window.injectHeader();
+        }
 
-    const path = window.location.pathname;
+        const path = window.location.pathname;
 
-    // Page-specific initialization
-    if (path.includes('product.html')) {
-        if (typeof initProductPage === 'function') await initProductPage();
-        if (typeof initProductReviews === 'function') initProductReviews();
-    }
+        // Page-specific initialization
+        if (path.includes('product.html')) {
+            if (typeof initProductPage === 'function') await initProductPage();
+            if (typeof initProductReviews === 'function') initProductReviews();
+        }
 
-    // Check if we are on index/category page
-    if (document.getElementById('productGrid') || document.getElementById('featuredProductsGrid') || document.getElementById('offersGrid')) {
-        renderProductGrid('productGrid');
-        renderProductGrid('featuredProductsGrid');
-        renderProductGrid('offersGrid');
+        // Check if we are on index/category page
+        if (document.getElementById('productGrid') || document.getElementById('featuredProductsGrid') || document.getElementById('offersGrid')) {
+            renderProductGrid('productGrid');
+            renderProductGrid('featuredProductsGrid');
+            renderProductGrid('offersGrid');
+        }
+        console.log("Site initialization completed successfully");
+    } catch (error) {
+        console.error("Critical site initialization error:", error);
+        // Fallback: try to render from cache anyway if API failed
+        applyGlobalSettings();
+        if (window.injectHeader) window.injectHeader();
+        if (document.getElementById('productGrid')) renderProductGrid('productGrid');
     }
 }
 
@@ -744,8 +754,10 @@ document.addEventListener('click', (e) => {
 async function loadProducts() {
     try {
         const response = await fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         if (data.success && data.products) {
+            console.log("Fresh products loaded from API");
             // Always sync fresh data to LocalStorage to avoid stale mocks
             localStorage.setItem('misk_products', JSON.stringify(data.products));
             return data.products;
@@ -764,8 +776,10 @@ async function loadProducts() {
 async function loadCategories() {
     try {
         const response = await fetch(`/api/categories?t=${Date.now()}`, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         if (data.success && data.categories) {
+            console.log("Fresh categories loaded from API");
             localStorage.setItem('misk_categories', JSON.stringify(data.categories));
             return data.categories;
         }
@@ -779,8 +793,10 @@ async function loadCategories() {
 async function loadSettings() {
     try {
         const response = await fetch(`/api/settings?t=${Date.now()}`, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         if (data.success && data.settings) {
+            console.log("Fresh settings loaded from API");
             localStorage.setItem('misk_settings', JSON.stringify(data.settings));
             applyGlobalSettings(); // Re-apply with fresh data
             return data.settings;
