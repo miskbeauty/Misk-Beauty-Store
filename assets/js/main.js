@@ -743,7 +743,7 @@ document.addEventListener('click', (e) => {
 
 async function loadProducts() {
     try {
-        const response = await fetch(`/api/products?t=${Date.now()}`);
+        const response = await fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' });
         const data = await response.json();
         if (data.success && data.products) {
             // Always sync fresh data to LocalStorage to avoid stale mocks
@@ -763,7 +763,7 @@ async function loadProducts() {
 
 async function loadCategories() {
     try {
-        const response = await fetch(`/api/categories?t=${Date.now()}`);
+        const response = await fetch(`/api/categories?t=${Date.now()}`, { cache: 'no-store' });
         const data = await response.json();
         if (data.success && data.categories) {
             localStorage.setItem('misk_categories', JSON.stringify(data.categories));
@@ -778,7 +778,7 @@ async function loadCategories() {
 
 async function loadSettings() {
     try {
-        const response = await fetch(`/api/settings?t=${Date.now()}`);
+        const response = await fetch(`/api/settings?t=${Date.now()}`, { cache: 'no-store' });
         const data = await response.json();
         if (data.success && data.settings) {
             localStorage.setItem('misk_settings', JSON.stringify(data.settings));

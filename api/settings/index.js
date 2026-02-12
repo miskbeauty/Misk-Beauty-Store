@@ -1,3 +1,4 @@
+export const revalidate = 0;
 const connectToDatabase = require('../db');
 
 module.exports = async (req, res) => {
