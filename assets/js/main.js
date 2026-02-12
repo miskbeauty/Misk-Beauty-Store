@@ -25,6 +25,16 @@ const CloudinaryHelper = {
     }
 };
 
+function escapeHTML(str) {
+    if (!str) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 // Cart State - Load from LocalStorage if exists
 let cart = JSON.parse(localStorage.getItem('misk_cart')) || [];
 
@@ -1141,11 +1151,12 @@ function applyStoreSettingsToFooter() {
 
 // Zoom Effect
 const zoomContainer = document.getElementById('zoomContainer');
+const mainImg = document.getElementById('mainProductImg'); // Ensure we have a reference
 if (zoomContainer && mainImg) {
     zoomContainer.addEventListener('mousemove', (e) => {
         const { left, top, width, height } = zoomContainer.getBoundingClientRect();
-        const x = ((e.pageX - left) / width) * 100;
-        const y = ((e.pageY - top) / height) * 100;
+        const x = ((e.pageX - (left + window.scrollX)) / width) * 100;
+        const y = ((e.pageY - (top + window.scrollY)) / height) * 100;
 
         mainImg.style.transformOrigin = `${x}% ${y}%`;
         mainImg.style.transform = "scale(2)";

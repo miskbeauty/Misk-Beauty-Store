@@ -808,9 +808,19 @@
                 placeholder: 'اكتب شروط الاستخدام هنا...'
             });
 
-            // Load Initial Data
-            renderOrders();
+            // Unified Initialization
+            initDashboard();
         });
+
+        function escapeHTML(str) {
+            if (!str) return "";
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
 
         // --- Data Protection Helper ---
         const DataVault = {
@@ -2014,30 +2024,36 @@
 
             // Load essential data from API
             try {
-                const catRes = await fetch('/api/categories').then(r => r.json()).catch(err => ({ success: false, error: err }));
-                const setRes = await fetch('/api/settings').then(r => r.json()).catch(err => ({ success: false, error: err }));
+                const [catRes, setRes] = await Promise.all([
+                    fetch('/api/categories').then(r => r.json()),
+                    fetch('/api/settings').then(r => r.json())
+                ]);
 
                 if (catRes.success) {
                     mockCategories = catRes.categories;
-                } else if (localStorage.getItem('misk_categories')) {
-                    mockCategories = JSON.parse(localStorage.getItem('misk_categories'));
+                    localStorage.setItem('misk_categories', JSON.stringify(catRes.categories));
                 }
-
                 if (setRes.success && setRes.settings) {
                     storeSettings = setRes.settings;
+                    localStorage.setItem('misk_settings', JSON.stringify(setRes.settings));
                 }
-
             } catch (e) {
-                console.warn("Initialization data fetch partially failed:", e);
+                console.warn("API Fetch failed, using local storage fallback:", e);
+                const localCats = localStorage.getItem('misk_categories');
+                const localSettings = localStorage.getItem('misk_settings');
+                if (localCats) mockCategories = JSON.parse(localCats);
+                if (localSettings) storeSettings = JSON.parse(localSettings);
             }
 
+            // Trigger initial renders
             renderOrders();
             renderProducts();
             renderCategories();
             renderPages();
-        }
 
-        initDashboard();
+            // Log for debug
+            console.log("Dashboard fully initialized with Categories:", mockCategories.length);
+        }
 
         // Initialize Page Editor
         pageQuill = new Quill('#page-editor', {
