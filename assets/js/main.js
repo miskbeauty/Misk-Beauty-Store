@@ -680,6 +680,7 @@ async function initSite() {
         if (window.injectHeader) {
             console.log("💉 Injecting fresh header...");
             window.injectHeader();
+            initSearchBar(); // Initialize search after header is in DOM
         }
 
         const path = window.location.pathname;
@@ -716,34 +717,48 @@ async function initSite() {
 document.addEventListener('DOMContentLoaded', initSite);
 
 // --- Search Functionality ---
+function initSearchBar() {
+    const searchInput = document.getElementById('searchInput');
+    const noResultsMessage = document.getElementById('noResultsMessage');
 
-if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase().trim();
-        let anyVisible = false;
+    if (searchInput) {
+        // Prevent multiple listeners
+        if (searchInput.getAttribute('data-search-init')) return;
+        searchInput.setAttribute('data-search-init', 'true');
 
-        // Re-query cards every time to ensure we catch dynamically added products
-        const currentCards = document.querySelectorAll('.product-card');
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            let anyVisible = false;
 
-        currentCards.forEach(card => {
-            const productName = card.getAttribute('data-name').toLowerCase();
-            if (productName.includes(searchTerm)) {
-                card.style.display = 'block';
-                anyVisible = true;
-            } else {
-                card.style.display = 'none';
+            // Re-query cards every time to ensure we catch dynamically added products
+            const currentCards = document.querySelectorAll('.product-card');
+
+            currentCards.forEach(card => {
+                const productName = (card.getAttribute('data-name') || '').toLowerCase();
+                const productPrice = (card.getAttribute('data-price') || '').toLowerCase();
+                // Find product data from local cache if possible or just rely on attributes
+
+                // Enhance: Search also in category or description if available in storage
+                // For now, let's keep it efficient with name match
+                if (productName.includes(searchTerm)) {
+                    card.style.display = 'block';
+                    anyVisible = true;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // Show/Hide No Results Message
+            if (noResultsMessage) {
+                if (!anyVisible && searchTerm !== '') {
+                    noResultsMessage.classList.remove('hidden');
+                } else {
+                    noResultsMessage.classList.add('hidden');
+                }
             }
         });
-
-        // Show/Hide No Results Message
-        if (noResultsMessage) {
-            if (!anyVisible) {
-                noResultsMessage.classList.remove('hidden');
-            } else {
-                noResultsMessage.classList.add('hidden');
-            }
-        }
-    });
+        console.log("🔍 Search bar initialized");
+    }
 }
 
 // Close cart when clicking outside (kept for safety, though we now redirect)
@@ -887,12 +902,23 @@ async function renderProductGrid(containerId) {
         }
     }
 
-    if (filterCat) {
-        products = products.filter(p => p.category === filterCat);
-    }
+    // Filter by Visibility & Hierarchy
+    const savedCats = localStorage.getItem('misk_categories');
+    const categories = savedCats ? JSON.parse(savedCats) : [];
+
     if (filterSub) {
         products = products.filter(p => p.subCategory === filterSub);
+    } else if (filterCat) {
+        // If filtering by parent category, include products from all its subcategories too
+        const parentCat = categories.find(c => c.name === filterCat);
+        const childrenNames = categories.filter(c => c.parentId === (parentCat?._id || parentCat?.id)).map(c => c.name);
+
+        products = products.filter(p => p.category === filterCat || childrenNames.includes(p.subCategory));
     }
+
+    // Filter out products from hidden categories
+    const hiddenCatNames = categories.filter(c => String(c.showInHeader) === 'false').map(c => c.name);
+    // products = products.filter(p => !hiddenCatNames.includes(p.category) && !hiddenCatNames.includes(p.subCategory));
 
     // Sort by Priority (Descending)
     products.sort((a, b) => (b.priority || 0) - (a.priority || 0));

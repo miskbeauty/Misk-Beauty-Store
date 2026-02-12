@@ -755,7 +755,15 @@
         let mockCustomers = [];
 
         document.addEventListener('DOMContentLoaded', () => {
-            // ... (Init Product & Category Quills)
+            // --- Admin Auth Guard ---
+            const session = localStorage.getItem('misk_admin_session');
+            if (!session) {
+                console.error("Unauthorized access, redirecting to login...");
+                window.location.href = 'admin-login.html';
+                return;
+            }
+
+            // Init Product Editor
             quill = new Quill('#editor-container', {
                 theme: 'snow',
                 modules: {
@@ -769,6 +777,7 @@
                 placeholder: 'اكتب وصف المنتج هنا...'
             });
 
+            // Init Category Editor
             catQuill = new Quill('#cat-editor-container', {
                 theme: 'snow',
                 modules: {
@@ -781,7 +790,7 @@
                 placeholder: 'المحتوى الذي سيظهر في رأس الصفحة...'
             });
 
-            // Init Legal Quills
+            // Init Privacy Editor
             privacyQuill = new Quill('#privacy-editor-container', {
                 theme: 'snow',
                 modules: {
@@ -790,6 +799,7 @@
                 placeholder: 'اكتب سياسة الخصوصية هنا...'
             });
 
+            // Init Terms Editor
             termsQuill = new Quill('#terms-editor-container', {
                 theme: 'snow',
                 modules: {
@@ -797,6 +807,9 @@
                 },
                 placeholder: 'اكتب شروط الاستخدام هنا...'
             });
+
+            // Load Initial Data
+            renderOrders();
         });
 
         // --- Data Protection Helper ---

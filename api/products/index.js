@@ -22,6 +22,15 @@ module.exports = async (req, res) => {
     if (req.method === 'POST') {
         try {
             const product = req.body;
+
+            // Enforce SKU and Image (Testsprite requirement)
+            if (!product.sku || product.sku.trim() === "") {
+                return res.status(400).json({ message: 'SKU is required' });
+            }
+            if (!product.images || product.images.length === 0 || !product.images[0]) {
+                return res.status(400).json({ message: 'At least one product image is required' });
+            }
+
             // Remove any empty or legacy IDs to let MongoDB generate fresh _id
             delete product._id;
             if (product.id && (isNaN(product.id) || product.id === '')) delete product.id;

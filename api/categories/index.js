@@ -22,6 +22,13 @@ module.exports = async (req, res) => {
     if (req.method === 'POST') {
         try {
             const category = req.body;
+
+            // Check for duplicate name
+            const existing = await categories.findOne({ name: category.name });
+            if (existing) {
+                return res.status(409).json({ message: 'Category name already exists' });
+            }
+
             // Clean up and standardize
             delete category._id;
             if (category.id && isNaN(category.id)) delete category.id;
@@ -46,16 +53,33 @@ module.exports = async (req, res) => {
         try {
             const { id, _id, ...updateData } = req.body;
             let filter = {};
+            let currentId;
+
             if (_id) {
-                filter = { _id: new ObjectId(_id) };
+                currentId = new ObjectId(_id);
+                filter = { _id: currentId };
             } else if (id) {
                 if (!isNaN(id)) {
-                    filter = { id: parseInt(id) };
+                    currentId = parseInt(id);
+                    filter = { id: currentId };
                 } else {
-                    filter = { _id: new ObjectId(id) };
+                    currentId = new ObjectId(id);
+                    filter = { _id: currentId };
                 }
             } else {
                 return res.status(400).json({ message: 'Missing ID' });
+            }
+
+            // Check for duplicate name (excluding self)
+            if (updateData.name) {
+                const existing = await categories.findOne({
+                    name: updateData.name,
+                    _id: { $ne: currentId instanceof ObjectId ? currentId : undefined },
+                    id: { $ne: typeof currentId === 'number' ? currentId : undefined }
+                });
+                if (existing) {
+                    return res.status(409).json({ message: 'Another category already has this name' });
+                }
             }
 
             // Clean up updateData
@@ -87,15 +111,34 @@ module.exports = async (req, res) => {
             const { id } = req.query;
             if (!id) return res.status(400).json({ message: 'Missing ID' });
 
+            const targetId = !isNaN(id) ? parseInt(id) : new ObjectId(id);
+
+            // 1. Check for child categories
+            const children = await categories.findOne({ parentId: targetId });
+            if (children) {
+                return res.status(400).json({ message: 'Cannot delete category with sub-categories' });
+            }
+
+            // 2. Check for assigned products
+            const products = db.collection('products');
+            const categoryObj = await categories.findOne(!isNaN(id) ? { id: targetId } : { _id: targetId });
+            if (categoryObj) {
+                const assignedProducts = await products.findOne({ category: categoryObj.name });
+                if (assignedProducts) {
+                    return res.status(400).json({ message: 'Cannot delete category assigned to products' });
+                }
+            }
+
             let deleteResult;
             if (!isNaN(id)) {
-                deleteResult = await categories.deleteOne({ id: parseInt(id) });
+                deleteResult = await categories.deleteOne({ id: targetId });
             } else {
-                deleteResult = await categories.deleteOne({ _id: new ObjectId(id) });
+                deleteResult = await categories.deleteOne({ _id: targetId });
             }
 
             res.status(200).json({ success: true });
         } catch (e) {
+            console.error("DELETE Error:", e);
             res.status(500).json({ message: 'Error deleting category' });
         }
     }
