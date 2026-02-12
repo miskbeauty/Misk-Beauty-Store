@@ -664,42 +664,52 @@ function applyGlobalSettings() {
 // Final Initialization
 async function initSite() {
     try {
-        console.log("Site initialization started...");
+        console.log("🚀 Site initialization started...");
+
+        // Initial setup
         startSlideShow();
         updateCartUI();
+        applyStoreSettingsToFooter();
 
-        // Load categories and settings from API
+        // Load critical data from API
+        console.log("📦 Loading categories and settings...");
         await Promise.all([loadSettings(), loadCategories()]);
 
-        // Initial apply from cache while waiting or if API failed
+        // Apply settings and update UI
         applyGlobalSettings();
-
-        // Re-trigger header injection to reflect new category data
         if (window.injectHeader) {
+            console.log("💉 Injecting fresh header...");
             window.injectHeader();
         }
 
         const path = window.location.pathname;
+        console.log(`📍 Current path: ${path}`);
 
         // Page-specific initialization
         if (path.includes('product.html')) {
+            console.log("🛠 Initializing product page...");
             if (typeof initProductPage === 'function') await initProductPage();
             if (typeof initProductReviews === 'function') initProductReviews();
         }
 
-        // Check if we are on index/category page
-        if (document.getElementById('productGrid') || document.getElementById('featuredProductsGrid') || document.getElementById('offersGrid')) {
-            renderProductGrid('productGrid');
-            renderProductGrid('featuredProductsGrid');
-            renderProductGrid('offersGrid');
+        // Global Grid Injection
+        const grids = ['productGrid', 'featuredProductsGrid', 'offersGrid'];
+        for (const gridId of grids) {
+            if (document.getElementById(gridId)) {
+                console.log(`🖼 Rendering grid: ${gridId}`);
+                await renderProductGrid(gridId);
+            }
         }
-        console.log("Site initialization completed successfully");
+
+        console.log("✅ Site initialization completed successfully");
     } catch (error) {
-        console.error("Critical site initialization error:", error);
-        // Fallback: try to render from cache anyway if API failed
+        console.error("❌ Critical site initialization error:", error);
+        // Emergency Fallback
         applyGlobalSettings();
         if (window.injectHeader) window.injectHeader();
-        if (document.getElementById('productGrid')) renderProductGrid('productGrid');
+        ['productGrid', 'featuredProductsGrid', 'offersGrid'].forEach(id => {
+            if (document.getElementById(id)) renderProductGrid(id);
+        });
     }
 }
 
@@ -1103,56 +1113,23 @@ function applyStoreSettingsToFooter() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    applyStoreSettingsToFooter();
-    // ... rest of init ...
-    const path = window.location.pathname;
-    if (path.includes('index.html') || path === '/' || path.endsWith('Misk-Beauty-Store/')) {
-        renderProductGrid('productGrid');
-    } else if (path.includes('product.html')) {
-        initProductPage();
-    }
+// Zoom Effect
+const zoomContainer = document.getElementById('zoomContainer');
+if (zoomContainer && mainImg) {
+    zoomContainer.addEventListener('mousemove', (e) => {
+        const { left, top, width, height } = zoomContainer.getBoundingClientRect();
+        const x = ((e.pageX - left) / width) * 100;
+        const y = ((e.pageY - top) / height) * 100;
 
-    // Thumbnail Switching (existing logic, but enhanced in initProductPage)
-    const mainImg = document.getElementById('mainProductImg');
-    const thumbnails = document.querySelectorAll('.thumb');
-    // ... rest of DOMContentLoaded ...
+        mainImg.style.transformOrigin = `${x}% ${y}%`;
+        mainImg.style.transform = "scale(2)";
+    });
 
-    // Quantity Selector
-    const qtyInput = document.getElementById('productQty');
-    const plusBtn = document.querySelector('.qty-btn.plus');
-    const minusBtn = document.querySelector('.qty-btn.minus');
-
-    if (qtyInput && plusBtn && minusBtn) {
-        plusBtn.addEventListener('click', () => {
-            qtyInput.value = parseInt(qtyInput.value) + 1;
-        });
-
-        minusBtn.addEventListener('click', () => {
-            if (parseInt(qtyInput.value) > 1) {
-                qtyInput.value = parseInt(qtyInput.value) - 1;
-            }
-        });
-    }
-
-    // Zoom Effect
-    const zoomContainer = document.getElementById('zoomContainer');
-    if (zoomContainer && mainImg) {
-        zoomContainer.addEventListener('mousemove', (e) => {
-            const { left, top, width, height } = zoomContainer.getBoundingClientRect();
-            const x = ((e.pageX - left) / width) * 100;
-            const y = ((e.pageY - top) / height) * 100;
-
-            mainImg.style.transformOrigin = `${x}% ${y}%`;
-            mainImg.style.transform = "scale(2)";
-        });
-
-        zoomContainer.addEventListener('mouseleave', () => {
-            mainImg.style.transform = "scale(1.1)";
-            mainImg.style.transformOrigin = "center center";
-        });
-    }
-});
+    zoomContainer.addEventListener('mouseleave', () => {
+        mainImg.style.transform = "scale(1.1)";
+        mainImg.style.transformOrigin = "center center";
+    });
+}
 
 console.log("Misk Beauty JS initialized successfully with Security Validation & Product Page logic.");
 

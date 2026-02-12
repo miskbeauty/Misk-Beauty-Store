@@ -97,84 +97,8 @@
                         style="color: #FFD700; font-size: 1.5rem; vertical-align: middle; margin-left: 10px;"></i>عروض
                     وتخفيضات حصرية</h2>
             </div>
-            <div class="offers-grid">
-                <!-- Offer 1 -->
-                <div class="product-card offer-card" data-id="201" data-name="مجموعة العناية المتكاملة"
-                    data-price="250">
-                    <span class="badge-sale">-30%</span>
-                    <div class="product-image">
-                        <a href="product.html">
-                            <img src="https://images.unsplash.com/photo-1612817288484-6f916006741a?q=80&w=500&auto=format&fit=crop"
-                                alt="مجموعة العناية المتكاملة">
-                        </a>
-                        <div class="product-actions">
-                            <button class="btn-quick-view"><i class="fas fa-eye"></i></button>
-                            <button class="btn-add-cart"
-                                onclick="addToCart(201, 'مجموعة العناية المتكاملة', 250, 'https://images.unsplash.com/photo-1612817288484-6f916006741a?q=80&w=500&auto=format&fit=crop')"><i
-                                    class="fas fa-shopping-cart"></i></button>
-                        </div>
-                    </div>
-                    <div class="product-info">
-                        <h3>مجموعة العناية المتكاملة</h3>
-                        <div class="price-wrapper">
-                            <span class="old-price">350 شيكل</span>
-                            <span class="sale-price">250 شيكل</span>
-                        </div>
-                        <button class="add-to-cart-btn-prominent"
-                            onclick="addToCart(201, 'مجموعة العناية المتكاملة', 250, 'https://images.unsplash.com/photo-1612817288484-6f916006741a?q=80&w=500&auto=format&fit=crop')">إضافة
-                            للسلة</button>
-                    </div>
-                </div>
-
-                <!-- Offer 2 -->
-                <div class="product-card offer-card" data-id="202" data-name="طقم عطور ميني لوكس" data-price="190">
-                    <span class="badge-sale">-50%</span>
-                    <div class="product-image">
-                        <img src="https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=500&auto=format&fit=crop"
-                            alt="طقم عطور ميني لوكس">
-                        <div class="product-actions">
-                            <button class="btn-quick-view"><i class="fas fa-eye"></i></button>
-                            <button class="btn-add-cart"
-                                onclick="addToCart(202, 'طقم عطور ميني لوكس', 190, 'https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=500&auto=format&fit=crop')"><i
-                                    class="fas fa-shopping-cart"></i></button>
-                        </div>
-                    </div>
-                    <div class="product-info">
-                        <h3>طقم عطور ميني لوكس</h3>
-                        <div class="price-wrapper">
-                            <span class="old-price">380 شيكل</span>
-                            <span class="sale-price">190 شيكل</span>
-                        </div>
-                        <button class="add-to-cart-btn-prominent"
-                            onclick="addToCart(202, 'طقم عطور ميني لوكس', 190, 'https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=500&auto=format&fit=crop')">إضافة
-                            للسلة</button>
-                    </div>
-                </div>
-
-                <!-- Offer 3 -->
-                <div class="product-card offer-card" data-id="203" data-name="باليت ظلال عيون سيمر" data-price="120">
-                    <span class="badge-sale">-20%</span>
-                    <div class="product-image">
-                        <img src="https://images.unsplash.com/photo-1512496015851-a90fb38ba796?q=80&w=500&auto=format&fit=crop"
-                            alt="باليت ظلال عيون سيمر">
-                        <div class="product-actions">
-                            <button class="btn-quick-view"><i class="fas fa-eye"></i></button>
-                            <button class="btn-add-cart"
-                                onclick="addToCart(203, 'باليت ظلال عيون سيمر', 120, 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?q=80&w=500&auto=format&fit=crop')"><i
-                                    class="fas fa-shopping-cart"></i></button>
-                        </div>
-                    </div>
-                    <div class="product-info">
-                        <h3>باليت ظلال عيون سيمر</h3>
-                        <div class="price-wrapper">
-                            <span class="old-price">150 شيكل</span>
-                            <span class="sale-price">120 شيكل</span>
-                        </div>
-                        <button class="add-to-cart-btn-prominent"
-                            onclick="addToCart(203, 'باليت ظلال عيون سيمر', 120, 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?q=80&w=500&auto=format&fit=crop')">إضافة
-                            للسلة</button>
-                    </div>
-                </div>
+            <div class="offers-grid" id="offersGrid">
+                <!-- Offers will be loaded dynamically -->
             </div>
         </section>
 
@@ -182,82 +106,8 @@
             <div class="section-title">
                 <h2>الأكثر مبيعاً</h2>
             </div>
-            <div class="product-grid">
-                <!-- Best Seller 1 -->
-                <div class="product-card" data-id="101" data-name="طقم هدايا المسك الملكي" data-price="450">
-                    <span class="badge-best-seller">الأكثر مبيعاً</span>
-                    <div class="product-image">
-                        <img src="https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=500&auto=format&fit=crop"
-                            alt="طقم هدايا المسك الملكي">
-                        <div class="product-actions">
-                            <button class="btn-quick-view"><i class="fas fa-eye"></i></button>
-                            <button class="btn-add-cart"
-                                onclick="addToCart(101, 'طقم هدايا المسك الملكي', 450, 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=500&auto=format&fit=crop')"><i
-                                    class="fas fa-shopping-cart"></i></button>
-                        </div>
-                    </div>
-                    <div class="product-info">
-                        <h3>طقم هدايا المسك الملكي</h3>
-                        <p class="price">450 شيكل</p>
-                    </div>
-                </div>
-
-                <!-- Best Seller 2 -->
-                <div class="product-card" data-id="102" data-name="عطر العود الفاخر" data-price="320">
-                    <span class="badge-best-seller">الأكثر مبيعاً</span>
-                    <div class="product-image">
-                        <img src="https://images.unsplash.com/photo-1595425970377-c9703cf48b6d?q=80&w=500&auto=format&fit=crop"
-                            alt="عطر العود الفاخر">
-                        <div class="product-actions">
-                            <button class="btn-quick-view"><i class="fas fa-eye"></i></button>
-                            <button class="btn-add-cart"
-                                onclick="addToCart(102, 'عطر العود الفاخر', 320, 'https://images.unsplash.com/photo-1595425970377-c9703cf48b6d?q=80&w=500&auto=format&fit=crop')"><i
-                                    class="fas fa-shopping-cart"></i></button>
-                        </div>
-                    </div>
-                    <div class="product-info">
-                        <h3>عطر العود والمسك الأبيض</h3>
-                        <p class="price">320 شيكل</p>
-                    </div>
-                </div>
-
-                <!-- Best Seller 3 -->
-                <div class="product-card" data-id="103" data-name="سيروم نضارة البشرة" data-price="180">
-                    <span class="badge-best-seller">الأكثر مبيعاً</span>
-                    <div class="product-image">
-                        <img src="https://images.unsplash.com/photo-1620916566398-39f1143f7c9e?q=80&w=500&auto=format&fit=crop"
-                            alt="سيروم نضارة البشرة">
-                        <div class="product-actions">
-                            <button class="btn-quick-view"><i class="fas fa-eye"></i></button>
-                            <button class="btn-add-cart"
-                                onclick="addToCart(103, 'سيروم نضارة البشرة', 180, 'https://images.unsplash.com/photo-1620916566398-39f1143f7c9e?q=80&w=500&auto=format&fit=crop')"><i
-                                    class="fas fa-shopping-cart"></i></button>
-                        </div>
-                    </div>
-                    <div class="product-info">
-                        <h3>سيروم فيتامين سي المطور</h3>
-                        <p class="price">180 شيكل</p>
-                    </div>
-                </div>
-
-                <!-- Best Seller 4 -->
-                <div class="product-card" data-id="104" data-name="حقيبة تنظيم المكياج" data-price="110">
-                    <span class="badge-best-seller">الأكثر مبيعاً</span>
-                    <div class="product-image">
-                        <img src="https://images.unsplash.com/photo-1512496015851-a90fb38ba796?q=80&w=500&auto=format&fit=crop"
-                            alt="حقيبة تنظيم المكياج">
-                        <div class="product-actions">
-                            <button class="btn-quick-view"><i class="fas fa-eye"></i></button>
-                            <button class="btn-add-cart"
-                                onclick="addToCart(104, 'حقيبة تنظيم المكياج', 110, 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?q=80&w=500&auto=format&fit=crop')"><i
-                                    class="fas fa-shopping-cart"></i></button>
-                        </div>
-                    </div>
-                    <div class="product-info">
-                        <h3>حقيبة تنظيم مكياج احترافية</h3>
-                        <p class="price">110 شيكل</p>
-                    </div>
-                </div>
+            <div class="product-grid" id="featuredProductsGrid">
+                <!-- Best sellers will be loaded dynamically -->
             </div>
         </section>
 
