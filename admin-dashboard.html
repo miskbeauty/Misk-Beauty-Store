@@ -704,6 +704,11 @@
                                 placeholder="مثلاً: عطور فرنسية">
                         </div>
                         <div class="admin-form-group">
+                            <label>رابط (Slug) SEO</label>
+                            <input type="text" id="cat-slug" class="admin-input"
+                                placeholder="اختياري - سيتم توليده تلقائياً">
+                        </div>
+                        <div class="admin-form-group">
                             <label>التصنيف الأب (Hierarchy)</label>
                             <select id="cat-parent" class="admin-input">
                                 <option value="">بدون (تصنيف رئيسي)</option>
@@ -1456,6 +1461,7 @@
                 const cat = mockCategories.find(c => String(c.id) === String(id) || String(c._id) === String(id));
                 if (cat) {
                     document.getElementById('cat-name').value = cat.name;
+                    if (document.getElementById('cat-slug')) document.getElementById('cat-slug').value = cat.slug || '';
                     document.getElementById('cat-parent').value = cat.parentId || '';
                     document.getElementById('cat-priority').value = cat.priority || 0;
                     document.getElementById('cat-show-header').value = cat.showInHeader;
@@ -1589,10 +1595,19 @@
         async function handleCategorySubmit(e) {
             e.preventDefault();
             const id = document.getElementById('category-id').value;
+            let slug = document.getElementById('cat-slug') ? document.getElementById('cat-slug').value : '';
+            const name = document.getElementById('cat-name').value;
+
+            // Auto-generate slug if parameters missing
+            if (!slug || slug.trim() === '') {
+                slug = generateSlug(name);
+            }
+
             const newCat = {
                 id: id && !isNaN(id) ? parseInt(id) : undefined,
                 _id: id && isNaN(id) ? id : undefined,
-                name: document.getElementById('cat-name').value,
+                name: name,
+                slug: slug,
                 parentId: document.getElementById('cat-parent').value || null,
                 priority: parseInt(document.getElementById('cat-priority').value) || 0,
                 showInHeader: document.getElementById('cat-show-header').value,
@@ -1620,6 +1635,15 @@
                 console.error("Error saving category:", e);
                 alert('فشل الاتصال بالخادم');
             }
+        }
+
+        function generateSlug(text) {
+            return text.toString().toLowerCase()
+                .replace(/\s+/g, '-')           // Replace spaces with -
+                .replace(/[^\w\u0600-\u06FF\-]+/g, '')       // Remove all non-word chars (accepting Arabic)
+                .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+                .replace(/^-+/, '')             // Trim - from start of text
+                .replace(/-+$/, '');            // Trim - from end of text
         }
 
         async function deleteCategory(id) {

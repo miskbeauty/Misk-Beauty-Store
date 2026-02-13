@@ -12,7 +12,12 @@ module.exports = async (req, res) => {
 
     if (req.method === 'GET') {
         try {
-            const allProducts = await products.find({}).sort({ priority: -1 }).toArray();
+            const { slug } = req.query;
+            let query = {};
+            if (slug) {
+                query = { slug: slug };
+            }
+            const allProducts = await products.find(query).sort({ priority: -1 }).toArray();
             res.status(200).json({ success: true, products: allProducts });
         } catch (e) {
             res.status(500).json({ message: 'Error fetching products' });

@@ -43,16 +43,21 @@ function getDynamicNavHTML(passedCategories = null) {
             return String(c.parentId) === String(pId);
         });
 
+        const parentLink = p.slug ? `/category/${p.slug}` : `index.html?category=${encodeURIComponent(p.name)}`;
+
         if (children.length > 0) {
             html += `
                 <li class="dropdown">
-                    <a href="index.html?category=${encodeURIComponent(p.name)}">${p.name} <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-right: 5px;"></i></a>
+                    <a href="${parentLink}">${p.name} <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-right: 5px;"></i></a>
                     <ul class="dropdown-menu">
-                        ${children.map(c => `<li><a href="index.html?sub=${encodeURIComponent(c.name)}">${c.name}</a></li>`).join('')}
+                        ${children.map(c => {
+                const childLink = c.slug ? `/category/${c.slug}` : `index.html?sub=${encodeURIComponent(c.name)}`;
+                return `<li><a href="${childLink}">${c.name}</a></li>`;
+            }).join('')}
                     </ul>
                 </li>`;
         } else {
-            html += `<li><a href="index.html?category=${encodeURIComponent(p.name)}">${p.name}</a></li>`;
+            html += `<li><a href="${parentLink}">${p.name}</a></li>`;
         }
     });
 

@@ -2,6 +2,14 @@
     "version": 2,
     "rewrites": [
         {
+            "source": "/product/:slug",
+            "destination": "/product.html?slug=:slug"
+        },
+        {
+            "source": "/category/:slug",
+            "destination": "/index.html?category=:slug"
+        },
+        {
             "source": "/api/(.*)",
             "destination": "/api/$1"
         }

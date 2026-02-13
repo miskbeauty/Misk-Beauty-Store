@@ -884,15 +884,18 @@ function getProductCardHTML(prod) {
     const discountPercent = hasDiscount ? Math.round(((prod.originalPrice - prod.price) / prod.originalPrice) * 100) : 0;
     const currentId = prod._id || prod.id;
 
+    // Clean Link Logic
+    const productLink = prod.slug ? `/product/${prod.slug}` : `product.html?id=${currentId}`;
+
     return `
         <div class="product-card" data-id="${currentId}" data-name="${prod.name}" data-price="${prod.price}">
             ${hasDiscount ? `<span class="badge-sale">-${discountPercent}%</span>` : ''}
             <div class="product-image">
-                <a href="product.html?id=${currentId}">
+                <a href="${productLink}">
                     <img src="${primaryImage}" alt="${prod.name}">
                 </a>
                 <div class="product-actions">
-                    <button class="btn-quick-view" onclick="location.href='product.html?id=${currentId}'"><i class="fas fa-eye"></i></button>
+                    <button class="btn-quick-view" onclick="location.href='${productLink}'"><i class="fas fa-eye"></i></button>
                     <button class="btn-add-cart"
                         onclick="addToCart('${currentId}', '${prod.name}', ${prod.price}, '${primaryImage}', null, '${prod.category}')">
                         <i class="fas fa-shopping-cart"></i>
@@ -901,7 +904,7 @@ function getProductCardHTML(prod) {
             </div>
             <div class="product-info">
                 <div class="product-category-small">${prod.subCategory || prod.category}</div>
-                <a href="product.html?id=${currentId}">
+                <a href="${productLink}">
                     <h3>${prod.name}</h3>
                 </a>
                 <div class="price-wrapper" style="margin-bottom: 0;">
@@ -921,8 +924,27 @@ async function renderProductGrid(containerId) {
 
     // Automatic Category Filtering based on URL Parameters
     const urlParams = new URLSearchParams(window.location.search);
-    const filterCat = urlParams.get('category');
-    const filterSub = urlParams.get('sub');
+    let filterCat = urlParams.get('category');
+    let filterSub = urlParams.get('sub');
+
+    // SEO: Check for clean URL slug
+    const path = window.location.pathname;
+    if (path.includes('/category/')) {
+        const slug = path.split('/category/')[1];
+        // Must resolve slug to category name
+        const savedCats = localStorage.getItem('misk_categories');
+        if (savedCats) {
+            const categories = JSON.parse(savedCats);
+            const matchedCat = categories.find(c => c.slug === slug);
+            if (matchedCat) {
+                if (matchedCat.parentId) {
+                    filterSub = matchedCat.name;
+                } else {
+                    filterCat = matchedCat.name;
+                }
+            }
+        }
+    }
 
     // Category Static Content Injection
     const headerContainer = document.getElementById('categoryHeaderContainer');
@@ -979,11 +1001,36 @@ async function renderProductGrid(containerId) {
 
 async function initProductPage() {
     const urlParams = new URLSearchParams(window.location.search);
-    const prodId = urlParams.get('id');
-    if (!prodId) return;
+    let prodId = urlParams.get('id');
+    let prodSlug = null;
+
+    // SEO: Check slug from path
+    const path = window.location.pathname;
+    if (path.includes('/product/')) {
+        prodSlug = path.split('/product/')[1];
+    }
+
+    if (!prodId && !prodSlug) return;
 
     const products = await loadProducts();
-    const prod = products.find(p => (p._id || p.id).toString() === prodId.toString());
+    let prod;
+
+    if (prodId) {
+        prod = products.find(p => (p._id || p.id).toString() === prodId.toString());
+    } else if (prodSlug) {
+        prod = products.find(p => p.slug === prodSlug);
+        // Fallback: If not found in cache, fetch directly
+        if (!prod) {
+            try {
+                const res = await fetch(`/api/products?slug=${prodSlug}`);
+                const data = await res.json();
+                if (data.success && data.products && data.products.length > 0) {
+                    prod = data.products[0];
+                }
+            } catch (e) { console.error(e); }
+        }
+    }
+
     if (!prod) return;
 
     // Update Meta
