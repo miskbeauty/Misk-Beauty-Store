@@ -24,8 +24,11 @@ module.exports = async (req, res) => {
             const product = req.body;
 
             // Enforce SKU and Image (Testsprite requirement)
+            // Auto-generate SKU if missing
             if (!product.sku || product.sku.trim() === "") {
-                return res.status(400).json({ message: 'SKU is required' });
+                const prefix = product.name ? product.name.substring(0, 3).toUpperCase() : "PROD";
+                const random = Math.floor(1000 + Math.random() * 9000);
+                product.sku = `${prefix}-${random}`;
             }
             if (!product.images || product.images.length === 0 || !product.images[0]) {
                 return res.status(400).json({ message: 'At least one product image is required' });
