@@ -4,17 +4,7 @@
  */
 
 // --- Data Protection Helper ---
-const DataVault = {
-    encrypt: (data) => btoa(encodeURIComponent(JSON.stringify(data))), // Basic obfuscation for demo
-    decrypt: (secret) => {
-        if (!secret) return null;
-        try {
-            return JSON.parse(decodeURIComponent(atob(secret)));
-        } catch (e) {
-            return null;
-        }
-    }
-};
+// DataVault removed to avoid duplicate declaration (imported from auth.js)
 
 // --- Cloudinary Helper ---
 const CloudinaryHelper = {
