@@ -1434,18 +1434,26 @@
             const parentSelect = document.getElementById('cat-parent');
             parentSelect.innerHTML = '<option value="">بدون (تصنيف رئيسي)</option>';
 
-            // Permissive filter for parents: not having a parentId, or parentId is null/empty/string-null
-            mockCategories.filter(c => {
-                const hasNoParent = !c.parentId || c.parentId === 'null' || c.parentId === "";
-                const isNotSelf = (c.id != id && c._id != id);
-                return hasNoParent && isNotSelf;
-            }).forEach(p => {
+            console.log("Populating dropdown, Total Categories:", mockCategories.length);
+
+            // Robust filter for potential parents
+            const potentialParents = mockCategories.filter(c => {
+                // Is root? (Null, empty, "null", or 0)
+                const isRoot = !c.parentId || c.parentId === 'null' || c.parentId === "" || c.parentId === "0" || c.parentId === 0;
+                // Prevent selecting self
+                const isNotSelf = id ? (String(c._id) !== String(id) && String(c.id) !== String(id)) : true;
+                return isRoot && isNotSelf;
+            });
+
+            console.log("Found Parents:", potentialParents.length);
+
+            potentialParents.forEach(p => {
                 const pId = p._id || p.id;
                 parentSelect.innerHTML += `<option value="${pId}">${p.name}</option>`;
             });
 
             if (id) {
-                const cat = mockCategories.find(c => c.id == id || c._id == id);
+                const cat = mockCategories.find(c => String(c.id) === String(id) || String(c._id) === String(id));
                 if (cat) {
                     document.getElementById('cat-name').value = cat.name;
                     document.getElementById('cat-parent').value = cat.parentId || '';

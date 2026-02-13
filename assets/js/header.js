@@ -37,7 +37,11 @@ function getDynamicNavHTML(passedCategories = null) {
     parents.forEach(p => {
         // Find children that are also marked to show in header
         const pId = p._id || p.id;
-        const children = headerCats.filter(c => c.parentId && c.parentId == pId);
+        const children = headerCats.filter(c => {
+            // Robust comparison for mixed types (string IDs vs number IDs)
+            if (!c.parentId) return false;
+            return String(c.parentId) === String(pId);
+        });
 
         if (children.length > 0) {
             html += `
