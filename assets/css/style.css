@@ -1807,3 +1807,39 @@ footer {
     color: var(--primary-dark);
     padding-right: 5px;
 }
+
+/* System Toast */
+.sys-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    /* Left aligned for visibility in RTL layout */
+    background: #333;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    z-index: 9999;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transform: translateY(100px);
+    animation: slideUp 0.5s forwards;
+}
+
+.sys-toast.error {
+    background: #d32f2f;
+    /* Red for errors */
+}
+
+.sys-toast.info {
+    background: #2e7d32;
+    /* Green/Blue for info */
+}
+
+@keyframes slideUp {
+    to {
+        transform: translateY(0);
+    }
+}

@@ -671,10 +671,40 @@ function applyGlobalSettings() {
     }
 }
 
+// --- System Diagnostics ---
+async function checkSystemHealth() {
+    try {
+        const response = await fetch('/api/health');
+        if (!response.ok) throw new Error(`Status: ${response.status}`);
+        const data = await response.json();
+        if (!data.success) throw new Error(data.message || 'Unknown Error');
+        console.log("✅ System Health Check Passed");
+    } catch (e) {
+        console.error("⚠️ System Health Check Failed:", e);
+        showSystemToast(`⚠️ اتصال غير مستقر: قد تكون البيانات قديمة (${e.message})`, 'error');
+    }
+}
+
+function showSystemToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `sys-toast ${type}`;
+    toast.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+    document.body.appendChild(toast);
+
+    // Auto remove after 10s
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 500);
+    }, 10000);
+}
+
 // Final Initialization
 async function initSite() {
     try {
         console.log("🚀 Site initialization started...");
+
+        // 0. Diagnostic: Check System Health
+        await checkSystemHealth();
 
         // 1. Apply cached settings immediately for perceived performance
         applyStoreSettingsToFooter();
