@@ -676,21 +676,31 @@ async function initSite() {
     try {
         console.log("🚀 Site initialization started...");
 
-        // Initial setup
-        startSlideShow();
-        updateCartUI();
+        // 1. Apply cached settings immediately for perceived performance
         applyStoreSettingsToFooter();
+        // Initial header injection from cache (if any)
+        if (window.injectHeader) window.injectHeader();
 
-        // Load critical data from API
-        console.log("📦 Loading categories and settings...");
-        await Promise.all([loadSettings(), loadCategories()]);
+        // 2. Load critical data from API
+        console.log("📦 Loading categories and settings from API...");
 
-        // Apply settings and update UI
-        applyGlobalSettings();
+        // Load in parallel
+        const [settings, categories] = await Promise.all([
+            loadSettings(),
+            loadCategories()
+        ]);
+
+        // 3. Apply Fresh Data Immediately
+        if (settings) {
+            applyGlobalSettings();
+            applyStoreSettingsToFooter(); // Apply to footer as well
+        }
+
         if (window.injectHeader) {
-            console.log("💉 Injecting fresh header...");
-            window.injectHeader();
-            initSearchBar(); // Initialize search after header is in DOM
+            console.log("💉 Injecting fresh header with API data...");
+            // Pass categories directly to avoid localStorage race conditions
+            window.injectHeader(categories);
+            initSearchBar();
         }
 
         const path = window.location.pathname;
@@ -704,6 +714,8 @@ async function initSite() {
         }
 
         // Global Grid Injection
+        // Force re-render of grids now that we might have fresh products/categories
+        // We need to ensure loadProducts is called again or we pass data if we optimized it
         const grids = ['productGrid', 'featuredProductsGrid', 'offersGrid'];
         for (const gridId of grids) {
             if (document.getElementById(gridId)) {
@@ -711,6 +723,10 @@ async function initSite() {
                 await renderProductGrid(gridId);
             }
         }
+
+        // Slider & UI
+        startSlideShow();
+        updateCartUI();
 
         console.log("✅ Site initialization completed successfully");
     } catch (error) {
@@ -814,12 +830,12 @@ async function loadCategories() {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         if (data.success && data.categories) {
-            console.log("Fresh categories loaded from API");
+            console.log("Fresh categories loaded from API:", data.categories.length);
             localStorage.setItem('misk_categories', JSON.stringify(data.categories));
             return data.categories;
         }
     } catch (e) {
-        console.warn("Error loading categories from API:", e);
+        console.warn("Error loading categories from API, falling back to cache:", e);
     }
     const localCats = localStorage.getItem('misk_categories');
     return localCats ? JSON.parse(localCats) : [];

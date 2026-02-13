@@ -3,11 +3,16 @@
  * This script injects the consistent header across all pages.
  */
 
-function getDynamicNavHTML() {
-    const savedCats = localStorage.getItem('misk_categories');
+function getDynamicNavHTML(passedCategories = null) {
     let categories = [];
-    if (savedCats) {
-        categories = JSON.parse(savedCats);
+
+    if (passedCategories && Array.isArray(passedCategories) && passedCategories.length > 0) {
+        categories = passedCategories;
+    } else {
+        const savedCats = localStorage.getItem('misk_categories');
+        if (savedCats) {
+            categories = JSON.parse(savedCats);
+        }
     }
 
     // Filter categories to show in header
@@ -90,7 +95,7 @@ const headerHTML = `
     </div>
 `;
 
-function injectHeader() {
+function injectHeader(categories = null) {
     const headerElement = document.querySelector('header');
     if (headerElement) {
         headerElement.innerHTML = headerHTML;
@@ -112,7 +117,7 @@ function injectHeader() {
 
         const dynamicNav = document.getElementById('dynamic-nav');
         if (dynamicNav) {
-            dynamicNav.innerHTML = getDynamicNavHTML();
+            dynamicNav.innerHTML = getDynamicNavHTML(categories);
         }
     }
 }
