@@ -1961,6 +1961,12 @@
                 desc: quill.root.innerHTML
             };
 
+            // Client-side Validation (matching server requirements)
+            if (!newProd.images || newProd.images.length === 0) {
+                alert('خطأ: يجب إضافة صورة واحدة على الأقل للمنتج');
+                return;
+            }
+
             try {
                 const method = id ? 'PUT' : 'POST';
                 const response = await fetch('/api/products', {
@@ -1969,16 +1975,19 @@
                     body: JSON.stringify(newProd)
                 });
 
+                const data = await response.json();
+
                 if (response.ok) {
                     alert(id ? 'تم التحديث بنجاح' : 'تم الإضافة بنجاح');
                     closeModal('product-modal');
                     renderProducts();
                 } else {
-                    alert('خطأ في حفظ المنتج');
+                    console.error("Server Error:", data);
+                    alert('خطأ في حفظ المنتج: ' + (data.message || 'Unknown Server Error'));
                 }
             } catch (e) {
                 console.error("Error saving product:", e);
-                alert('فشل الاتصال بالخادم');
+                alert('فشل الاتصال بالخادم: ' + e.message);
             }
         }
 
