@@ -25,13 +25,13 @@ function getDynamicNavHTML(passedCategories = null) {
     const parents = headerCats.filter(c => !c.parentId);
 
     const user = (typeof AuthService !== 'undefined') ? AuthService.getUser() : null;
-    let html = `<li><a href="index.html">الرئيسية</a></li>`;
-    html += `<li><a href="offers.html" style="color: #d81b60; font-weight: 700;"><i class="fas fa-percent"></i> العروض</a></li>`;
+    let html = `<li><a href="/index.html">الرئيسية</a></li>`;
+    html += `<li><a href="/offers.html" style="color: #d81b60; font-weight: 700;"><i class="fas fa-percent"></i> العروض</a></li>`;
 
     if (user) {
-        html += `<li><a href="account.html"><i class="fas fa-user-circle"></i> حسابي</a></li>`;
+        html += `<li><a href="/account.html"><i class="fas fa-user-circle"></i> حسابي</a></li>`;
     } else {
-        html += `<li><a href="login.html"><i class="fas fa-sign-in-alt"></i> دخول</a></li>`;
+        html += `<li><a href="/login.html"><i class="fas fa-sign-in-alt"></i> دخول</a></li>`;
     }
 
     parents.forEach(p => {
@@ -43,7 +43,7 @@ function getDynamicNavHTML(passedCategories = null) {
             return String(c.parentId) === String(pId);
         });
 
-        const parentLink = p.slug ? `/category/${p.slug}` : `index.html?category=${encodeURIComponent(p.name)}`;
+        const parentLink = p.slug ? `/category/${p.slug}` : `/index.html?category=${encodeURIComponent(p.name)}`;
 
         if (children.length > 0) {
             html += `
@@ -51,7 +51,7 @@ function getDynamicNavHTML(passedCategories = null) {
                     <a href="${parentLink}">${p.name} <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-right: 5px;"></i></a>
                     <ul class="dropdown-menu">
                         ${children.map(c => {
-                const childLink = c.slug ? `/category/${c.slug}` : `index.html?sub=${encodeURIComponent(c.name)}`;
+                const childLink = c.slug ? `/category/${c.slug}` : `/index.html?sub=${encodeURIComponent(c.name)}`;
                 return `<li><a href="${childLink}">${c.name}</a></li>`;
             }).join('')}
                     </ul>
@@ -67,8 +67,8 @@ function getDynamicNavHTML(passedCategories = null) {
 const headerHTML = `
     <nav class="container">
         <div class="logo">
-            <a href="index.html">
-                <img src="assets/images/1745215944148877862-removebg-preview.png" alt="Misk Beauty Logo">
+            <a href="/index.html">
+                <img src="/assets/images/1745215944148877862-removebg-preview.png" alt="Misk Beauty Logo">
             </a>
         </div>
         <ul class="nav-links" id="dynamic-nav">
@@ -80,7 +80,7 @@ const headerHTML = `
             <input type="text" id="searchInput" placeholder="ابحث في مسك بيوتي">
             <i class="fas fa-search"></i>
         </div>
-        <div class="cart-widget" id="cartWidgetToggle" onclick="window.location.href='cart.html'" style="cursor: pointer;">
+        <div class="cart-widget" id="cartWidgetToggle" onclick="window.location.href='/cart.html'" style="cursor: pointer;">
             <div class="cart-icon-wrapper">
                 <i class="fas fa-shopping-cart"></i>
                 <span class="cart-badge" id="widgetCartCountBadge">0</span>
