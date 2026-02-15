@@ -8,18 +8,45 @@ module.exports = async (req, res) => {
     const users = db.collection('users');
 
     if (req.method === 'GET') {
-        // Admin or User order history
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'Unauthorized' });
 
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            // If admin, they might want all orders (logic for admin check can be added)
-            // For now, return user's orders
-            const userOrders = await orders.find({ phone: decoded.phone }).sort({ date: -1 }).toArray();
-            return res.status(200).json({ success: true, orders: userOrders });
+            let query = {};
+            // If NOT admin, restrict to user's phone
+            if (decoded.role !== 'admin') {
+                if (!decoded.phone) {
+                    return res.status(400).json({ message: 'User token missing phone information' });
+                }
+                query = { phone: decoded.phone }; // Match by phone, assuming unique enough for this simple system
+                // Or better: $or: [{ userId: decoded.userId }, { phone: decoded.phone }]
+            }
+
+            // Pagination (optional addition for now, but good practice)
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 20;
+            const skip = (page - 1) * limit;
+
+            const total = await orders.countDocuments(query);
+            const userOrders = await orders.find(query)
+                .sort({ date: -1, createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .toArray();
+
+            return res.status(200).json({
+                success: true,
+                orders: userOrders,
+                pagination: {
+                    total,
+                    page,
+                    pages: Math.ceil(total / limit)
+                }
+            });
         } catch (e) {
+            console.error("Order Fetch Error:", e);
             return res.status(401).json({ message: 'Invalid token' });
         }
     }

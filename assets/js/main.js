@@ -822,26 +822,43 @@ document.addEventListener('click', (e) => {
 
 // --- Advanced Product Data Management ---
 
-async function loadProducts() {
+// --- Pagination State ---
+const paginationState = {
+    page: 1,
+    limit: 12,
+    loading: false,
+    hasMore: true
+};
+
+async function loadProducts(params = {}) {
+    const { page = 1, limit = 12, category = '', subCategory = '' } = params;
+
     try {
-        const response = await fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' });
+        const query = new URLSearchParams({
+            page: page,
+            limit: limit,
+            t: Date.now()
+        });
+
+        if (category) query.append('category', category);
+        if (subCategory) query.append('subCategory', subCategory);
+
+        const response = await fetch(`/api/products?${query.toString()}`, { cache: 'no-store' });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
         const data = await response.json();
         if (data.success && data.products) {
-            console.log("Fresh products loaded from API");
-            // Always sync fresh data to LocalStorage to avoid stale mocks
-            localStorage.setItem('misk_products', JSON.stringify(data.products));
-            return data.products;
+            // Update global pagination state if we rely on it, 
+            // but returning data allows caller to handle it
+            return {
+                products: data.products,
+                pagination: data.pagination
+            };
         }
     } catch (e) {
-        console.warn("فشل تحميل المنتجات من الخادم، يتم استخدام البيانات المحلية المؤقتة.");
+        console.warn("فشل تحميل المنتجات من الخادم:", e);
     }
-
-    // Fallback if API fails
-    const localProducts = localStorage.getItem('misk_products');
-    if (localProducts) return JSON.parse(localProducts);
-
-    return []; // Return empty if absolutely nothing found
+    return { products: [], pagination: { total: 0, page: 1, pages: 1 } };
 }
 
 async function loadCategories() {
@@ -850,7 +867,6 @@ async function loadCategories() {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         if (data.success && data.categories) {
-            console.log("Fresh categories loaded from API:", data.categories.length);
             localStorage.setItem('misk_categories', JSON.stringify(data.categories));
             return data.categories;
         }
@@ -867,7 +883,6 @@ async function loadSettings() {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         if (data.success && data.settings) {
-            console.log("Fresh settings loaded from API");
             localStorage.setItem('misk_settings', JSON.stringify(data.settings));
             applyGlobalSettings(); // Re-apply with fresh data
             return data.settings;
@@ -916,85 +931,111 @@ function getProductCardHTML(prod) {
     `;
 }
 
-async function renderProductGrid(containerId) {
+async function renderProductGrid(containerId, isLoadMore = false) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    let products = await loadProducts();
+    // Determine grid type constraints
+    const isMainGrid = (containerId === 'productGrid');
+    const limit = isMainGrid ? 12 : 4;
 
-    // Automatic Category Filtering based on URL Parameters
+    // URL Filters
     const urlParams = new URLSearchParams(window.location.search);
-    let filterCat = urlParams.get('category');
-    let filterSub = urlParams.get('sub');
+    let filterCat = urlParams.get('category') || '';
+    let filterSub = urlParams.get('sub') || '';
 
-    // SEO: Check for clean URL slug
+    // Advanced SEO: Resolve category slug if present
     const path = window.location.pathname;
     if (path.includes('/category/')) {
         const slug = path.split('/category/')[1];
-        // Must resolve slug to category name
-        const savedCats = localStorage.getItem('misk_categories');
-        if (savedCats) {
-            const categories = JSON.parse(savedCats);
-            const matchedCat = categories.find(c => c.slug === slug);
-            if (matchedCat) {
-                if (matchedCat.parentId) {
-                    filterSub = matchedCat.name;
-                } else {
-                    filterCat = matchedCat.name;
-                }
+        const localCats = localStorage.getItem('misk_categories');
+        const categories = localCats ? JSON.parse(localCats) : [];
+        const matchedCat = categories.find(c => c.slug === slug);
+        if (matchedCat) {
+            matchedCat.parentId ? (filterSub = matchedCat.name) : (filterCat = matchedCat.name);
+            updateCategoryHeader(matchedCat);
+        }
+    } else {
+        // Try to update header based on query params too
+        if (filterCat || filterSub) {
+            const localCats = localStorage.getItem('misk_categories');
+            if (localCats) {
+                const categories = JSON.parse(localCats);
+                const c = categories.find(c => c.name === (filterSub || filterCat));
+                if (c) updateCategoryHeader(c);
             }
         }
     }
 
-    // Category Static Content Injection
-    const headerContainer = document.getElementById('categoryHeaderContainer');
-    if (headerContainer) {
-        headerContainer.innerHTML = '';
-        const savedCats = localStorage.getItem('misk_categories');
-        if (savedCats) {
-            const categories = JSON.parse(savedCats);
-            let activeCat = null;
-            if (filterSub) {
-                activeCat = categories.find(c => c.name === filterSub);
-            } else if (filterCat) {
-                activeCat = categories.find(c => c.name === filterCat);
-            }
-
-            if (activeCat) {
-                if (activeCat.staticHeader && activeCat.staticHeader !== '<p><br></p>') {
-                    headerContainer.innerHTML = `<div class="category-rich-header">${activeCat.staticHeader}</div>`;
-                }
-                const sectionTitle = document.querySelector('.section-title h2');
-                if (sectionTitle) sectionTitle.innerText = activeCat.name;
-            }
-        }
+    // Reset pagination on initial load (not Load More)
+    if (!isLoadMore && isMainGrid) {
+        paginationState.page = 1;
+        paginationState.hasMore = true;
+        container.innerHTML = ''; // Clear only on fresh load
     }
 
-    // Filter by Visibility & Hierarchy
-    const savedCats = localStorage.getItem('misk_categories');
-    const categories = savedCats ? JSON.parse(savedCats) : [];
+    // For auxiliary grids (Featured/Offers), always page 1, distinct limit
+    const pageToFetch = isMainGrid ? paginationState.page : 1;
 
-    if (filterSub) {
-        products = products.filter(p => p.subCategory === filterSub);
-    } else if (filterCat) {
-        // If filtering by parent category, include products from all its subcategories too
-        const parentCat = categories.find(c => c.name === filterCat);
-        const childrenNames = categories.filter(c => c.parentId === (parentCat?._id || parentCat?.id)).map(c => c.name);
+    if (paginationState.loading) return;
+    paginationState.loading = true;
 
-        products = products.filter(p => p.category === filterCat || childrenNames.includes(p.subCategory));
-    }
+    // Load Data
+    const result = await loadProducts({
+        page: pageToFetch,
+        limit: limit,
+        category: filterCat,
+        subCategory: filterSub
+    });
 
-    // Filter out products from hidden categories
-    const hiddenCatNames = categories.filter(c => String(c.showInHeader) === 'false').map(c => c.name);
-    // products = products.filter(p => !hiddenCatNames.includes(p.category) && !hiddenCatNames.includes(p.subCategory));
+    const products = result.products || [];
+    const meta = result.pagination;
 
-    // Sort by Priority (Descending)
-    products.sort((a, b) => (b.priority || 0) - (a.priority || 0));
-
-    container.innerHTML = '';
+    // Render
     products.forEach(prod => {
         container.insertAdjacentHTML('beforeend', getProductCardHTML(prod));
     });
+
+    if (products.length === 0 && !isLoadMore) {
+        container.innerHTML = '<p class="no-products">لا توجد منتجات مطابقة حالياً.</p>';
+    }
+
+    paginationState.loading = false;
+
+    // Handle "Load More" Button for Main Grid Only
+    if (isMainGrid) {
+        const loadMoreBtnId = 'btn-load-more-products';
+        let loadMoreBtn = document.getElementById(loadMoreBtnId);
+
+        // Remove existing button if it exists to re-position or hide
+        if (loadMoreBtn) loadMoreBtn.remove();
+
+        if (meta && meta.page < meta.pages) {
+            // Append Load More Button
+            const btnHtml = `
+                <div style="width: 100%; text-align: center; margin-top: 30px;" id="${loadMoreBtnId}-container">
+                     <button id="${loadMoreBtnId}" class="btn-primary" style="padding: 10px 30px;">عرض المزيد</button>
+                </div>
+            `;
+            container.insertAdjacentHTML('afterend', btnHtml); // Outside grid container
+
+            // Re-bind click
+            document.getElementById(loadMoreBtnId).onclick = function () {
+                paginationState.page++;
+                document.getElementById(`${loadMoreBtnId}-container`).remove(); // Remove button before loading next batch
+                renderProductGrid(containerId, true);
+            };
+        }
+    }
+}
+
+function updateCategoryHeader(cat) {
+    const headerContainer = document.getElementById('categoryHeaderContainer');
+    if (headerContainer && cat.staticHeader && cat.staticHeader !== '<p><br></p>') {
+        headerContainer.innerHTML = `<div class="category-rich-header">${cat.staticHeader}</div>`;
+    }
+    const sectionTitle = document.querySelector('.section-title h2');
+    if (sectionTitle) sectionTitle.innerText = cat.name;
 }
 
 // --- Single Product Page (Advanced) ---
@@ -1012,11 +1053,23 @@ async function initProductPage() {
 
     if (!prodId && !prodSlug) return;
 
-    const products = await loadProducts();
+    // Load initial batch (page 1) to see if product is there
+    const result = await loadProducts();
+    const products = result.products || [];
     let prod;
 
     if (prodId) {
         prod = products.find(p => (p._id || p.id).toString() === prodId.toString());
+        // Fallback: Fetch by ID if not in page 1
+        if (!prod) {
+            try {
+                const res = await fetch(`/api/products?id=${prodId}`);
+                const data = await res.json();
+                if (data.success && data.products && data.products.length > 0) {
+                    prod = data.products[0];
+                }
+            } catch (e) { console.error(e); }
+        }
     } else if (prodSlug) {
         prod = products.find(p => p.slug === prodSlug);
         // Fallback: If not found in cache, fetch directly

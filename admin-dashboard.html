@@ -1985,13 +1985,67 @@
                 desc: quill.root.innerHTML
             };
 
-            // Client-side Validation (matching server requirements)
-            if (!newProd.images || newProd.images.length === 0) {
+            // Client-side Validation
+            if (uploadedImagesBase64.length === 0) {
                 alert('خطأ: يجب إضافة صورة واحدة على الأقل للمنتج');
                 return;
             }
 
+            // Show Loading State
+            const submitBtn = document.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الرفع والحفظ...';
+            submitBtn.disabled = true;
+
             try {
+                // 1. Upload Images to Cloudinary via API
+                const imageUrls = [];
+                for (const base64Img of uploadedImagesBase64) {
+                    // Check if it's already a URL (existing image)
+                    if (base64Img.startsWith('http')) {
+                        imageUrls.push(base64Img);
+                        continue;
+                    }
+
+                    // Upload new image
+                    const uploadRes = await fetch('/api/upload', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${JSON.parse(localStorage.getItem('misk_admin_session')).token}`
+                        },
+                        body: JSON.stringify({
+                            file: base64Img,
+                            folder: 'misk_products'
+                        })
+                    });
+
+                    const uploadData = await uploadRes.json();
+                    if (!uploadData.success) {
+                        throw new Error('فشل رفع الصورة: ' + uploadData.message);
+                    }
+                    imageUrls.push(uploadData.url);
+                }
+
+                // 2. Prepare Product Data with URLs
+                const newProd = {
+                    id: id && !isNaN(id) ? parseInt(id) : undefined,
+                    _id: id && isNaN(id) ? id : undefined,
+                    name: document.getElementById('prod-name').value,
+                    slug: document.getElementById('prod-slug').value,
+                    metaTitle: document.getElementById('prod-meta-title').value,
+                    metaDesc: document.getElementById('prod-meta-desc').value,
+                    originalPrice: document.getElementById('prod-original-price').value ? parseInt(document.getElementById('prod-original-price').value) : null,
+                    price: parseInt(document.getElementById('prod-price').value),
+                    stock: parseInt(document.getElementById('prod-stock').value),
+                    priority: parseInt(document.getElementById('prod-priority').value) || 0,
+                    category: document.getElementById('prod-category').value,
+                    subCategory: document.getElementById('prod-sub-category').value,
+                    images: imageUrls, // Send URLs now
+                    variants: getVariantsData(),
+                    desc: quill.root.innerHTML
+                };
+
                 const method = id ? 'PUT' : 'POST';
                 const response = await fetch('/api/products', {
                     method: method,
@@ -2002,7 +2056,7 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    alert(id ? 'تم التحديث بنجاح' : 'تم الإضافة بنجاح');
+                    alert(id ? 'تم القحديث بنجاح' : 'تم الإضافة بنجاح');
                     closeModal('product-modal');
                     renderProducts();
                 } else {
@@ -2011,7 +2065,10 @@
                 }
             } catch (e) {
                 console.error("Error saving product:", e);
-                alert('فشل الاتصال بالخادم: ' + e.message);
+                alert('فشل العملية: ' + e.message);
+            } finally {
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
             }
         }
 

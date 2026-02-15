@@ -1,8 +1,15 @@
 const connectToDatabase = require('../db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const rateLimit = require('../utils/rate-limit');
 
 module.exports = async (req, res) => {
+    try {
+        await rateLimit(req, 10); // 10 attempts per minute per IP
+    } catch (e) {
+        return res.status(429).json({ message: 'Too many login attempts, please try again later.' });
+    }
+
     if (req.method !== 'POST') {
         return res.status(405).json({ message: 'Method Not Allowed' });
     }
@@ -13,11 +20,26 @@ module.exports = async (req, res) => {
         return res.status(400).json({ message: 'Missing required fields' });
     }
 
+    // Sanitize phone (remove non-digits)
+    const cleanPhone = phone.replace(/\D/g, '');
+
+    if (!cleanPhone || cleanPhone.length < 9) {
+        return res.status(400).json({ message: 'رقم الهاتف غير صالح' });
+    }
+
     try {
         const db = await connectToDatabase();
         const users = db.collection('users');
 
-        const user = await users.findOne({ phone });
+        // flexible find: support 059... or 59...
+        const user = await users.findOne({
+            $or: [
+                { phone: cleanPhone },
+                { phone: '0' + cleanPhone },
+                { phone: phone }
+            ]
+        });
+
         if (!user) {
             return res.status(400).json({ message: 'رقم الهاتف أو كلمة المرور غير صحيحة' });
         }

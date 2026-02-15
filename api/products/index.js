@@ -12,13 +12,41 @@ module.exports = async (req, res) => {
 
     if (req.method === 'GET') {
         try {
-            const { slug } = req.query;
+            const { slug, category, subCategory, id } = req.query;
             let query = {};
             if (slug) {
                 query = { slug: slug };
+            } else if (id) {
+                if (!isNaN(id)) {
+                    query = { id: parseInt(id) };
+                } else {
+                    query = { _id: new ObjectId(id) };
+                }
+            } else {
+                if (category) query.category = category;
+                if (subCategory) query.subCategory = subCategory;
             }
-            const allProducts = await products.find(query).sort({ priority: -1 }).toArray();
-            res.status(200).json({ success: true, products: allProducts });
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 12; // Default 12 products per page
+            const skip = (page - 1) * limit;
+
+            const total = await products.countDocuments(query);
+            const allProducts = await products.find(query)
+                .sort({ priority: -1 })
+                .skip(skip)
+                .limit(limit)
+                .toArray();
+
+            res.status(200).json({
+                success: true,
+                products: allProducts,
+                pagination: {
+                    total,
+                    page,
+                    limit,
+                    pages: Math.ceil(total / limit)
+                }
+            });
         } catch (e) {
             res.status(500).json({ message: 'Error fetching products' });
         }
