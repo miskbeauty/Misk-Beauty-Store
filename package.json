@@ -4,8 +4,7 @@
   "description": "Misk Beauty Store - Secure & Scalable",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"No tests\" && exit 0",
-    "build": "echo \"Build success\""
+    "test": "echo \"No tests\" && exit 0"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
