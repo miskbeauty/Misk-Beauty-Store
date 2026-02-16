@@ -1,5 +1,6 @@
 /**
  * Simple Rate Limiter Helper
+ * Fresh build trigger: 2026-02-16 21:38
  * This version is simplified to avoid external dependencies that cause Vercel build errors.
  */
 module.exports = async (req, limit = 10) => {
