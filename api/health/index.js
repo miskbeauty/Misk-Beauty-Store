@@ -1,4 +1,4 @@
-const connectDB = require('../../api/db');
+const connectToDatabase = require('../../lib/db');
 
 module.exports = async (req, res) => {
     // Enable CORS

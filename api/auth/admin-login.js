@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const rateLimit = require('../utils/rate-limit');
+const rateLimit = require('../../lib/rate-limit');
 
 module.exports = async (req, res) => {
     try {

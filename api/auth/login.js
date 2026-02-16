@@ -1,7 +1,7 @@
-const connectToDatabase = require('../db');
+const connectToDatabase = require('../../lib/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const rateLimit = require('../utils/rate-limit');
+const rateLimit = require('../../lib/rate-limit');
 
 module.exports = async (req, res) => {
     try {

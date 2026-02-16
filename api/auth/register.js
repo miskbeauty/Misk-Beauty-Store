@@ -1,5 +1,6 @@
-const connectToDatabase = require('../db');
+const connectToDatabase = require('../../lib/db');
 const bcrypt = require('bcryptjs');
+const rateLimit = require('../../lib/rate-limit');
 
 module.exports = async (req, res) => {
     if (req.method !== 'POST') {

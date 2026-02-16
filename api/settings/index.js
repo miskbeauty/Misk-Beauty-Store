@@ -1,4 +1,5 @@
-const connectToDatabase = require('../db');
+const connectToDatabase = require('../../lib/db');
+const { verifyAdmin } = require('../../lib/auth');
 
 module.exports = async (req, res) => {
     const db = await connectToDatabase();

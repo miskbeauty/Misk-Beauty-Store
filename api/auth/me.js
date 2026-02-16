@@ -1,4 +1,4 @@
-const connectToDatabase = require('../db');
+const connectToDatabase = require('../../lib/db');
 const jwt = require('jsonwebtoken');
 const { ObjectId } = require('mongodb');
 
