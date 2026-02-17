@@ -15,6 +15,13 @@ module.exports = async (req, res) => {
         return;
     }
 
+    if (!process.env.MONGODB_URI) {
+        return res.status(500).json({
+            success: false,
+            message: "Missing MONGODB_URI environment variable on server"
+        });
+    }
+
     try {
         await connectToDatabase();
         res.status(200).json({
@@ -26,8 +33,8 @@ module.exports = async (req, res) => {
         console.error("Health Check Failed:", error);
         res.status(500).json({
             success: false,
-            message: "Database Connection Failed",
-            error: error.message
+            message: "Database Connection Failed: " + error.message,
+            error: error.stack
         });
     }
 };

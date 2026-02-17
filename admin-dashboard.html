@@ -1556,12 +1556,25 @@
             };
 
             try {
+                const sessionData = localStorage.getItem('misk_admin_session');
+                if (!sessionData) {
+                    alert('خطأ: لم يتم العثور على جلسة الإدارة. يرجى تسجيل الدخول مجدداً.');
+                    window.location.href = 'admin-login.html';
+                    return;
+                }
+                const token = JSON.parse(sessionData).token;
+                if (!token) {
+                    alert('خطأ: توكن الوصول مفقود. يرجى تسجيل الدخول مجدداً.');
+                    window.location.href = 'admin-login.html';
+                    return;
+                }
+
                 const method = id ? 'PUT' : 'POST';
                 const response = await fetch('/api/pages', {
                     method: method,
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${JSON.parse(localStorage.getItem('misk_admin_session')).token}`
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify(newPage)
                 });
@@ -1576,17 +1589,21 @@
                 }
             } catch (e) {
                 console.error("Error saving page:", e);
-                alert('فشل الاتصال بالخادم');
+                alert('فشل الاتصال بالخادم: ' + e.message);
             }
         }
 
         async function deletePage(id) {
             if (confirm('هل أنت متأكد من حذف هذه الصفحة؟')) {
                 try {
+                    const sessionData = localStorage.getItem('misk_admin_session');
+                    if (!sessionData) throw new Error('يرجى تسجيل الدخول مجدداً (الجلسة مفقودة)');
+                    const token = JSON.parse(sessionData).token;
+
                     const response = await fetch(`/api/pages?id=${id}`, {
                         method: 'DELETE',
                         headers: {
-                            'Authorization': `Bearer ${JSON.parse(localStorage.getItem('misk_admin_session')).token}`
+                            'Authorization': `Bearer ${token}`
                         }
                     });
                     if (response.ok) {
@@ -1597,7 +1614,7 @@
                     }
                 } catch (e) {
                     console.error("Error deleting page:", e);
-                    alert('فشل الاتصال بالخادم');
+                    alert('فشل الاتصال بالخادم: ' + e.message);
                 }
             }
         }
@@ -1626,12 +1643,25 @@
             };
 
             try {
+                const sessionData = localStorage.getItem('misk_admin_session');
+                if (!sessionData) {
+                    alert('خطأ: لم يتم العثور على جلسة الإدارة. يرجى تسجيل الدخول مجدداً.');
+                    window.location.href = 'admin-login.html';
+                    return;
+                }
+                const token = JSON.parse(sessionData).token;
+                if (!token) {
+                    alert('خطأ: توكن الوصول مفقود. يرجى تسجيل الدخول مجدداً.');
+                    window.location.href = 'admin-login.html';
+                    return;
+                }
+
                 const method = id ? 'PUT' : 'POST';
                 const response = await fetch('/api/categories', {
                     method: method,
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${JSON.parse(localStorage.getItem('misk_admin_session')).token}`
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify(newCat)
                 });
@@ -1647,7 +1677,7 @@
                 }
             } catch (e) {
                 console.error("Error saving category:", e);
-                alert('فشل الاتصال بالخادم');
+                alert('فشل الاتصال بالخادم: ' + e.message);
             }
         }
 
@@ -1663,10 +1693,14 @@
         async function deleteCategory(id) {
             if (confirm('هل أنت متأكد من حذف هذا التصنيف؟ سيتم فك ارتباط الفروع به.')) {
                 try {
+                    const sessionData = localStorage.getItem('misk_admin_session');
+                    if (!sessionData) throw new Error('يرجى تسجيل الدخول مجدداً (الجلسة مفقودة)');
+                    const token = JSON.parse(sessionData).token;
+
                     const response = await fetch(`/api/categories?id=${id}`, {
                         method: 'DELETE',
                         headers: {
-                            'Authorization': `Bearer ${JSON.parse(localStorage.getItem('misk_admin_session')).token}`
+                            'Authorization': `Bearer ${token}`
                         }
                     });
                     if (response.ok) {
@@ -1678,7 +1712,7 @@
                     }
                 } catch (e) {
                     console.error("Error deleting category:", e);
-                    alert('فشل الاتصال بالخادم');
+                    alert('فشل الاتصال بالخادم: ' + e.message);
                 }
             }
         }
@@ -1875,11 +1909,15 @@
             };
 
             try {
+                const sessionData = localStorage.getItem('misk_admin_session');
+                if (!sessionData) throw new Error('No session data');
+                const token = JSON.parse(sessionData).token;
+
                 const response = await fetch('/api/settings', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${JSON.parse(localStorage.getItem('misk_admin_session')).token}`
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify(updated)
                 });
@@ -1893,7 +1931,7 @@
                 }
             } catch (e) {
                 console.error("Error saving settings:", e);
-                alert('فشل الاتصال بالخادم');
+                alert('فشل الاتصال بالخادم: ' + e.message);
             }
         }
 
@@ -2022,6 +2060,19 @@
             submitBtn.disabled = true;
 
             try {
+                const sessionData = localStorage.getItem('misk_admin_session');
+                if (!sessionData) {
+                    alert('خطأ: لم يتم العثور على جلسة الإدارة. يرجى تسجيل الدخول مجدداً.');
+                    window.location.href = 'admin-login.html';
+                    return;
+                }
+                const token = JSON.parse(sessionData).token;
+                if (!token) {
+                    alert('خطأ: توكن الوصول مفقود. يرجى تسجيل الدخول مجدداً.');
+                    window.location.href = 'admin-login.html';
+                    return;
+                }
+
                 // 1. Upload Images to Cloudinary via API
                 const imageUrls = [];
                 for (const base64Img of uploadedImagesBase64) {
@@ -2036,7 +2087,7 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${JSON.parse(localStorage.getItem('misk_admin_session')).token}`
+                            'Authorization': `Bearer ${token}`
                         },
                         body: JSON.stringify({
                             file: base64Img,
@@ -2075,7 +2126,7 @@
                     method: method,
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${JSON.parse(localStorage.getItem('misk_admin_session')).token}`
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify(newProd)
                 });
@@ -2102,10 +2153,14 @@
         async function deleteProduct(id) {
             if (confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
                 try {
+                    const sessionData = localStorage.getItem('misk_admin_session');
+                    if (!sessionData) throw new Error('يرجى تسجيل الدخول مجدداً (الجلسة مفقودة)');
+                    const token = JSON.parse(sessionData).token;
+
                     const response = await fetch(`/api/products?id=${id}`, {
                         method: 'DELETE',
                         headers: {
-                            'Authorization': `Bearer ${JSON.parse(localStorage.getItem('misk_admin_session')).token}`
+                            'Authorization': `Bearer ${token}`
                         }
                     });
                     if (response.ok) {
@@ -2116,7 +2171,7 @@
                     }
                 } catch (e) {
                     console.error("Error deleting product:", e);
-                    alert('فشل الاتصال بالخادم');
+                    alert('فشل الاتصال بالخادم: ' + e.message);
                 }
             }
         }
