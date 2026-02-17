@@ -21,6 +21,10 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'POST' || req.method === 'PUT') {
+        const adminCheck = await verifyAdmin(req);
+        if (!adminCheck.authenticated) {
+            return res.status(adminCheck.error === 'Authorization header missing' ? 401 : 403).json({ message: adminCheck.error });
+        }
         try {
             const newSettings = req.body;
             // Upsert: replace the single settings document or create if it doesn't exist

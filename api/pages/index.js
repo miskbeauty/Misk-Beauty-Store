@@ -16,6 +16,10 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'POST') {
+        const adminCheck = await verifyAdmin(req);
+        if (!adminCheck.authenticated) {
+            return res.status(adminCheck.error === 'Authorization header missing' ? 401 : 403).json({ message: adminCheck.error });
+        }
         try {
             const page = req.body;
             if (page.id) page.id = parseInt(page.id);
@@ -27,6 +31,10 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'PUT') {
+        const adminCheck = await verifyAdmin(req);
+        if (!adminCheck.authenticated) {
+            return res.status(adminCheck.error === 'Authorization header missing' ? 401 : 403).json({ message: adminCheck.error });
+        }
         try {
             const { id, _id, ...updateData } = req.body;
             let filter = {};
@@ -46,6 +54,10 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'DELETE') {
+        const adminCheck = await verifyAdmin(req);
+        if (!adminCheck.authenticated) {
+            return res.status(adminCheck.error === 'Authorization header missing' ? 401 : 403).json({ message: adminCheck.error });
+        }
         try {
             const { id } = req.query;
             if (!id) return res.status(400).json({ message: 'Missing ID' });

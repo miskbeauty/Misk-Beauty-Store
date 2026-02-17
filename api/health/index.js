@@ -16,7 +16,7 @@ module.exports = async (req, res) => {
     }
 
     try {
-        await connectDB();
+        await connectToDatabase();
         res.status(200).json({
             success: true,
             message: "System Healthy",

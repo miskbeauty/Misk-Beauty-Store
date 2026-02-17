@@ -1559,7 +1559,10 @@
                 const method = id ? 'PUT' : 'POST';
                 const response = await fetch('/api/pages', {
                     method: method,
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${JSON.parse(localStorage.getItem('misk_admin_session')).token}`
+                    },
                     body: JSON.stringify(newPage)
                 });
 
@@ -1568,7 +1571,8 @@
                     closeModal('page-modal');
                     renderPages();
                 } else {
-                    alert('خطأ في حفظ الصفحة');
+                    const errorData = await response.json();
+                    alert('خطأ في حفظ الصفحة: ' + (errorData.message || 'Unknown Error'));
                 }
             } catch (e) {
                 console.error("Error saving page:", e);
@@ -1579,11 +1583,17 @@
         async function deletePage(id) {
             if (confirm('هل أنت متأكد من حذف هذه الصفحة؟')) {
                 try {
-                    const response = await fetch(`/api/pages?id=${id}`, { method: 'DELETE' });
+                    const response = await fetch(`/api/pages?id=${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${JSON.parse(localStorage.getItem('misk_admin_session')).token}`
+                        }
+                    });
                     if (response.ok) {
                         renderPages();
                     } else {
-                        alert('خطأ في حذف الصفحة');
+                        const errorData = await response.json();
+                        alert('خطأ في حذف الصفحة: ' + (errorData.message || 'Unknown Error'));
                     }
                 } catch (e) {
                     console.error("Error deleting page:", e);
@@ -1619,7 +1629,10 @@
                 const method = id ? 'PUT' : 'POST';
                 const response = await fetch('/api/categories', {
                     method: method,
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${JSON.parse(localStorage.getItem('misk_admin_session')).token}`
+                    },
                     body: JSON.stringify(newCat)
                 });
 
@@ -1629,7 +1642,8 @@
                     renderCategories();
                     updateProductCategoryDropdowns();
                 } else {
-                    alert('خطأ في حفظ التصنيف');
+                    const errorData = await response.json();
+                    alert('خطأ في حفظ التصنيف: ' + (errorData.message || 'Unknown Error'));
                 }
             } catch (e) {
                 console.error("Error saving category:", e);
@@ -1649,12 +1663,18 @@
         async function deleteCategory(id) {
             if (confirm('هل أنت متأكد من حذف هذا التصنيف؟ سيتم فك ارتباط الفروع به.')) {
                 try {
-                    const response = await fetch(`/api/categories?id=${id}`, { method: 'DELETE' });
+                    const response = await fetch(`/api/categories?id=${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${JSON.parse(localStorage.getItem('misk_admin_session')).token}`
+                        }
+                    });
                     if (response.ok) {
                         renderCategories();
                         updateProductCategoryDropdowns();
                     } else {
-                        alert('خطأ في حذف التصنيف');
+                        const errorData = await response.json();
+                        alert('خطأ في حذف التصنيف: ' + (errorData.message || 'Unknown Error'));
                     }
                 } catch (e) {
                     console.error("Error deleting category:", e);
@@ -1857,7 +1877,10 @@
             try {
                 const response = await fetch('/api/settings', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${JSON.parse(localStorage.getItem('misk_admin_session')).token}`
+                    },
                     body: JSON.stringify(updated)
                 });
 
@@ -1865,7 +1888,8 @@
                     storeSettings = updated;
                     alert('تم حفظ الإعدادات بنجاح وسيتم تطبيقها في الموقع.');
                 } else {
-                    alert('خطأ في حفظ الإعدادات');
+                    const errorData = await response.json();
+                    alert('خطأ في حفظ الإعدادات: ' + (errorData.message || 'Unknown Error'));
                 }
             } catch (e) {
                 console.error("Error saving settings:", e);
@@ -2049,7 +2073,10 @@
                 const method = id ? 'PUT' : 'POST';
                 const response = await fetch('/api/products', {
                     method: method,
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${JSON.parse(localStorage.getItem('misk_admin_session')).token}`
+                    },
                     body: JSON.stringify(newProd)
                 });
 
@@ -2075,11 +2102,17 @@
         async function deleteProduct(id) {
             if (confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
                 try {
-                    const response = await fetch(`/api/products?id=${id}`, { method: 'DELETE' });
+                    const response = await fetch(`/api/products?id=${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${JSON.parse(localStorage.getItem('misk_admin_session')).token}`
+                        }
+                    });
                     if (response.ok) {
                         renderProducts();
                     } else {
-                        alert('خطأ في حذف المنتج');
+                        const errorData = await response.json();
+                        alert('خطأ في حذف المنتج: ' + (errorData.message || 'Unknown Error'));
                     }
                 } catch (e) {
                     console.error("Error deleting product:", e);
