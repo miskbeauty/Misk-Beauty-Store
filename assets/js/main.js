@@ -665,9 +665,16 @@ function applyGlobalSettings() {
 async function checkSystemHealth() {
     try {
         const response = await fetch('/api/health');
-        if (!response.ok) throw new Error(`Status: ${response.status}`);
-        const data = await response.json();
-        if (!data.success) throw new Error(data.message || 'Unknown Error');
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(data.message || `Status: ${response.status}`);
+        }
+
+        if (!data.success) {
+            throw new Error(data.message || 'Unknown Error');
+        }
+
         console.log("✅ System Health Check Passed");
     } catch (e) {
         console.error("⚠️ System Health Check Failed:", e);

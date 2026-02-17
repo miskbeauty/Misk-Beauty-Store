@@ -50,30 +50,45 @@
             encryptionPrep: true                  // Ready for future hashing integration
         };
 
-        function handleAdminLogin(e) {
+        async function handleAdminLogin(e) {
             e.preventDefault();
             const user = document.getElementById('username').value;
             const pass = document.getElementById('password').value;
             const rememberMe = document.getElementById('rememberMe').checked;
+            const loginBtn = document.querySelector('.btn-admin-login');
 
-            // --- Encryption Preparation Note ---
-            // When moving to a backend (Node/PHP/Firebase):
-            // 1. Password should NEVER be sent or stored as plain text.
-            // 2. We will use bcrypt.compare(pass, hashedPassword) on the server.
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الدخول...';
 
-            if (user === 'admin' && pass === 'admin123') {
-                const sessionData = {
-                    status: 'active',
-                    loginTime: Date.now(),
-                    user: user,
-                    persistent: rememberMe
-                };
+            try {
+                const response = await fetch('/api/auth/admin-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
 
-                // Store robust session object
-                localStorage.setItem('misk_admin_session', JSON.stringify(sessionData));
-                window.location.href = 'admin-dashboard.html';
-            } else {
-                alert('اسم المستخدم أو كلمة المرور غير صحيحة');
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const sessionData = {
+                        status: 'active',
+                        loginTime: Date.now(),
+                        user: user,
+                        token: data.token, // Essential for API calls
+                        persistent: rememberMe
+                    };
+
+                    localStorage.setItem('misk_admin_session', JSON.stringify(sessionData));
+                    window.location.href = 'admin-dashboard.html';
+                } else {
+                    alert(data.message || 'اسم المستخدم أو كلمة المرور غير صحيحة');
+                }
+            } catch (error) {
+                console.error("Login error:", error);
+                alert('فشل الاتصال بالخادم: ' + error.message);
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = 'دخول للوحة التحكم';
             }
         }
     </script>
