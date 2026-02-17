@@ -1584,8 +1584,14 @@
                     closeModal('page-modal');
                     renderPages();
                 } else {
-                    const errorData = await response.json();
-                    alert('خطأ في حفظ الصفحة: ' + (errorData.message || 'Unknown Error'));
+                    let errorMessage = 'Unknown Error';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.message || errorMessage;
+                    } catch (parseError) {
+                        errorMessage = await response.text() || response.statusText;
+                    }
+                    alert('خطأ في حفظ الصفحة: ' + errorMessage);
                 }
             } catch (e) {
                 console.error("Error saving page:", e);
@@ -1609,8 +1615,14 @@
                     if (response.ok) {
                         renderPages();
                     } else {
-                        const errorData = await response.json();
-                        alert('خطأ في حذف الصفحة: ' + (errorData.message || 'Unknown Error'));
+                        let errorMessage = 'Unknown Error';
+                        try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.message || errorMessage;
+                        } catch (parseError) {
+                            errorMessage = await response.text() || response.statusText;
+                        }
+                        alert('خطأ في حذف الصفحة: ' + errorMessage);
                     }
                 } catch (e) {
                     console.error("Error deleting page:", e);
@@ -1672,8 +1684,14 @@
                     renderCategories();
                     updateProductCategoryDropdowns();
                 } else {
-                    const errorData = await response.json();
-                    alert('خطأ في حفظ التصنيف: ' + (errorData.message || 'Unknown Error'));
+                    let errorMessage = 'Unknown Error';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.message || errorMessage;
+                    } catch (parseError) {
+                        errorMessage = await response.text() || response.statusText;
+                    }
+                    alert('خطأ في حفظ التصنيف: ' + errorMessage);
                 }
             } catch (e) {
                 console.error("Error saving category:", e);
@@ -1707,8 +1725,14 @@
                         renderCategories();
                         updateProductCategoryDropdowns();
                     } else {
-                        const errorData = await response.json();
-                        alert('خطأ في حذف التصنيف: ' + (errorData.message || 'Unknown Error'));
+                        let errorMessage = 'Unknown Error';
+                        try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.message || errorMessage;
+                        } catch (parseError) {
+                            errorMessage = await response.text() || response.statusText;
+                        }
+                        alert('خطأ في حذف التصنيف: ' + errorMessage);
                     }
                 } catch (e) {
                     console.error("Error deleting category:", e);
@@ -1926,8 +1950,14 @@
                     storeSettings = updated;
                     alert('تم حفظ الإعدادات بنجاح وسيتم تطبيقها في الموقع.');
                 } else {
-                    const errorData = await response.json();
-                    alert('خطأ في حفظ الإعدادات: ' + (errorData.message || 'Unknown Error'));
+                    let errorMessage = 'Unknown Error';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.message || errorMessage;
+                    } catch (parseError) {
+                        errorMessage = await response.text() || response.statusText;
+                    }
+                    alert('خطأ في حفظ الإعدادات: ' + errorMessage);
                 }
             } catch (e) {
                 console.error("Error saving settings:", e);
@@ -2131,7 +2161,13 @@
                     body: JSON.stringify(newProd)
                 });
 
-                const data = await response.json();
+                let data = {};
+                try {
+                    data = await response.json();
+                } catch (pe) {
+                    const text = await response.text();
+                    data = { message: text || response.statusText };
+                }
 
                 if (response.ok) {
                     alert(id ? 'تم القحديث بنجاح' : 'تم الإضافة بنجاح');
@@ -2166,8 +2202,14 @@
                     if (response.ok) {
                         renderProducts();
                     } else {
-                        const errorData = await response.json();
-                        alert('خطأ في حذف المنتج: ' + (errorData.message || 'Unknown Error'));
+                        let errorMessage = 'Unknown Error';
+                        try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.message || errorMessage;
+                        } catch (parseError) {
+                            errorMessage = await response.text() || response.statusText;
+                        }
+                        alert('خطأ في حذف المنتج: ' + errorMessage);
                     }
                 } catch (e) {
                     console.error("Error deleting product:", e);
