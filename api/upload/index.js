@@ -49,6 +49,14 @@ module.exports = async (req, res) => {
             return res.status(400).json({ message: 'No file provided' });
         }
 
+        // Validate Configuration
+        if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+            return res.status(500).json({
+                success: false,
+                message: 'Cloudinary configuration is missing on server (CLOUDINARY_CLOUD_NAME, etc.)'
+            });
+        }
+
         // Upload to Cloudinary
         const uploadResponse = await cloudinary.uploader.upload(file, {
             folder: folder || 'misk_products',
@@ -65,8 +73,8 @@ module.exports = async (req, res) => {
         console.error("Cloudinary Upload Error:", error);
         return res.status(500).json({
             success: false,
-            message: 'Image upload failed',
-            error: error.message
+            message: 'Cloudinary Error: ' + error.message,
+            stack: error.stack
         });
     }
 };
