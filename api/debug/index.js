@@ -44,15 +44,18 @@ module.exports = async (req, res) => {
 
     // 3. Test Cloudinary
     try {
+        const cloudName = (process.env.CLOUDINARY_CLOUD_NAME || '').trim();
+        const apiKey = (process.env.CLOUDINARY_API_KEY || '').trim();
+        const apiSecret = (process.env.CLOUDINARY_API_SECRET || '').trim();
+
         cloudinary.config({
-            cloud_name: (process.env.CLOUDINARY_CLOUD_NAME || '').trim(),
-            api_key: (process.env.CLOUDINARY_API_KEY || '').trim(),
-            api_secret: (process.env.CLOUDINARY_API_SECRET || '').trim(),
+            cloud_name: cloudName,
+            api_key: apiKey,
+            api_secret: apiSecret,
             secure: true
         });
 
         const start = Date.now();
-        // Ping Cloudinary API by fetching root folder or similar low-impact call
         const result = await cloudinary.api.ping();
         const duration = Date.now() - start;
         
@@ -62,10 +65,12 @@ module.exports = async (req, res) => {
             result: result.status
         };
     } catch (err) {
+        console.error("Cloudinary Debug Error:", err);
         report.cloudinary = {
             status: 'Failed',
-            message: err.message,
-            http_code: err.http_code
+            message: err.message || (err.error && err.error.message) || JSON.stringify(err),
+            http_code: err.http_code,
+            raw: err
         };
     }
 
