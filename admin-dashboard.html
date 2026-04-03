@@ -64,11 +64,11 @@
                         <span>التقارير والإحصائيات</span>
                     </a>
                 </li>
-                <li class="menu-item" id="menu-settings">
-                    <a href="#" onclick="toggleSection('settings-section')"><i class="fas fa-cog"></i> الإعدادات</a>
-                </li>
-                <li style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
-                    <a href="#" onclick="runDiagnostics()"><i class="fas fa-stethoscope"></i> فحص نظام الربط</a>
+                <li style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                    <a href="javascript:void(0)" onclick="runDiagnostics(this)">
+                        <i class="fas fa-stethoscope"></i>
+                        <span>فحص نظام الربط</span>
+                    </a>
                 </li>
                 <li class="menu-item" style="margin-top: 50px;">
                     <a href="admin-login.html" onclick="localStorage.removeItem('misk_admin_session')">
@@ -2337,6 +2337,44 @@
                 ]
             }
         });
+        async function runDiagnostics(el) {
+            try {
+                if (!confirm('هل تريد تشغيل فحص الاتصال بقاعدة البيانات ورفع الصور؟')) return;
+                
+                const originalHTML = el.innerHTML;
+                el.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الفحص...';
+                
+                const sessionData = localStorage.getItem('misk_admin_session');
+                if (!sessionData) {
+                    alert('يرجى تسجيل الدخول أولاً.');
+                    el.innerHTML = originalHTML;
+                    return;
+                }
+                const token = JSON.parse(sessionData).token;
+
+                const response = await fetch('/api/debug', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`فشل الطلب: ${response.status} - ${errorText}`);
+                }
+
+                const report = await response.json();
+                
+                let message = `📝 تقرير فحص النظام:\n\n`;
+                message += `🗄️ MongoDB: ${report.mongodb.status}\n   - ${report.mongodb.message}\n\n`;
+                message += `🖼️ Cloudinary: ${report.cloudinary.status}\n   - ${report.cloudinary.message}\n\n`;
+                message += `🔑 البيئة:\n   - URI: ${report.env.MONGODB_URI}\n   - Cloudinary: ${report.env.CLOUDINARY_API_KEY}\n   - Secret: ${report.env.JWT_SECRET}`;
+                
+                alert(message);
+                el.innerHTML = originalHTML;
+            } catch (e) {
+                alert('خطأ أثناء تشغيل الفحص: ' + e.message);
+                if(el) el.innerHTML = originalHTML;
+            }
+        }
     </script>
 </body>
 
