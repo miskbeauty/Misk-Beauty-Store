@@ -46,9 +46,8 @@ module.exports = async (req, res) => {
             secure: true
         });
 
-        // Upload to Cloudinary
+        // Upload to Cloudinary - Temporarily simplified to isolate Signature issues
         const uploadResponse = await cloudinary.uploader.upload(file, {
-            folder: folder || 'misk_products',
             resource_type: 'auto'
         });
 
@@ -58,12 +57,13 @@ module.exports = async (req, res) => {
             public_id: uploadResponse.public_id
         });
 
-    } catch (error) {
-        console.error("Cloudinary Upload Error:", error);
+    } catch (e) {
+        const hostname = process.env.MONGODB_URI ? new URL(process.env.MONGODB_URI.replace('mongodb+srv://', 'http://')).hostname : 'unknown';
+        console.error(`CRITICAL: MongoDB connection failed for host [${hostname}]:`, e.message);
         return res.status(500).json({
             success: false,
-            message: 'Cloudinary Error: ' + error.message,
-            stack: error.stack
+            message: 'Cloudinary Error: ' + e.message,
+            stack: e.stack
         });
     }
 };
