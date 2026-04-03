@@ -1,5 +1,6 @@
 const connectToDatabase = require('../../lib/db');
 const { ObjectId } = require('mongodb');
+const { verifyAdmin } = require('../../lib/auth');
 
 module.exports = async (req, res) => {
     const db = await connectToDatabase();
