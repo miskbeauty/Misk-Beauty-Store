@@ -1,5 +1,5 @@
 const cloudinary = require('cloudinary').v2;
-const jwt = require('jsonwebtoken');
+const { verifyAdmin } = require('../../lib/auth');
 
 // Configure Cloudinary
 cloudinary.config({
@@ -8,22 +8,6 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Helper to verify admin token
-// We duplicate this small helper here to avoid complex relative imports if utils structure changes
-async function verifyAdmin(req) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return false;
-    }
-    const token = authHeader.split(' ')[1];
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        return decoded.role === 'admin';
-    } catch (err) {
-        return false;
-    }
-}
-
 module.exports = async (req, res) => {
     // 1. Method Check
     if (req.method !== 'POST') {
@@ -31,8 +15,8 @@ module.exports = async (req, res) => {
     }
 
     // 2. Auth Check
-    const isAdmin = await verifyAdmin(req);
-    if (!isAdmin) {
+    const adminCheck = await verifyAdmin(req);
+    if (!adminCheck.authenticated) {
         return res.status(401).json({ message: 'Unauthorized: Admin access required' });
     }
 

@@ -1644,17 +1644,11 @@
                 slug = generateSlug(name);
             }
 
-            const newCat = {
-                id: id && !isNaN(id) ? parseInt(id) : undefined,
-                _id: id && isNaN(id) ? id : undefined,
-                name: name,
-                slug: slug,
-                parentId: document.getElementById('cat-parent').value || null,
-                priority: parseInt(document.getElementById('cat-priority').value) || 0,
-                showInHeader: document.getElementById('cat-show-header').value,
-                image: catImageBase64,
-                staticHeader: catQuill.root.innerHTML
-            };
+            // Show Loading State
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+            submitBtn.disabled = true;
 
             try {
                 const sessionData = localStorage.getItem('misk_admin_session');
@@ -1669,6 +1663,41 @@
                     window.location.href = 'admin-login.html';
                     return;
                 }
+
+                // 1. Upload Image to Cloudinary if it's new (Base64)
+                let finalImageUrl = catImageBase64;
+                if (catImageBase64 && catImageBase64.startsWith('data:image')) {
+                    const uploadRes = await fetch('/api/upload', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            file: catImageBase64,
+                            folder: 'misk_categories'
+                        })
+                    });
+
+                    const uploadData = await uploadRes.json();
+                    if (uploadData.success) {
+                        finalImageUrl = uploadData.url;
+                    } else {
+                        throw new Error('فشل رفع صورة التصنيف: ' + uploadData.message);
+                    }
+                }
+
+                const newCat = {
+                    id: id && !isNaN(id) ? parseInt(id) : undefined,
+                    _id: id && isNaN(id) ? id : undefined,
+                    name: name,
+                    slug: slug,
+                    parentId: document.getElementById('cat-parent').value || null,
+                    priority: parseInt(document.getElementById('cat-priority').value) || 0,
+                    showInHeader: document.getElementById('cat-show-header').value,
+                    image: finalImageUrl,
+                    staticHeader: catQuill.root.innerHTML
+                };
 
                 const method = id ? 'PUT' : 'POST';
                 const response = await fetch('/api/categories', {
@@ -1698,7 +1727,10 @@
                 }
             } catch (e) {
                 console.error("Error saving category:", e);
-                alert('فشل الاتصال بالخادم: ' + e.message);
+                alert('فشل العملية: ' + e.message);
+            } finally {
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
             }
         }
 
