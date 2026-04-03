@@ -20,26 +20,31 @@ module.exports = async (req, res) => {
         return res.status(401).json({ message: 'Unauthorized: Admin access required' });
     }
 
-    // 3. Body Check (Expecting JSON with file data for Vercel Serverless simplicity)
-    // Note: detailed multipart/form-data parsing in Vercel functions is complex without middleware.
-    // For this implementation, we will accept a base64 string from the client, 
-    // BUT we will upload it to Cloudinary immediately and return the URL.
-    // This solves the database size issue, even if the upload payload is still large.
-
+    // 3. Body Check
     try {
         const { file, folder } = req.body;
-
         if (!file) {
             return res.status(400).json({ message: 'No file provided' });
         }
 
-        // Validate Configuration
-        if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+        // Validate & Re-configure Cloudinary explicitly to ensure env vars are fresh
+        const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+        const apiKey = process.env.CLOUDINARY_API_KEY;
+        const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+        if (!cloudName || !apiKey || !apiSecret) {
             return res.status(500).json({
                 success: false,
-                message: 'Cloudinary configuration is missing on server (CLOUDINARY_CLOUD_NAME, etc.)'
+                message: `Cloudinary configuration missing: ${!cloudName ? 'CloudName ' : ''}${!apiKey ? 'ApiKey ' : ''}${!apiSecret ? 'ApiSecret' : ''}`
             });
         }
+
+        cloudinary.config({
+            cloud_name: cloudName.trim(),
+            api_key: apiKey.trim(),
+            api_secret: apiSecret.trim(),
+            secure: true
+        });
 
         // Upload to Cloudinary
         const uploadResponse = await cloudinary.uploader.upload(file, {
