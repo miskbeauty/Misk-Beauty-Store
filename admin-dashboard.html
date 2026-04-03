@@ -65,10 +65,10 @@
                     </a>
                 </li>
                 <li class="menu-item" id="menu-settings">
-                    <a href="#" onclick="switchTab('settings')">
-                        <i class="fas fa-cog"></i>
-                        <span>الإعدادات</span>
-                    </a>
+                    <a href="#" onclick="toggleSection('settings-section')"><i class="fas fa-cog"></i> الإعدادات</a>
+                </li>
+                <li style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                    <a href="#" onclick="runDiagnostics()"><i class="fas fa-stethoscope"></i> فحص نظام الربط</a>
                 </li>
                 <li class="menu-item" style="margin-top: 50px;">
                     <a href="admin-login.html" onclick="localStorage.removeItem('misk_admin_session')">
