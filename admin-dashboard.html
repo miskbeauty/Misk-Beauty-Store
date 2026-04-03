@@ -1584,11 +1584,12 @@
                     closeModal('page-modal');
                     renderPages();
                 } else {
+                    const contentType = response.headers.get("content-type");
                     let errorMessage = 'Unknown Error';
-                    try {
+                    if (contentType && contentType.includes("application/json")) {
                         const errorData = await response.json();
                         errorMessage = errorData.message || errorMessage;
-                    } catch (parseError) {
+                    } else {
                         errorMessage = await response.text() || response.statusText;
                     }
                     alert('خطأ في حفظ الصفحة: ' + errorMessage);
@@ -1615,11 +1616,12 @@
                     if (response.ok) {
                         renderPages();
                     } else {
+                        const contentType = response.headers.get("content-type");
                         let errorMessage = 'Unknown Error';
-                        try {
+                        if (contentType && contentType.includes("application/json")) {
                             const errorData = await response.json();
                             errorMessage = errorData.message || errorMessage;
-                        } catch (parseError) {
+                        } else {
                             errorMessage = await response.text() || response.statusText;
                         }
                         alert('خطأ في حذف الصفحة: ' + errorMessage);
@@ -1684,11 +1686,12 @@
                     renderCategories();
                     updateProductCategoryDropdowns();
                 } else {
+                    const contentType = response.headers.get("content-type");
                     let errorMessage = 'Unknown Error';
-                    try {
+                    if (contentType && contentType.includes("application/json")) {
                         const errorData = await response.json();
                         errorMessage = errorData.message || errorMessage;
-                    } catch (parseError) {
+                    } else {
                         errorMessage = await response.text() || response.statusText;
                     }
                     alert('خطأ في حفظ التصنيف: ' + errorMessage);
@@ -1725,11 +1728,12 @@
                         renderCategories();
                         updateProductCategoryDropdowns();
                     } else {
+                        const contentType = response.headers.get("content-type");
                         let errorMessage = 'Unknown Error';
-                        try {
+                        if (contentType && contentType.includes("application/json")) {
                             const errorData = await response.json();
                             errorMessage = errorData.message || errorMessage;
-                        } catch (parseError) {
+                        } else {
                             errorMessage = await response.text() || response.statusText;
                         }
                         alert('خطأ في حذف التصنيف: ' + errorMessage);
@@ -1950,11 +1954,12 @@
                     storeSettings = updated;
                     alert('تم حفظ الإعدادات بنجاح وسيتم تطبيقها في الموقع.');
                 } else {
+                    const contentType = response.headers.get("content-type");
                     let errorMessage = 'Unknown Error';
-                    try {
+                    if (contentType && contentType.includes("application/json")) {
                         const errorData = await response.json();
                         errorMessage = errorData.message || errorMessage;
-                    } catch (parseError) {
+                    } else {
                         errorMessage = await response.text() || response.statusText;
                     }
                     alert('خطأ في حفظ الإعدادات: ' + errorMessage);
@@ -2161,21 +2166,22 @@
                     body: JSON.stringify(newProd)
                 });
 
-                let data = {};
-                try {
-                    data = await response.json();
-                } catch (pe) {
-                    const text = await response.text();
-                    data = { message: text || response.statusText };
-                }
-
                 if (response.ok) {
-                    alert(id ? 'تم القحديث بنجاح' : 'تم الإضافة بنجاح');
+                    alert(id ? 'تم التحديث بنجاح' : 'تم الإضافة بنجاح');
                     closeModal('product-modal');
                     renderProducts();
                 } else {
-                    console.error("Server Error:", data);
-                    alert('خطأ في حفظ المنتج: ' + (data.message || 'Unknown Server Error'));
+                    const contentType = response.headers.get("content-type");
+                    let errorMessage = 'Unknown Server Error';
+                    let errorData = null;
+                    if (contentType && contentType.includes("application/json")) {
+                        errorData = await response.json();
+                        errorMessage = errorData.message || errorMessage;
+                    } else {
+                        errorMessage = await response.text() || response.statusText;
+                    }
+                    console.error("Server Error:", errorData || errorMessage);
+                    alert('خطأ في حفظ المنتج: ' + errorMessage);
                 }
             } catch (e) {
                 console.error("Error saving product:", e);
@@ -2202,11 +2208,12 @@
                     if (response.ok) {
                         renderProducts();
                     } else {
+                        const contentType = response.headers.get("content-type");
                         let errorMessage = 'Unknown Error';
-                        try {
+                        if (contentType && contentType.includes("application/json")) {
                             const errorData = await response.json();
                             errorMessage = errorData.message || errorMessage;
-                        } catch (parseError) {
+                        } else {
                             errorMessage = await response.text() || response.statusText;
                         }
                         alert('خطأ في حذف المنتج: ' + errorMessage);
