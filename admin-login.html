@@ -67,21 +67,28 @@
                     body: JSON.stringify({ username: user, password: pass })
                 });
 
-                const data = await response.json();
+                // Get content type to ensure it's JSON
+                const contentType = response.headers.get("content-type");
+                let data = null;
 
-                if (response.ok && data.success) {
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    data = await response.json();
+                }
+
+                if (response.ok && data && data.success) {
                     const sessionData = {
                         status: 'active',
                         loginTime: Date.now(),
                         user: user,
-                        token: data.token, // Essential for API calls
+                        token: data.token,
                         persistent: rememberMe
                     };
 
                     localStorage.setItem('misk_admin_session', JSON.stringify(sessionData));
                     window.location.href = 'admin-dashboard.html';
                 } else {
-                    alert(data.message || 'اسم المستخدم أو كلمة المرور غير صحيحة');
+                    const errorMsg = data ? data.message : 'حدث خطأ في السيرفر (خطأ 500). تأكد من إعدادات Vercel وعمل Redeploy.';
+                    alert(errorMsg);
                 }
             } catch (error) {
                 console.error("Login error:", error);
