@@ -5,15 +5,90 @@
     <base href="/">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مجموعة العناية المتكاملة | مسك بيوتي</title>
-    <!-- Secure HTTPS Links for external libraries -->
+    <title>تفاصيل المنتج | مسك بيوتي</title>
+    <meta name="description" content="اكتشف تفاصيل المنتج وأضفه لسلتك من متجر مسك بيوتي">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Tajawal:wght@300;400;500;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/assets/css/style.css">
+    <style>
+        /* Loading State */
+        .product-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            gap: 20px;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3e8ff;
+            border-top-color: var(--primary-color, #9b59b6);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Error State */
+        .product-error {
+            text-align: center;
+            padding: 80px 20px;
+        }
+        .product-error i {
+            font-size: 3rem;
+            color: #e74c3c;
+            margin-bottom: 15px;
+        }
+        .product-error h2 { color: #333; margin-bottom: 10px; }
+        .product-error p { color: #666; margin-bottom: 25px; }
+
+        /* Gallery */
+        .product-gallery { display: flex; flex-direction: column; gap: 12px; }
+        .main-image-container {
+            border-radius: 16px;
+            overflow: hidden;
+            background: #f9f9f9;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .main-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        .main-image-container img:hover { transform: scale(1.04); }
+        .thumbnail-list { display: flex; gap: 10px; flex-wrap: wrap; }
+        .thumbnail-list img {
+            width: 70px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+        .thumbnail-list img.active,
+        .thumbnail-list img:hover { border-color: var(--primary-color, #9b59b6); }
+
+        /* No image placeholder */
+        .no-image-placeholder {
+            width: 100%;
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #f3e8ff, #fce4ec);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #c084fc;
+            font-size: 5rem;
+        }
+    </style>
 </head>
 
 <body>
@@ -21,243 +96,157 @@
     <script src="/assets/js/auth.js"></script>
     <script src="/assets/js/header.js"></script>
 
-    <main class="container">
-        <!-- Breadcrumbs -->
-        <nav class="breadcrumbs">
-            <ul>
-                <li><a href="/index.html">الرئيسية</a></li>
-                <li><a href="#">العناية والجمال</a></li>
-                <li class="current-page">مجموعة العناية المتكاملة</li>
-            </ul>
-        </nav>
+    <main class="container" id="product-main">
+        <!-- Loading State -->
+        <div class="product-loading" id="loading-state">
+            <div class="spinner"></div>
+            <p style="color:#888;">جاري تحميل المنتج...</p>
+        </div>
 
-        <section class="product-single">
-            <div class="product-single-grid">
-                <!-- Left Side: Image Gallery -->
-                <div class="product-gallery">
-                    <div class="main-image-container" id="zoomContainer">
-                        <img src="https://images.unsplash.com/photo-1612817288484-6f916006741a?q=80&w=800&auto=format&fit=crop"
-                            alt="مجموعة العناية المتكاملة" id="mainProductImg">
-                    </div>
-                    <div class="thumbnail-list">
-                        <img src="https://images.unsplash.com/photo-1612817288484-6f916006741a?q=80&w=200&auto=format&fit=crop"
-                            class="thumb active">
-                        <img src="https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=200&auto=format&fit=crop"
-                            class="thumb">
-                        <img src="https://images.unsplash.com/photo-1601049541289-9b1b7abc7190?q=80&w=200&auto=format&fit=crop"
-                            class="thumb">
-                    </div>
-                </div>
+        <!-- Error State (hidden by default) -->
+        <div class="product-error" id="error-state" style="display:none;">
+            <i class="fas fa-exclamation-circle"></i>
+            <h2>لم يتم العثور على المنتج</h2>
+            <p id="error-message">المنتج الذي تبحث عنه غير موجود أو تم حذفه.</p>
+            <a href="/index.html" class="btn-primary" style="display:inline-block; padding: 12px 30px; text-decoration:none; border-radius:12px; background: var(--primary-color,#9b59b6); color:#fff;">
+                <i class="fas fa-home"></i> العودة للرئيسية
+            </a>
+        </div>
 
-                <!-- Right Side: Details -->
-                <div class="product-details">
-                    <span class="badge-sale">-30% التوفير</span>
-                    <h1 class="product-title">مجموعة العناية المتكاملة للعناية بالبشرة</h1>
-                    <div class="price-wrapper-single">
-                        <span class="old-price-single">350 شيكل</span>
-                        <span class="sale-price-single">250 شيكل</span>
-                    </div>
+        <!-- Product Content (hidden until loaded) -->
+        <div id="product-content" style="display:none;">
+            <!-- Breadcrumbs -->
+            <nav class="breadcrumbs">
+                <ul>
+                    <li><a href="/index.html">الرئيسية</a></li>
+                    <li><a href="#" id="breadcrumb-category"></a></li>
+                    <li class="current-page" id="breadcrumb-name"></li>
+                </ul>
+            </nav>
 
-                    <div class="product-meta">
-                        <p><strong>التوفر:</strong> <span id="product-stock-status" class="in-stock">متوفر في
-                                المخزن</span> <span id="stock-count"></span></p>
-                        <p><strong>SKU:</strong> <span id="product-sku">N/A</span></p>
-                        <p><strong>العلامة التجارية:</strong> مسك بيوتي Essential</p>
-                    </div>
-
-                    <div class="product-description">
-                        <h3>وصف المنتج</h3>
-                        <p>مجموعة متكاملة للعناية اليومية بالبشرة، تحتوي على منظف لطيف، مرطب عميق، وسيروم مغذي. تم
-                            اختيار المكونات بعناية لضمان نضارة وإشراق يدوم طويلاً.</p>
-                        <ul>
-                            <li>مناسب لجميع أنواع البشرة.</li>
-                            <li>مكونات طبيعية وآمنة.</li>
-                            <li>نتائج ملحوظة خلال 7 أيام.</li>
-                        </ul>
-                    </div>
-
-                    <div class="purchase-actions">
-                        <div class="quantity-selector">
-                            <button class="qty-btn minus"><i class="fas fa-minus"></i></button>
-                            <input type="number" value="1" min="1" id="productQty">
-                            <button class="qty-btn plus"><i class="fas fa-plus"></i></button>
+            <section class="product-single">
+                <div class="product-single-grid">
+                    <!-- Left Side: Image Gallery -->
+                    <div class="product-gallery">
+                        <div class="main-image-container" id="zoomContainer">
+                            <img src="" alt="" id="mainProductImg">
                         </div>
-                        <button class="btn-add-cart-single"
-                            onclick="addToCart(201, 'مجموعة العناية المتكاملة', 250, 'https://images.unsplash.com/photo-1612817288484-6f916006741a?q=80&w=500&auto=format&fit=crop')">
-                            <i class="fas fa-shopping-cart"></i> إضافة للسلة
-                        </button>
+                        <div class="thumbnail-list" id="thumbnail-list"></div>
                     </div>
 
-                    <div id="loyalty-teaser"
-                        style="margin-top: 15px; padding: 10px; background: #fffafa; border: 1px dashed var(--accent-color); border-radius: 10px; font-size: 0.9rem; text-align: center;">
-                        <i class="fas fa-gem" style="color: var(--accent-color);"></i>
-                        <span>سجل دخولك لكسب 250 نقطة عند شراء هذا المنتج!</span>
-                        <a href="login.html"
-                            style="color: var(--primary-color); font-weight: 700; text-decoration: underline; margin-right: 5px;">دخول
-                            / تسجيل</a>
-                    </div>
-
-                    <div class="product-tags">
-                        <span><i class="fas fa-shield-alt"></i> ضمان الجودة</span>
-                        <span><i class="fas fa-undo"></i> استرجاع مرن</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Product Reviews Section -->
-        <section class="container product-reviews-section">
-            <div class="reviews-header">
-                <div class="avg-rating-box">
-                    <span class="avg-number" id="avg-rating-value">0.0</span>
-                    <div class="avg-stars">
-                        <div class="star-rating" id="avg-stars-display">
-                            <i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i
-                                class="far fa-star"></i><i class="far fa-star"></i>
+                    <!-- Right Side: Details -->
+                    <div class="product-details">
+                        <span class="badge-sale" id="product-badge" style="display:none;"></span>
+                        <h1 class="product-title" id="product-title"></h1>
+                        <div class="price-wrapper-single">
+                            <span class="old-price-single" id="product-old-price" style="display:none;"></span>
+                            <span class="sale-price-single" id="product-price"></span>
                         </div>
-                        <span style="font-size: 0.9rem; color: #666;" id="review-count-text">(0 تقييمات)</span>
-                    </div>
-                </div>
-                <button type="button" class="btn-primary" id="btn-write-review" onclick="toggleReviewForm()">
-                    <i class="fas fa-pen-nib"></i> أضف تقييمك
-                </button>
-            </div>
 
-            <!-- Review Submission Form (Hidden by default) -->
-            <div id="review-form-container" class="review-form-container hidden">
-                <h3 style="margin-bottom: 25px; color: var(--primary-dark);">اكتب مراجعتك للمنتج</h3>
-                <form id="product-review-form" onsubmit="handleReviewSubmit(event)">
-                    <div class="review-form-group">
-                        <label>تقييمك للمنتج:</label>
-                        <div class="star-rating interactive" id="form-star-rating">
-                            <i class="far fa-star" data-rating="1"></i>
-                            <i class="far fa-star" data-rating="2"></i>
-                            <i class="far fa-star" data-rating="3"></i>
-                            <i class="far fa-star" data-rating="4"></i>
-                            <i class="far fa-star" data-rating="5"></i>
+                        <div class="product-meta">
+                            <p><strong>التوفر:</strong>
+                                <span id="product-stock-status" class="in-stock">متوفر في المخزن</span>
+                                <span id="stock-count"></span>
+                            </p>
+                            <p><strong>SKU:</strong> <span id="product-sku">N/A</span></p>
+                            <p><strong>العلامة التجارية:</strong> <span id="product-brand">مسك بيوتي</span></p>
                         </div>
-                        <input type="hidden" id="review-rating-value" required>
-                    </div>
 
-                    <div class="review-form-group">
-                        <label>رأيك بالتفصيل:</label>
-                        <textarea id="review-text" class="review-input" rows="4"
-                            placeholder="اكتب مراجعتك هنا، رأيك يهمنا ويساعد الآخرين..." required></textarea>
-                    </div>
+                        <div class="product-description">
+                            <h3>وصف المنتج</h3>
+                            <p id="product-description"></p>
+                        </div>
 
-                    <div class="review-form-group">
-                        <label>أضف صور للمنتج (اختياري):</label>
-                        <input type="file" id="review-images-input" class="review-input" accept="image/*" multiple
-                            onchange="previewReviewImages(this)">
-                        <div id="review-images-preview" class="review-images" style="margin-top: 15px;"></div>
-                    </div>
+                        <div class="purchase-actions">
+                            <div class="quantity-selector">
+                                <button class="qty-btn minus" onclick="changeQty(-1)"><i class="fas fa-minus"></i></button>
+                                <input type="number" value="1" min="1" id="productQty">
+                                <button class="qty-btn plus" onclick="changeQty(1)"><i class="fas fa-plus"></i></button>
+                            </div>
+                            <button class="btn-add-cart-single" id="btn-add-to-cart">
+                                <i class="fas fa-shopping-cart"></i> إضافة للسلة
+                            </button>
+                        </div>
 
-                    <div style="display: flex; gap: 15px;">
-                        <button type="submit" class="btn-primary" style="padding: 12px 30px;">إرسال التقييم</button>
-                        <button type="button" class="btn-cancel" onclick="toggleReviewForm()"
-                            style="background: #f0f0f0; border: none; padding: 12px 30px; border-radius: 12px; cursor: pointer;">إلغاء</button>
-                    </div>
-                </form>
-            </div>
+                        <div id="loyalty-teaser" style="margin-top:15px; padding:10px; background:#fffafa; border:1px dashed var(--accent-color); border-radius:10px; font-size:0.9rem; text-align:center;">
+                            <i class="fas fa-gem" style="color:var(--accent-color);"></i>
+                            <span id="loyalty-text">سجل دخولك لكسب نقاط عند شراء هذا المنتج!</span>
+                            <a href="login.html" style="color:var(--primary-color); font-weight:700; text-decoration:underline; margin-right:5px;">دخول / تسجيل</a>
+                        </div>
 
-            <!-- Reviews List -->
-            <div class="reviews-list" id="reviews-list-container">
-                <!-- Data populated by JS -->
-                <p style="text-align: center; color: #888; padding: 40px 0;">لا توجد تقييمات لهذا المنتج بعد. كن أول من
-                    يضيف تقييمه!</p>
-            </div>
-        </section>
-
-        <!-- Upselling Slider -->
-        <section class="related-products">
-            <div class="section-title">
-                <h2>منتجات قد تعجبك</h2>
-            </div>
-            <div class="product-grid">
-                <!-- Related item 1 (Compact) -->
-                <div class="product-card" data-id="1" data-name="عطر مسك إيطالي" data-price="150">
-                    <div class="product-image">
-                        <img src="https://images.unsplash.com/photo-1541643600914-78b084683601?q=80&w=500&auto=format&fit=crop"
-                            alt="عطر مسك إيطالي">
-                        <div class="product-actions">
-                            <button class="btn-quick-view"><i class="fas fa-eye"></i></button>
-                            <button class="btn-add-cart"
-                                onclick="addToCart(1, 'عطر مسك إيطالي', 150, 'https://images.unsplash.com/photo-1541643600914-78b084683601?q=80&w=500&auto=format&fit=crop')"><i
-                                    class="fas fa-shopping-cart"></i></button>
+                        <div class="product-tags">
+                            <span><i class="fas fa-shield-alt"></i> ضمان الجودة</span>
+                            <span><i class="fas fa-undo"></i> استرجاع مرن</span>
                         </div>
                     </div>
-                    <div class="product-info">
-                        <h3>عطر مسك إيطالي</h3>
-                        <p class="price">150 شيكل</p>
-                    </div>
                 </div>
-                <!-- Related item 2 -->
-                <div class="product-card" data-id="2" data-name="كريم العناية بالبشرة" data-price="85">
-                    <div class="product-image">
-                        <img src="https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=500&auto=format&fit=crop"
-                            alt="كريم العناية بالبشرة">
-                        <div class="product-actions">
-                            <button class="btn-quick-view"><i class="fas fa-eye"></i></button>
-                            <button class="btn-add-cart"
-                                onclick="addToCart(2, 'كريم العناية بالبشرة', 85, 'https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=500&auto=format&fit=crop')"><i
-                                    class="fas fa-shopping-cart"></i></button>
+            </section>
+
+            <!-- Product Reviews Section -->
+            <section class="container product-reviews-section">
+                <div class="reviews-header">
+                    <div class="avg-rating-box">
+                        <span class="avg-number" id="avg-rating-value">0.0</span>
+                        <div class="avg-stars">
+                            <div class="star-rating" id="avg-stars-display">
+                                <i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i>
+                            </div>
+                            <span style="font-size:0.9rem; color:#666;" id="review-count-text">(0 تقييمات)</span>
                         </div>
                     </div>
-                    <div class="product-info">
-                        <h3>كريم مرطب عضوي</h3>
-                        <p class="price">85 شيكل</p>
-                    </div>
+                    <button type="button" class="btn-primary" id="btn-write-review" onclick="toggleReviewForm()">
+                        <i class="fas fa-pen-nib"></i> أضف تقييمك
+                    </button>
                 </div>
-                <!-- Related item 3 -->
-                <div class="product-card" data-id="3" data-name="زيت الشعر السحري" data-price="120">
-                    <div class="product-image">
-                        <img src="https://images.unsplash.com/photo-1626784215021-2e39ccf971cd?q=80&w=500&auto=format&fit=crop"
-                            alt="زيت الشعر السحري">
-                        <div class="product-actions">
-                            <button class="btn-quick-view"><i class="fas fa-eye"></i></button>
-                            <button class="btn-add-cart"
-                                onclick="addToCart(3, 'زيت الشعر السحري', 120, 'https://images.unsplash.com/photo-1626784215021-2e39ccf971cd?q=80&w=500&auto=format&fit=crop')"><i
-                                    class="fas fa-shopping-cart"></i></button>
+
+                <div id="review-form-container" class="review-form-container hidden">
+                    <h3 style="margin-bottom:25px; color:var(--primary-dark);">اكتب مراجعتك للمنتج</h3>
+                    <form id="product-review-form" onsubmit="handleReviewSubmit(event)">
+                        <div class="review-form-group">
+                            <label>تقييمك للمنتج:</label>
+                            <div class="star-rating interactive" id="form-star-rating">
+                                <i class="far fa-star" data-rating="1"></i>
+                                <i class="far fa-star" data-rating="2"></i>
+                                <i class="far fa-star" data-rating="3"></i>
+                                <i class="far fa-star" data-rating="4"></i>
+                                <i class="far fa-star" data-rating="5"></i>
+                            </div>
+                            <input type="hidden" id="review-rating-value" required>
                         </div>
-                    </div>
-                    <div class="product-info">
-                        <h3>زيت الشعر بالأرغان</h3>
-                        <p class="price">120 شيكل</p>
-                    </div>
-                </div>
-                <!-- Related item 4 -->
-                <div class="product-card" data-id="102" data-name="عطر العود الفاخر" data-price="320">
-                    <div class="product-image">
-                        <img src="https://images.unsplash.com/photo-1595425970377-c9703cf48b6d?q=80&w=500&auto=format&fit=crop"
-                            alt="عطر العود الفاخر">
-                        <div class="product-actions">
-                            <button class="btn-quick-view"><i class="fas fa-eye"></i></button>
-                            <button class="btn-add-cart"
-                                onclick="addToCart(102, 'عطر العود الفاخر', 320, 'https://images.unsplash.com/photo-1595425970377-c9703cf48b6d?q=80&w=500&auto=format&fit=crop')"><i
-                                    class="fas fa-shopping-cart"></i></button>
+                        <div class="review-form-group">
+                            <label>رأيك بالتفصيل:</label>
+                            <textarea id="review-text" class="review-input" rows="4" placeholder="اكتب مراجعتك هنا، رأيك يهمنا ويساعد الآخرين..." required></textarea>
                         </div>
-                    </div>
-                    <div class="product-info">
-                        <h3>عطر العود والمسك</h3>
-                        <p class="price">320 شيكل</p>
-                    </div>
+                        <div style="display:flex; gap:15px;">
+                            <button type="submit" class="btn-primary" style="padding:12px 30px;">إرسال التقييم</button>
+                            <button type="button" class="btn-cancel" onclick="toggleReviewForm()" style="background:#f0f0f0; border:none; padding:12px 30px; border-radius:12px; cursor:pointer;">إلغاء</button>
+                        </div>
+                    </form>
                 </div>
-            </div>
-        </section>
+
+                <div class="reviews-list" id="reviews-list-container">
+                    <p style="text-align:center; color:#888; padding:40px 0;">لا توجد تقييمات لهذا المنتج بعد. كن أول من يضيف تقييمه!</p>
+                </div>
+            </section>
+
+            <!-- Related Products -->
+            <section class="related-products">
+                <div class="section-title"><h2>منتجات قد تعجبك</h2></div>
+                <div class="product-grid" id="related-products-grid">
+                    <p style="text-align:center; color:#888; padding:20px 0; grid-column:1/-1;">جاري تحميل المنتجات المشابهة...</p>
+                </div>
+            </section>
+        </div>
     </main>
 
-    <div class="cart-sidebar" id="cartSidebar">
-        <!-- JS will populate -->
-    </div>
+    <div class="cart-sidebar" id="cartSidebar"></div>
 
     <footer>
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-col">
                     <h3>مسك بيوتي</h3>
-                    <p>مسك بيوتي - وجهتكم الأولى لأرقى العطور ومنتجات العناية والجمال. نحن نجمع بين الجودة والفخامة
-                        لنقدم
-                        لكم الأفضل دائماً.</p>
+                    <p>مسك بيوتي - وجهتكم الأولى لأرقى العطور ومنتجات العناية والجمال. نحن نجمع بين الجودة والفخامة لنقدم لكم الأفضل دائماً.</p>
                 </div>
                 <div class="footer-col">
                     <h3>روابط سريعة</h3>
@@ -288,7 +277,201 @@
         </div>
     </footer>
 
-    <script src="assets/js/main.js"></script>
+    <script src="/assets/js/main.js"></script>
+    <script>
+        // ============================================================
+        // Dynamic Product Page - Loads product data from API by slug
+        // ============================================================
+
+        let currentProduct = null;
+
+        function getSlugFromURL() {
+            // Supports: /product/my-product-slug
+            const path = window.location.pathname;
+            const parts = path.split('/').filter(Boolean);
+            // Last segment is the slug
+            return parts[parts.length - 1] || null;
+        }
+
+        async function loadProduct() {
+            const slug = getSlugFromURL();
+
+            if (!slug || slug === 'product.html') {
+                showError('لم يتم تحديد المنتج في الرابط.');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/products?slug=${encodeURIComponent(slug)}`);
+                const data = await res.json();
+
+                if (!data.success || !data.products || data.products.length === 0) {
+                    showError('المنتج الذي تبحث عنه غير موجود أو تم حذفه.');
+                    return;
+                }
+
+                currentProduct = data.products[0];
+                renderProduct(currentProduct);
+                loadRelatedProducts(currentProduct.category);
+
+            } catch (err) {
+                console.error('Error loading product:', err);
+                showError('حدث خطأ أثناء تحميل المنتج. يرجى المحاولة مجدداً.');
+            }
+        }
+
+        function renderProduct(p) {
+            // Update page title
+            document.title = `${p.name} | مسك بيوتي`;
+
+            // Breadcrumbs
+            document.getElementById('breadcrumb-category').textContent = p.category || 'المنتجات';
+            document.getElementById('breadcrumb-name').textContent = p.name;
+
+            // Badge / discount
+            const badgeEl = document.getElementById('product-badge');
+            if (p.oldPrice && p.price && p.oldPrice > p.price) {
+                const discount = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
+                badgeEl.textContent = `-${discount}% التوفير`;
+                badgeEl.style.display = 'inline-block';
+                document.getElementById('product-old-price').textContent = `${p.oldPrice} شيكل`;
+                document.getElementById('product-old-price').style.display = 'inline';
+            }
+
+            // Title & Price
+            document.getElementById('product-title').textContent = p.name;
+            document.getElementById('product-price').textContent = `${p.price} شيكل`;
+
+            // Meta
+            document.getElementById('product-sku').textContent = p.sku || 'N/A';
+            document.getElementById('product-brand').textContent = p.brand || 'مسك بيوتي';
+
+            // Stock
+            const stockEl = document.getElementById('product-stock-status');
+            const stockCount = document.getElementById('stock-count');
+            if (p.stock !== undefined && p.stock !== null) {
+                if (p.stock <= 0) {
+                    stockEl.textContent = 'نفذ من المخزن';
+                    stockEl.className = 'out-of-stock';
+                    document.getElementById('btn-add-to-cart').disabled = true;
+                } else if (p.stock < 5) {
+                    stockEl.textContent = 'كمية محدودة';
+                    stockEl.className = 'low-stock';
+                    stockCount.textContent = `(${p.stock} متبقي)`;
+                } else {
+                    stockEl.textContent = 'متوفر في المخزن';
+                    stockEl.className = 'in-stock';
+                }
+            }
+
+            // Description
+            document.getElementById('product-description').textContent = p.description || 'لا يوجد وصف لهذا المنتج.';
+
+            // Loyalty points
+            document.getElementById('loyalty-text').textContent = `سجل دخولك لكسب ${p.price || 0} نقطة عند شراء هذا المنتج!`;
+
+            // Images
+            const images = Array.isArray(p.images) ? p.images.filter(Boolean) : [];
+            const mainImg = document.getElementById('mainProductImg');
+            const thumbList = document.getElementById('thumbnail-list');
+            const zoomContainer = document.getElementById('zoomContainer');
+
+            if (images.length > 0) {
+                mainImg.src = images[0];
+                mainImg.alt = p.name;
+                zoomContainer.innerHTML = `<img src="${images[0]}" alt="${p.name}" id="mainProductImg" style="width:100%;height:100%;object-fit:cover;transition:transform 0.3s ease;">`;
+
+                thumbList.innerHTML = images.map((img, i) =>
+                    `<img src="${img}" class="thumb ${i === 0 ? 'active' : ''}" onclick="changeMainImage(this, '${img}')" alt="صورة ${i+1}">`
+                ).join('');
+            } else {
+                zoomContainer.innerHTML = `<div class="no-image-placeholder"><i class="fas fa-image"></i></div>`;
+            }
+
+            // Add to cart button
+            document.getElementById('btn-add-to-cart').onclick = () => {
+                const qty = parseInt(document.getElementById('productQty').value) || 1;
+                const img = images[0] || '';
+                if (typeof addToCart === 'function') {
+                    addToCart(p._id || p.id, p.name, p.price, img, qty);
+                }
+            };
+
+            // Show content, hide loading
+            document.getElementById('loading-state').style.display = 'none';
+            document.getElementById('product-content').style.display = 'block';
+        }
+
+        function changeMainImage(thumb, src) {
+            document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+            thumb.classList.add('active');
+            const mainImg = document.getElementById('mainProductImg');
+            if (mainImg) mainImg.src = src;
+        }
+
+        function changeQty(delta) {
+            const qtyInput = document.getElementById('productQty');
+            const newVal = Math.max(1, (parseInt(qtyInput.value) || 1) + delta);
+            qtyInput.value = newVal;
+        }
+
+        async function loadRelatedProducts(category) {
+            if (!category) return;
+            try {
+                const res = await fetch(`/api/products?category=${encodeURIComponent(category)}&limit=4`);
+                const data = await res.json();
+                const grid = document.getElementById('related-products-grid');
+
+                const related = (data.products || []).filter(p => p.slug !== getSlugFromURL()).slice(0, 4);
+
+                if (related.length === 0) {
+                    grid.innerHTML = '<p style="text-align:center; color:#888; padding:20px 0; grid-column:1/-1;">لا توجد منتجات مشابهة حالياً.</p>';
+                    return;
+                }
+
+                grid.innerHTML = related.map(p => {
+                    const img = (p.images && p.images[0]) ? p.images[0] : 'https://via.placeholder.com/300x300?text=No+Image';
+                    return `
+                        <div class="product-card" onclick="window.location.href='/product/${p.slug || p._id}'" style="cursor:pointer;">
+                            <div class="product-image">
+                                <img src="${img}" alt="${p.name}" loading="lazy">
+                                <div class="product-actions">
+                                    <button class="btn-add-cart" onclick="event.stopPropagation(); addToCart('${p._id}', '${p.name}', ${p.price}, '${img}')">
+                                        <i class="fas fa-shopping-cart"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="product-info">
+                                <h3>${p.name}</h3>
+                                <p class="price">${p.price} شيكل</p>
+                            </div>
+                        </div>`;
+                }).join('');
+            } catch (e) {
+                console.error('Error loading related products:', e);
+            }
+        }
+
+        function showError(msg) {
+            document.getElementById('loading-state').style.display = 'none';
+            document.getElementById('error-state').style.display = 'block';
+            document.getElementById('error-message').textContent = msg;
+        }
+
+        function toggleReviewForm() {
+            const form = document.getElementById('review-form-container');
+            form.classList.toggle('hidden');
+        }
+
+        function handleReviewSubmit(e) {
+            e.preventDefault();
+            alert('شكراً على تقييمك! سيتم مراجعته قريباً.');
+            toggleReviewForm();
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', loadProduct);
+    </script>
 </body>
 
 </html>
