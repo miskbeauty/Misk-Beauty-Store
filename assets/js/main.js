@@ -107,13 +107,23 @@ function saveCart() {
 }
 
 function removeFromCart(id) {
-    cart = cart.filter(item => item.id !== id);
+    // Robust filtering to handle both string and object IDs
+    cart = cart.filter(item => {
+        const itemId = (item.id && item.id._id) ? item.id._id : (item.id || item._id);
+        const targetId = (id && id._id) ? id._id : id;
+        return String(itemId) !== String(targetId);
+    });
     saveCart();
     updateCartUI();
 }
 
 function updateQuantity(id, delta) {
-    const item = cart.find(i => i.id === id);
+    const item = cart.find(i => {
+        const itemId = (i.id && i.id._id) ? i.id._id : (i.id || i._id);
+        const targetId = (id && id._id) ? id._id : id;
+        return String(itemId) === String(targetId);
+    });
+    
     if (item) {
         item.quantity += delta;
         if (item.quantity <= 0) {
@@ -126,39 +136,13 @@ function updateQuantity(id, delta) {
 }
 
 function updateCartUI() {
-    // Clear and redraw sidebar cart items
-    if (cartItemsContainer) cartItemsContainer.innerHTML = '';
     let total = 0;
     let count = 0;
 
+    // Calculate totals first
     cart.forEach(item => {
         total += item.price * item.quantity;
         count += item.quantity;
-
-        if (cartItemsContainer) {
-            const cartItem = document.createElement('div');
-            cartItem.className = 'cart-item';
-            let variantText = '';
-            if (item.variant) {
-                variantText = Object.entries(item.variant).map(([k, v]) => `<span style="font-size: 0.75rem; color: #888;">${k}: ${v}</span>`).join(' | ');
-            }
-            cartItem.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
-                    <div style="display: flex; align-items: center;">
-                        <img src="${item.image}" class="cart-item-img" alt="${item.name}">
-                        <div>
-                            <h4 style="margin: 0; font-size: 0.95rem;">${escapeHTML(item.name)}</h4>
-                            ${variantText ? `<div style="margin-top: 2px;">${variantText}</div>` : ''}
-                            <p style="color: #6a1b9a; margin: 5px 0; font-size: 0.85rem;">${item.price} شيكل × ${item.quantity}</p>
-                        </div>
-                    </div>
-                    <button onclick="removeFromCart(${item.id})" style="background: none; border: none; color: #880E4F; cursor: pointer; padding: 5px;">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `;
-            cartItemsContainer.appendChild(cartItem);
-        }
     });
 
     if (cartCount) cartCount.textContent = count;
@@ -166,22 +150,75 @@ function updateCartUI() {
 
     const isEmpty = cart.length === 0;
 
-    if (widgetCartCountBadge) {
-        widgetCartCountBadge.textContent = count;
+    // ===== Smart Cart Widget (Header) =====
+    const cartBadge = document.getElementById('widgetCartCountBadge');
+    const cartEmptyMsg = document.getElementById('cartEmptyMsg');
+    const cartFilledMsg = document.getElementById('cartFilledMsg');
+    const countText = document.getElementById('widgetCartCountText');
+    const totalText = document.getElementById('widgetCartTotalText');
+    const miniCartFooter = document.getElementById('miniCartFooter');
+
+    if (cartBadge) {
         if (isEmpty) {
-            widgetCartCountBadge.style.display = 'none';
+            cartBadge.style.display = 'none';
         } else {
-            widgetCartCountBadge.style.display = 'flex';
+            cartBadge.textContent = count;
+            cartBadge.style.display = 'flex';
         }
     }
 
-    if (widgetCartCountText) {
+    if (cartEmptyMsg) cartEmptyMsg.style.display = isEmpty ? 'block' : 'none';
+    if (cartFilledMsg) cartFilledMsg.style.display = isEmpty ? 'none' : 'flex';
+    if (countText) countText.textContent = `${count} ${count === 1 ? 'منتج' : 'منتجات'}`;
+    if (totalText) totalText.textContent = `${total} ₪`;
+    if (miniCartFooter) miniCartFooter.style.display = isEmpty ? 'none' : 'block';
+
+    // ===== Mini Cart Dropdown (Header) =====
+    const miniCartItemsEl = document.getElementById('miniCartItems');
+    if (miniCartItemsEl) {
         if (isEmpty) {
-            widgetCartCountText.textContent = "السلة فارغة";
+            miniCartItemsEl.innerHTML = `
+                <div class="mini-cart-empty-state">
+                    <i class="fas fa-shopping-bag"></i>
+                    <p>سلتك فارغة حالياً</p>
+                </div>`;
         } else {
-            widgetCartCountText.textContent = `${count} منتجات`;
+            miniCartItemsEl.innerHTML = cart.map(item => {
+                const itemId = (item.id && item.id._id) ? item.id._id : (item.id || item._id);
+                return `
+                    <div class="mini-cart-item">
+                        <img src="${item.image}" alt="${escapeHTML(item.name)}" onerror="this.src='/assets/images/1745215944148877862.png'">
+                        <div class="mini-item-info">
+                            <h4>${escapeHTML(item.name)}</h4>
+                            <p>${item.price} شيكل × ${item.quantity}</p>
+                        </div>
+                        <button onclick="removeFromCart('${itemId}')" style="background:none; border:none; color:#ff4d88; cursor:pointer; font-size:0.8rem; padding:5px;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>`;
+            }).join('');
         }
-        widgetCartCountText.style.display = 'inline';
+    }
+
+    const miniCartTotalEl = document.getElementById('miniCartTotal');
+    if (miniCartTotalEl) miniCartTotalEl.textContent = total;
+
+    // ===== Sidebar Cart (Legacy if still used) =====
+    if (cartItemsContainer) {
+        cartItemsContainer.innerHTML = cart.map(item => {
+            const itemId = (item.id && item.id._id) ? item.id._id : (item.id || item._id);
+            return `
+                <div class="cart-item" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <div style="display: flex; align-items: center;">
+                        <img src="${item.image}" class="cart-item-img" alt="${item.name}" style="width:50px; height:50px; object-fit:cover; border-radius:8px; margin-left:10px;">
+                        <div>
+                            <h4 style="margin: 0; font-size: 0.95rem;">${escapeHTML(item.name)}</h4>
+                            <p style="color: #6a1b9a; margin: 5px 0; font-size: 0.85rem;">${item.price} شيكل × ${item.quantity}</p>
+                        </div>
+                    </div>
+                    <button onclick="removeFromCart('${itemId}')" style="background: none; border: none; color: #880E4F; cursor: pointer; padding: 5px;">
+                        <i class="fas fa-trash"></i>
+                    </button>
     }
 
     // Update total text in widget if it exists

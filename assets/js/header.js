@@ -12,15 +12,17 @@ function getDynamicNavHTML(passedCategories = null) {
         if (savedCats) categories = JSON.parse(savedCats);
     }
 
-    const headerCats = (categories || []).filter(c => String(c.showInHeader) === 'true' || c.showInHeader === true);
-    headerCats.sort((a, b) => (b.priority || 0) - (a.priority || 0));
-    const parents = headerCats.filter(c => !c.parentId);
+    const headerCats = categories || [];
+    const parents = headerCats.filter(c => !c.parentId && (String(c.showInHeader) === 'true' || c.showInHeader === true));
+    parents.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
     let html = `<li><a href="/index.html"><i class="fas fa-home"></i> الرئيسية</a></li>`;
 
     parents.forEach(p => {
         const pId = p._id || p.id;
+        // Include all children regardless of showInHeader if the parent is visible
         const children = headerCats.filter(c => c.parentId && String(c.parentId) === String(pId));
+        children.sort((a, b) => (b.priority || 0) - (a.priority || 0));
         const parentLink = p.slug ? `/category/${p.slug}` : `/index.html?category=${encodeURIComponent(p.name)}`;
 
         if (children.length > 0) {
