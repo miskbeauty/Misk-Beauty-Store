@@ -126,7 +126,7 @@ function updateQuantity(id, delta) {
 }
 
 function updateCartUI() {
-    // Clear and redraw
+    // Clear and redraw sidebar cart items
     if (cartItemsContainer) cartItemsContainer.innerHTML = '';
     let total = 0;
     let count = 0;
@@ -164,17 +164,7 @@ function updateCartUI() {
     if (cartCount) cartCount.textContent = count;
     if (cartTotal) cartTotal.textContent = total;
 
-    // Update new widget
     const isEmpty = cart.length === 0;
-    const cartWidget = document.getElementById('cartWidgetToggle');
-
-    if (cartWidget) {
-        if (isEmpty) {
-            cartWidget.classList.add('is-empty');
-        } else {
-            cartWidget.classList.remove('is-empty');
-        }
-    }
 
     if (widgetCartCountBadge) {
         widgetCartCountBadge.textContent = count;
