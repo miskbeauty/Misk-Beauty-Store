@@ -981,7 +981,7 @@ async function renderProductGrid(containerId, isLoadMore = false) {
     // Advanced SEO: Resolve category slug if present
     const path = window.location.pathname;
     if (path.includes('/category/')) {
-        const slug = path.split('/category/')[1];
+        const slug = decodeURIComponent(path.split('/category/')[1]);
         const localCats = localStorage.getItem('misk_categories');
         const categories = localCats ? JSON.parse(localCats) : [];
         const matchedCat = categories.find(c => c.slug === slug);

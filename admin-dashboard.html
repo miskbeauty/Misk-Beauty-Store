@@ -462,7 +462,10 @@
                         </div>
                     </div>
 
-                    <div style="margin-top: 30px; text-align: left;">
+                    <div style="margin-top: 30px; text-align: left; display: flex; justify-content: space-between; align-items: center;">
+                        <button type="button" class="btn-cancel" style="padding: 12px 20px;" onclick="seedDefaultCategories(this)">
+                            <i class="fas fa-sync"></i> استعادة التصنيفات الافتراضية
+                        </button>
                         <button type="submit" class="btn-admin-login" style="width: auto; padding: 12px 40px;">حفظ
                             الإعدادات</button>
                     </div>
@@ -2373,6 +2376,74 @@
             } catch (e) {
                 alert('خطأ أثناء تشغيل الفحص: ' + e.message);
                 if(el) el.innerHTML = originalHTML;
+            }
+        }
+        async function seedDefaultCategories(btn) {
+            if (!confirm('هل أنت متأكد من استعادة التصنيفات الافتراضية؟ هذا سيضيف الأقسام الأساسية فقط في حال عدم وجودها ولن يحذف بياناتك الحالية.')) return;
+            
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الاستعادة...';
+            btn.disabled = true;
+
+            try {
+                const sessionData = localStorage.getItem('misk_admin_session');
+                if (!sessionData) throw new Error('يرجى تسجيل الدخول أولاً');
+                const token = JSON.parse(sessionData).token;
+
+                // 1. Fetch current categories to avoid duplicates
+                const currentRes = await fetch('/api/categories');
+                const currentData = await currentRes.json();
+                const existingNames = currentData.categories ? currentData.categories.map(c => c.name) : [];
+
+                const defaultCategories = [
+                    { name: 'عناية وجمال', priority: 10, sub: ['مكياج', 'عناية بالبشرة', 'شعر', 'جسم'] },
+                    { name: 'عطور', priority: 9, sub: ['ستاتي', 'رجالي', 'مزيل عرق', 'عطر شعر', 'بخور'] },
+                    { name: 'شنط وإكسسوارات', priority: 8, sub: ['شنط', 'إكسسوارات ستاتي', 'إكسسوارات رجالي'] },
+                    { name: 'الأطفال والبيبي', priority: 7, sub: ['مستلزمات', 'إكسسوارات بيبي'] },
+                    { name: 'الطباعة الحرارية', priority: 6, sub: ['براويز', 'مجات', 'لهايات وبلايز'] },
+                    { name: 'منتجات طبية', priority: 5, sub: [] },
+                    { name: 'المنزل والديكور', priority: 4, sub: [] },
+                    { name: 'الهدايا', priority: 3, sub: [] }
+                ];
+
+                let addedCount = 0;
+
+                for (const cat of defaultCategories) {
+                    if (!existingNames.includes(cat.name)) {
+                        // Create main category
+                        const mainRes = await fetch('/api/categories', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                            body: JSON.stringify({ name: cat.name, priority: cat.priority, showInHeader: "true", parentId: null })
+                        });
+                        const mainData = await mainRes.json();
+                        addedCount++;
+
+                        if (mainData.success && mainData.categoryId) {
+                            const parentId = mainData.categoryId;
+                            // Create subcategories
+                            for (const subName of cat.sub) {
+                                if (!existingNames.includes(subName)) {
+                                    await fetch('/api/categories', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                        body: JSON.stringify({ name: subName, priority: 0, showInHeader: "false", parentId: parentId })
+                                    });
+                                    addedCount++;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                alert(`تم استعادة التصنيفات الافتراضية بنجاح! تم إضافة ${addedCount} قسم.`);
+                initDashboard(); // Refresh UI
+            } catch (error) {
+                alert('حدث خطأ أثناء الاستعادة: ' + error.message);
+                console.error(error);
+            } finally {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
             }
         }
     </script>
