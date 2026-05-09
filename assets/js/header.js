@@ -1,6 +1,5 @@
 /**
  * Shared Header for Misk Beauty Store
- * Fix: جلب الأقسام من API مباشرة بدل الاعتماد على localStorage فقط
  */
 
 async function fetchAndCacheCategories() {
@@ -14,27 +13,24 @@ async function fetchAndCacheCategories() {
     } catch (e) {
         console.error('فشل جلب الأقسام:', e);
     }
-    // fallback على localStorage إذا فشل الـ fetch
     const saved = localStorage.getItem('misk_categories');
     return saved ? JSON.parse(saved) : [];
 }
 
 function getDynamicNavHTML(categories = []) {
-    const headerCats = categories || [];
-    const parents = headerCats.filter(c => !c.parentId);
+    // الأقسام الرئيسية فقط (parentId === null) وشرط showInHeader
+    const parents = categories.filter(c =>
+        !c.parentId && (String(c.showInHeader) === 'true' || c.showInHeader === true)
+    );
     parents.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
     let html = `<li><a href="/index.html"><i class="fas fa-home"></i> الرئيسية</a></li>`;
 
     parents.forEach(p => {
-        // Fix: نجرب المطابقة بكل الصيغ الممكنة (_id و id)
-        const children = headerCats.filter(c => {
-            if (!c.parentId) return false;
-            return (
-                String(c.parentId) === String(p._id) ||
-                String(c.parentId) === String(p.id)
-            );
-        });
+        // *** FIX: جلب كل الأبناء بغض النظر عن showInHeader ***
+        const children = categories.filter(c =>
+            c.parentId && String(c.parentId) === String(p._id)
+        );
         children.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
         const parentLink = p.slug
@@ -45,13 +41,13 @@ function getDynamicNavHTML(categories = []) {
             html += `
                 <li class="dropdown">
                     <a href="${parentLink}">${p.name}
-                        <i class="fas fa-chevron-down" style="font-size:0.65rem; margin-right:3px;"></i>
+                        <i class="fas fa-chevron-down" style="font-size:0.65rem;margin-right:3px;"></i>
                     </a>
                     <ul class="dropdown-menu">
                         ${children.map(c => {
                             const childLink = c.slug
                                 ? `/category/${c.slug}`
-                                : `/index.html?sub=${encodeURIComponent(c.name)}`;
+                                : `/index.html?subCategory=${encodeURIComponent(c.name)}`;
                             return `<li>
                                 <a href="${childLink}">
                                     <i class="fas fa-circle" style="font-size:0.4rem;vertical-align:middle;margin-left:6px;"></i>
@@ -132,16 +128,16 @@ async function injectHeader() {
     if (!headerElement) return;
     headerElement.innerHTML = headerHTML;
 
-    // تحميل الإعدادات
     const savedSettings = localStorage.getItem('misk_settings');
     if (savedSettings) {
-        const settings = JSON.parse(savedSettings);
-        if (settings.logo) {
-            document.querySelectorAll('.logo img').forEach(img => img.src = settings.logo);
-        }
+        try {
+            const settings = JSON.parse(savedSettings);
+            if (settings.logo) {
+                document.querySelectorAll('.logo img').forEach(img => img.src = settings.logo);
+            }
+        } catch(e) {}
     }
 
-    // Fix: جلب الأقسام من API أولاً ثم بناء القائمة
     const categories = await fetchAndCacheCategories();
 
     const dynamicNav = document.getElementById('dynamic-nav');
