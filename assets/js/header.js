@@ -148,7 +148,30 @@ async function injectHeader() {
 
     const utilityNav = document.getElementById('utility-nav');
     if (utilityNav) utilityNav.innerHTML = getUtilityNavHTML();
+
+    // FIX: تفعيل dropdown بـ JavaScript كـ backup للـ CSS
+    document.querySelectorAll('.nav-links > li.dropdown').forEach(li => {
+        li.addEventListener('mouseenter', () => {
+            const menu = li.querySelector('.dropdown-menu');
+            if (menu) {
+                menu.style.opacity = '1';
+                menu.style.visibility = 'visible';
+                menu.style.transform = 'translateY(0)';
+                menu.style.pointerEvents = 'all';
+            }
+        });
+        li.addEventListener('mouseleave', () => {
+            const menu = li.querySelector('.dropdown-menu');
+            if (menu) {
+                menu.style.opacity = '0';
+                menu.style.visibility = 'hidden';
+                menu.style.transform = 'translateY(10px)';
+                menu.style.pointerEvents = 'none';
+            }
+        });
+    });
 }
+
 
 window.injectHeader = injectHeader;
 injectHeader();

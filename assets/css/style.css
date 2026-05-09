@@ -1839,3 +1839,20 @@ footer {
         transform: translateY(0);
     }
 }
+
+/* ===== DROPDOWN FIX - FINAL OVERRIDE ===== */
+.nav-links > li .dropdown-menu {
+    display: block !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transform: translateY(10px) !important;
+    transition: opacity 0.25s ease, visibility 0.25s ease, transform 0.25s ease !important;
+    pointer-events: none !important;
+}
+
+.nav-links > li:hover .dropdown-menu {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: translateY(0) !important;
+    pointer-events: all !important;
+}
