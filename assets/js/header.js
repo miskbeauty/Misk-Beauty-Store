@@ -175,3 +175,37 @@ async function injectHeader() {
 
 window.injectHeader = injectHeader;
 injectHeader();
+
+// ===== DROPDOWN JAVASCRIPT ONLY - áÇ äÚÊãÏ Úáì CSS hover =====
+document.addEventListener('mouseover', function(e) {
+    const li = e.target.closest('.nav-links > li');
+    if (!li) return;
+    const menu = li.querySelector('.dropdown-menu');
+    if (!menu) return;
+    menu.style.cssText = 
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: translateY(0) !important;
+        pointer-events: all !important;
+        position: absolute !important;
+        top: 100% !important;
+        right: 0 !important;
+        z-index: 99999 !important;
+        background: white !important;
+        display: block !important;
+    ;
+});
+
+document.addEventListener('mouseout', function(e) {
+    const li = e.target.closest('.nav-links > li');
+    if (!li) return;
+    const related = e.relatedTarget;
+    if (related && li.contains(related)) return;
+    const menu = li.querySelector('.dropdown-menu');
+    if (!menu) return;
+    menu.style.cssText = 
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+    ;
+});
