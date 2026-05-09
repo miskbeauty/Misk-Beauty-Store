@@ -97,6 +97,14 @@ const headerHTML = `
         <nav class="main-nav">
             <ul class="nav-links" id="dynamic-nav"></ul>
         </nav>
+    </div>
+    <div class="header-second-row container">
+        <div class="search-section">
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="ابحث في مسك بيوتي...">
+            </div>
+        </div>
         <div class="header-utils">
             <div class="util-links" id="utility-nav"></div>
             <div class="smart-cart" id="cartWidgetToggle" onclick="window.location.href='/cart.html'">
@@ -115,13 +123,8 @@ const headerHTML = `
             </div>
         </div>
     </div>
-    <div class="header-search container">
-        <div class="search-bar">
-            <i class="fas fa-search"></i>
-            <input type="text" id="searchInput" placeholder="ابحث في مسك بيوتي...">
-        </div>
-    </div>
 `;
+
 
 async function injectHeader() {
     const headerElement = document.querySelector('header');

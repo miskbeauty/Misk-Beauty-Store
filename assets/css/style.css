@@ -60,12 +60,12 @@ header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: auto;           /* كان: 70px — يمنع ظهور كل الأقسام */
+    height: auto;
     min-height: 70px;
-    padding: 8px 0;
-    gap: 12px;
-    flex-wrap: nowrap;
+    padding: 10px 0;
+    gap: 24px;
 }
+
 
 
 /* Logo */
@@ -366,28 +366,46 @@ header {
 }
 .btn-mini-checkout:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(106,27,154,0.35); }
 
-/* ===== SEARCH BAR ROW ===== */
-.header-search {
-    padding: 8px 20px 12px;
-    border-top: 1px solid rgba(106,27,154,0.07);
+/* ===== SECOND ROW: Search + Utils ===== */
+.header-second-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px 15px;
+    gap: 20px;
+    border-top: 1px solid rgba(106, 27, 154, 0.07);
+}
+
+.search-section {
+    flex: 1;
 }
 
 .search-bar { position: relative; width: 100%; }
 
 .search-bar input {
     width: 100%;
-    padding: 9px 44px 9px 20px;
+    padding: 10px 44px 10px 20px;
     border-radius: 50px;
     border: 1.5px solid #e8d5f5;
     outline: none;
-    font-size: 0.9rem;
-    transition: border-color 0.3s, box-shadow 0.3s;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
     background: #fff;
     color: #333;
     font-family: 'Tajawal', sans-serif;
 }
-.search-bar input:focus { border-color: #9c27b0; box-shadow: 0 0 0 3px rgba(156,39,176,0.1); }
-.search-bar i { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: #9c27b0; font-size: 0.95rem; }
+.search-bar input:focus { 
+    border-color: #9c27b0; 
+    box-shadow: 0 4px 15px rgba(156,39,176,0.12); 
+}
+.search-bar i { 
+    position: absolute; 
+    right: 18px; 
+    top: 50%; 
+    transform: translateY(-50%); 
+    color: #9c27b0; 
+    font-size: 1rem; 
+}
 
 /* ===== LEGACY COMPAT ===== */
 .hidden { display: none !important; }
