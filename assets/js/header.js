@@ -21,9 +21,7 @@ async function fetchAndCacheCategories() {
 
 function getDynamicNavHTML(categories = []) {
     const headerCats = categories || [];
-    const parents = headerCats.filter(c =>
-        !c.parentId && (String(c.showInHeader) === 'true' || c.showInHeader === true)
-    );
+    const parents = headerCats.filter(c => !c.parentId);
     parents.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
     let html = `<li><a href="/index.html"><i class="fas fa-home"></i> الرئيسية</a></li>`;
