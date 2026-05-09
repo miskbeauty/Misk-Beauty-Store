@@ -19,17 +19,21 @@ async function fetchAndCacheCategories() {
 }
 
 function getDynamicNavHTML(categories = []) {
-    const parents = categories.filter(c =>
-        !c.parentId && (String(c.showInHeader) === 'true' || c.showInHeader === true)
-    );
+    // عرض جميع الأقسام الرئيسية التي ليس لها parentId
+    const parents = categories.filter(c => !c.parentId);
     parents.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
     let html = `<li><a href="/index.html"><i class="fas fa-home"></i> الرئيسية</a></li>`;
 
     parents.forEach(p => {
-        const children = categories.filter(c =>
-            c.parentId && String(c.parentId) === String(p._id)
-        );
+        // تحسين منطق جلب الأقسام الفرعية ليدعم كافة أنواع الـ IDs
+        const pId = String(p._id || p.id);
+        const children = categories.filter(c => {
+            if (!c.parentId) return false;
+            const cPid = String(c.parentId._id || c.parentId);
+            return cPid === pId;
+        });
+        
         children.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
         const parentLink = p.slug
@@ -63,6 +67,7 @@ function getDynamicNavHTML(categories = []) {
 
     return html;
 }
+
 
 function getUtilityNavHTML() {
     const user = (typeof AuthService !== 'undefined') ? AuthService.getUser() : null;
