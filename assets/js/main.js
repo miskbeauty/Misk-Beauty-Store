@@ -1,1559 +1,247 @@
 /**
  * Misk Beauty & Gifts - Core Logic
- * Focused on Security, Validation, and Premium UX
+ * Fix: قراءة params من URL لعرض المنتجات الصحيحة حسب القسم
  */
 
-// --- Data Protection Helper ---
-// DataVault removed to avoid duplicate declaration (imported from auth.js)
-
-// --- Cloudinary Helper ---
 const CloudinaryHelper = {
     optimize: (url, width = 800) => {
         if (!url || !url.includes('cloudinary.com')) return url;
-        // Apply automatic formatting and quality optimization
         return url.replace('/upload/', `/upload/f_auto,q_auto,w_${width}/`);
     }
 };
 
 function escapeHTML(str) {
     if (!str) return "";
-    return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
-// Cart State - Load from LocalStorage if exists
-let cart = JSON.parse(localStorage.getItem('misk_cart')) || [];
-
-// DOM Elements
-const cartSidebar = document.getElementById('cartSidebar');
-const cartToggle = document.getElementById('cartToggle'); // Might be null now
-const closeCart = document.getElementById('closeCart');
-const cartItemsContainer = document.getElementById('cartItems');
-const cartCount = document.getElementById('cartCount');
-const cartTotal = document.getElementById('cartTotal');
-
-// New Functional Row Elements
-const cartWidgetToggle = document.getElementById('cartWidgetToggle');
-const widgetCartCountBadge = document.getElementById('widgetCartCountBadge');
-const widgetCartCountText = document.getElementById('widgetCartCountText');
-const widgetCartTotalText = document.getElementById('widgetCartTotalText');
-
-// Mini Cart Elements
-const miniCartItems = document.getElementById('miniCartItems');
-const miniCartTotal = document.getElementById('miniCartTotal');
-
-// Search Elements
-const searchInput = document.getElementById('searchInput');
-const noResultsMessage = document.getElementById('noResultsMessage');
-
-// Slider Elements
-const slides = document.querySelectorAll('.slide');
-const dots = document.querySelectorAll('.dot');
-const prevBtn = document.querySelector('.slider-arrow.prev');
-const nextBtn = document.querySelector('.slider-arrow.next');
-
-// --- Security & Validation ---
-
-/**
- * Validates product data before adding to cart
- * Prevents malicious data injection
- */
-function validateProduct(id, name, price) {
-    if (!id) return false;
-    if (typeof name !== 'string' || name.trim().length === 0 || name.length > 100) return false;
-    if (typeof name !== 'string' || name.trim().length === 0 || name.length > 100) return false;
-    if (typeof price !== 'number' || isNaN(price) || price < 0) return false;
-
-    // Basic sanitization for name (remove potential HTML tags)
-    const sanitizedName = name.replace(/<[^>]*>?/gm, '');
-    if (sanitizedName !== name) return false; // Reject if it looks like HTML
-
-    return true;
-}
-
-// --- Cart Core Functions ---
-
-function addToCart(id, name, price, image = 'assets/images/1745215944148877862.png', variant = null, category = 'عام') {
-    console.log(`جارِ إضافة المنتج: ${name}`);
-
-    // Data Validation
-    if (!validateProduct(id, name, price)) {
-        console.error("فشل التحقق من صحة بيانات المنتج. تم منع الإضافة لأسباب أمنية.");
-        alert("حدث خطأ في معالجة المنتج. يرجى المحاولة مرة أخرى.");
-        return;
-    }
-
-    // Include variant in uniqueness check if applicable
-    // Include variant in uniqueness check if applicable
-    const existingItem = cart.find(item => (item._id || item.id) === (id._id || id.id || id) && JSON.stringify(item.variant) === JSON.stringify(variant));
-
-    if (existingItem) {
-        existingItem.quantity += 1;
-    } else {
-        cart.push({ id, name, price, quantity: 1, image, variant, category });
-    }
-
-    saveCart();
-    updateCartUI();
-    openCart();
-}
-
-function saveCart() {
-    localStorage.setItem('misk_cart', JSON.stringify(cart));
-}
-
-function removeFromCart(id) {
-    // Robust filtering to handle both string and object IDs
-    cart = cart.filter(item => {
-        const itemId = (item.id && item.id._id) ? item.id._id : (item.id || item._id);
-        const targetId = (id && id._id) ? id._id : id;
-        return String(itemId) !== String(targetId);
-    });
-    saveCart();
-    updateCartUI();
-}
-
-function updateQuantity(id, delta) {
-    const item = cart.find(i => {
-        const itemId = (i.id && i.id._id) ? i.id._id : (i.id || i._id);
-        const targetId = (id && id._id) ? id._id : id;
-        return String(itemId) === String(targetId);
-    });
-    
-    if (item) {
-        item.quantity += delta;
-        if (item.quantity <= 0) {
-            removeFromCart(id);
-        } else {
-            saveCart();
-            updateCartUI();
-        }
-    }
-}
-
-function updateCartUI() {
-    let total = 0;
-    let count = 0;
-
-    // Calculate totals first
-    cart.forEach(item => {
-        total += item.price * item.quantity;
-        count += item.quantity;
-    });
-
-    if (cartCount) cartCount.textContent = count;
-    if (cartTotal) cartTotal.textContent = total;
-
-    const isEmpty = cart.length === 0;
-
-    // ===== Smart Cart Widget (Header) =====
-    const cartBadge = document.getElementById('widgetCartCountBadge');
-    const cartEmptyMsg = document.getElementById('cartEmptyMsg');
-    const cartFilledMsg = document.getElementById('cartFilledMsg');
-    const countText = document.getElementById('widgetCartCountText');
-    const totalText = document.getElementById('widgetCartTotalText');
-    const miniCartFooter = document.getElementById('miniCartFooter');
-
-    if (cartBadge) {
-        if (isEmpty) {
-            cartBadge.style.display = 'none';
-        } else {
-            cartBadge.textContent = count;
-            cartBadge.style.display = 'flex';
-        }
-    }
-
-    if (cartEmptyMsg) cartEmptyMsg.style.display = isEmpty ? 'block' : 'none';
-    if (cartFilledMsg) cartFilledMsg.style.display = isEmpty ? 'none' : 'flex';
-    if (countText) countText.textContent = `${count} ${count === 1 ? 'منتج' : 'منتجات'}`;
-    if (totalText) totalText.textContent = `${total} ₪`;
-    if (miniCartFooter) miniCartFooter.style.display = isEmpty ? 'none' : 'block';
-
-    // ===== Mini Cart Dropdown (Header) =====
-    const miniCartItemsEl = document.getElementById('miniCartItems');
-    if (miniCartItemsEl) {
-        if (isEmpty) {
-            miniCartItemsEl.innerHTML = `
-                <div class="mini-cart-empty-state">
-                    <i class="fas fa-shopping-bag"></i>
-                    <p>سلتك فارغة حالياً</p>
-                </div>`;
-        } else {
-            miniCartItemsEl.innerHTML = cart.map(item => {
-                const itemId = (item.id && item.id._id) ? item.id._id : (item.id || item._id);
-                return `
-                    <div class="mini-cart-item">
-                        <img src="${item.image}" alt="${escapeHTML(item.name)}" onerror="this.src='/assets/images/1745215944148877862.png'">
-                        <div class="mini-item-info">
-                            <h4>${escapeHTML(item.name)}</h4>
-                            <p>${item.price} شيكل × ${item.quantity}</p>
-                        </div>
-                        <button onclick="removeFromCart('${itemId}')" style="background:none; border:none; color:#ff4d88; cursor:pointer; font-size:0.8rem; padding:5px;">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>`;
-            }).join('');
-        }
-    }
-
-    const miniCartTotalEl = document.getElementById('miniCartTotal');
-    if (miniCartTotalEl) miniCartTotalEl.textContent = total;
-
-    // ===== Sidebar Cart (Legacy if still used) =====
-    if (cartItemsContainer) {
-        cartItemsContainer.innerHTML = cart.map(item => {
-            const itemId = (item.id && item.id._id) ? item.id._id : (item.id || item._id);
-            return `
-                <div class="cart-item" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
-                    <div style="display: flex; align-items: center;">
-                        <img src="${item.image}" class="cart-item-img" alt="${item.name}" style="width:50px; height:50px; object-fit:cover; border-radius:8px; margin-left:10px;">
-                        <div>
-                            <h4 style="margin: 0; font-size: 0.95rem;">${escapeHTML(item.name)}</h4>
-                            <p style="color: #6a1b9a; margin: 5px 0; font-size: 0.85rem;">${item.price} شيكل × ${item.quantity}</p>
-                        </div>
-                    </div>
-                    <button onclick="removeFromCart('${itemId}')" style="background: none; border: none; color: #880E4F; cursor: pointer; padding: 5px;">
-                        <i class="fas fa-trash"></i>
-                    </button>
-    }
-
-    // Update total text in widget if it exists
-    if (widgetCartTotalText) {
-        widgetCartTotalText.textContent = `${total} شيكل`;
-        widgetCartTotalText.style.display = isEmpty ? 'none' : 'inline';
-    }
-
-    // --- Cart Page Specific Rendering ---
-    const cartPageItemsList = document.getElementById('cartPageItems');
-    if (cartPageItemsList) {
-        renderFullCart();
-    }
-
-    // --- Checkout Page Specific Rendering ---
-    const checkoutItemsList = document.getElementById('checkoutItemsList');
-    if (checkoutItemsList) {
-        renderCheckoutSummary();
-    }
-
-    // --- Update Mini Cart Dropdown ---
-    if (miniCartItems) {
-        miniCartItems.innerHTML = '';
-        if (isEmpty) {
-            miniCartItems.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">السلة فارغة.</p>';
-        } else {
-            cart.forEach(item => {
-                const miniItem = document.createElement('div');
-                miniItem.className = 'mini-cart-item';
-                miniItem.innerHTML = `
-                        <img src="${item.image}" alt="${item.name}" style="width: 40px; height: 40px; border-radius: 5px; margin-left: 10px; object-fit: cover;">
-                        <div class="mini-item-info">
-                            <h4 style="margin: 0; font-size: 0.9rem;">${escapeHTML(item.name)}</h4>
-                            <p style="margin: 2px 0 0; font-size: 0.8rem; color: #6a1b9a;">${item.price} شيكل × ${item.quantity}</p>
-                        </div>
-                    `;
-                miniCartItems.appendChild(miniItem);
-            });
-        }
-    }
-    if (miniCartTotal) miniCartTotal.textContent = total;
-}
-
-// Full Cart Page Logic
-const shippingRates = {
-    'none': 0,
-    'aqraba': 7,
-    'westbank': 20,
-    'jerusalem': 30,
-    'inside': 70
-};
-
-let selectedShippingRate = 0;
-
-function renderFullCart() {
-    const cartPageItems = document.getElementById('cartPageItems');
-    const subtotalEl = document.getElementById('cartSubtotal');
-    const shippingEl = document.getElementById('shippingCost');
-    const grandTotalEl = document.getElementById('grandTotal');
-    const freeShippingMsg = document.getElementById('freeShippingMsg');
-
-    if (!cartPageItems) return;
-
-    cartPageItems.innerHTML = '';
-    let subtotal = 0;
-
-    if (cart.length === 0) {
-        cartPageItems.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">سلة المشتريات فارغة.</td></tr>';
-    } else {
-        cart.forEach(item => {
-            const itemTotal = item.price * item.quantity;
-            subtotal += itemTotal;
-
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>
-                    <div class="cart-product-info">
-                        <img src="${item.image}" alt="${item.name}">
-                        <span>${escapeHTML(item.name)}</span>
-                    </div>
-                </td>
-                <td>${item.price} شيكل</td>
-                <td>
-                    <div class="quantity-controls">
-                        <button onclick="updateQuantity(${item.id}, -1)">-</button>
-                        <span>${item.quantity}</span>
-                        <button onclick="updateQuantity(${item.id}, 1)">+</button>
-                    </div>
-                </td>
-                <td>${itemTotal} شيكل</td>
-                <td>
-                    <button class="remove-btn" onclick="removeFromCart(${item.id})"><i class="fas fa-trash"></i></button>
-                </td>
-            `;
-            cartPageItems.appendChild(tr);
-        });
-    }
-
-    subtotalEl.textContent = `${subtotal}`;
-
-    // Free Shipping Rule
-    let freeShippingThreshold = 300;
-    const savedSettings = localStorage.getItem('misk_settings');
-    if (savedSettings) {
-        freeShippingThreshold = JSON.parse(savedSettings).freeShippingThreshold || 300;
-    }
-
-    let activeShipping = selectedShippingRate;
-    if (subtotal >= freeShippingThreshold && selectedShippingRate > 0) {
-        activeShipping = 0;
-        if (freeShippingMsg) freeShippingMsg.style.display = 'block';
-        if (freeShippingMsg) freeShippingMsg.innerHTML = `<i class="fas fa-truck"></i> مبروك! حصلت على توصيل مجاني`;
-    } else {
-        if (freeShippingMsg) freeShippingMsg.style.display = 'none';
-    }
-
-    shippingEl.textContent = `${activeShipping}`;
-    grandTotalEl.textContent = `${subtotal + activeShipping}`;
-}
-
-function updateShipping() {
-    const selector = document.getElementById('shippingRegion');
-    if (selector) {
-        selectedShippingRate = shippingRates[selector.value] || 0;
-        renderFullCart();
-    }
-}
-
-// Checkout Page Functions
-function renderCheckoutSummary() {
-    const listContainer = document.getElementById('checkoutItemsList');
-    const subtotalEl = document.getElementById('checkoutSubtotal');
-    const shippingEl = document.getElementById('checkoutShipping');
-    const grandTotalEl = document.getElementById('checkoutGrandTotal');
-
-    // Loyalty Redemption Elements
-    const redemptionBox = document.getElementById('loyalty-redemption-box');
-    const userPointsSpan = document.getElementById('current-user-points');
-    const redeemBtn = document.getElementById('btn-redeem-checkout');
-    const appliedMsg = document.getElementById('applied-points-msg');
-
-    if (!listContainer) return;
-
-    listContainer.innerHTML = '';
-    let subtotal = 0;
-
-    cart.forEach(item => {
-        const itemTotal = item.price * item.quantity;
-        subtotal += itemTotal;
-
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'checkout-item-compact';
-        itemDiv.style.display = 'flex';
-        itemDiv.style.justifyContent = 'space-between';
-        itemDiv.style.marginBottom = '10px';
-        itemDiv.style.fontSize = '0.9rem';
-        itemDiv.innerHTML = `
-            <span>${escapeHTML(item.name)} (×${item.quantity})</span>
-            <span>${itemTotal} شيكل</span>
-        `;
-        listContainer.appendChild(itemDiv);
-    });
-
-    if (cart.length === 0) {
-        listContainer.innerHTML = '<p style="text-align: center; color: #888;">السلة فارغة</p>';
-    }
-
-    subtotalEl.textContent = `${subtotal}`;
-
-    // Apply Free Shipping Rule in Checkout too
-    let freeShippingThreshold = 300;
-    const savedSettings = localStorage.getItem('misk_settings');
-    if (savedSettings) {
-        freeShippingThreshold = JSON.parse(savedSettings).freeShippingThreshold || 300;
-    }
-
-    let activeShipping = selectedShippingRate;
-    if (subtotal >= freeShippingThreshold && selectedShippingRate > 0) {
-        activeShipping = 0;
-    }
-
-    shippingEl.textContent = `${activeShipping}`;
-    grandTotalEl.textContent = `${subtotal + activeShipping}`;
-}
-
-function updateCheckoutShipping() {
-    const citySelector = document.getElementById('checkoutCity');
-    if (citySelector) {
-        selectedShippingRate = shippingRates[citySelector.value] || 0;
-        renderCheckoutSummary();
-    }
-}
-
-async function handleCheckoutSubmit(e) {
-    if (e) e.preventDefault();
-
-    const grandTotalEl = document.getElementById('checkoutGrandTotal');
-    const fullName = document.getElementById('fullName').value.trim();
-    const phone = document.getElementById('phone').value.trim();
-    const region = document.getElementById('checkoutCity').value;
-    const city = document.getElementById('cityText').value.trim();
-    const address = document.getElementById('address').value.trim();
-
-    if (!fullName || !phone || region === 'none' || !city || !address) {
-        alert("يرجى ملء جميع الحقول المطلوبة واختيار المنطقة.");
-        return;
-    }
-
-    if (cart.length === 0) {
-        alert("سلة المشتريات فارغة!");
-        return;
-    }
-
-    const checkoutContent = document.getElementById('checkoutContent');
-    const successSection = document.getElementById('successSection');
-
-    // 1. Prepare Order Data
-    const loggedUser = (typeof AuthService !== 'undefined') ? await AuthService.getUser() : null;
-
-    const newOrder = {
-        id: Date.now().toString().slice(-5),
-        date: new Date().toISOString().split('T')[0],
-        customer: fullName,
-        whatsapp: phone,
-        city: region + ", " + city,
-        address: address,
-        total: grandTotalEl.textContent + " شيكل",
-        items: cart.map(item => ({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            qty: item.quantity,
-            category: item.category || 'عام'
-        })),
-        userId: loggedUser ? (loggedUser._id || loggedUser.id) : null,
-        status: "waiting"
+// Fix: قراءة الـ URL params بشكل صحيح
+function getURLParams() {
+    const params = new URLSearchParams(window.location.search);
+    return {
+        category: params.get('category') || '',
+        subCategory: params.get('subCategory') || '',
+        slug: params.get('slug') || ''
     };
-
-    try {
-        // 2. Submit to API
-        const response = await fetch('/api/orders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newOrder)
-        });
-
-        if (response.ok) {
-            if (checkoutContent && successSection) {
-                checkoutContent.style.display = 'none';
-                successSection.style.display = 'block';
-
-                const waBtn = document.getElementById('waOrderBtn');
-                if (waBtn) {
-                    let storeWa = "+970599000000";
-                    const settings = JSON.parse(localStorage.getItem('misk_settings'));
-                    if (settings && settings.whatsapp) storeWa = settings.whatsapp;
-
-                    const orderMsg = `مرحباً مسك بيوتي، أود تأكيد طلبي:\nالاسم: ${fullName}\nالعنوان: ${address}, ${city}\nالإجمالي: ${grandTotalEl.textContent} شيكل`;
-                    waBtn.href = `https://wa.me/${storeWa.replace('+', '')}?text=${encodeURIComponent(orderMsg)}`;
-                }
-
-                // Clear Cart
-                cart = [];
-                saveCart();
-                updateCartUI();
-                window.scrollTo(0, 0);
-            }
-        } else {
-            alert("فشل في إرسال الطلب. يرجى المحاولة مرة أخرى.");
-        }
-    } catch (error) {
-        console.error('Order error:', error);
-        alert("حدث خطأ في الاتصال بالخدمة.");
-    }
 }
 
-/**
- * Escapes HTML characters to prevent XSS
- */
-function escapeHTML(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+// Fix: استخراج slug من مسار URL مثل /category/عطور
+function getCategorySlugFromPath() {
+    const path = window.location.pathname;
+    const match = path.match(/^\/category\/(.+)/);
+    return match ? decodeURIComponent(match[1]) : null;
 }
 
-// --- UI Interactions ---
-
-function openCart() {
-    // Redirect to the full cart page instead of just opening a sidebar
-    window.location.href = 'cart.html';
-}
-
-// Event Listeners
-if (cartToggle) cartToggle.addEventListener('click', openCart);
-if (cartWidgetToggle) cartWidgetToggle.addEventListener('click', openCart);
-if (closeCart) closeCart.addEventListener('click', () => cartSidebar?.classList.remove('active'));
-
-// --- Slider Component ---
-let currentSlide = 0;
-let slideInterval;
-
-function showSlide(index) {
-    if (slides.length === 0) return;
-
-    slides.forEach(slide => slide.classList.remove('active'));
-    dots.forEach(dot => dot.classList.remove('active'));
-
-    currentSlide = (index + slides.length) % slides.length;
-    slides[currentSlide].classList.add('active');
-    dots[currentSlide].classList.add('active');
-}
-
-function nextSlide() {
-    showSlide(currentSlide + 1);
-}
-
-function prevSlide() {
-    showSlide(currentSlide - 1);
-}
-
-function startSlideShow() {
-    stopSlideShow();
-    slideInterval = setInterval(nextSlide, 5000);
-}
-
-function stopSlideShow() {
-    if (slideInterval) clearInterval(slideInterval);
-}
-
-// Slider Listeners
-if (nextBtn) nextBtn.addEventListener('click', () => {
-    nextSlide();
-    startSlideShow(); // Reset timer
-});
-
-if (prevBtn) prevBtn.addEventListener('click', () => {
-    prevSlide();
-    startSlideShow(); // Reset timer
-});
-
-dots.forEach((dot, index) => {
-    dot.addEventListener('click', () => {
-        showSlide(index);
-        startSlideShow(); // Reset timer
-    });
-});
-
-// --- Apply Global Settings ---
-function applyGlobalSettings() {
-    const savedSettings = localStorage.getItem('misk_settings');
-    if (!savedSettings) return;
-
-    const settings = JSON.parse(savedSettings);
-
-    // 1. Meta Tags (SEO)
-    if (settings.metaTitle) {
-        // If it's the home page, use the full meta title, else prefix it
-        if (window.location.pathname.endsWith('index.html') || window.location.pathname === '/' || window.location.pathname === '' || window.location.pathname.includes('index.html')) {
-            document.title = settings.metaTitle;
-        } else if (!window.location.pathname.includes('product.html')) {
-            // For other pages, we usually want "Page Name | Store Name"
-            if (!document.title.includes(settings.name)) {
-                const currentTitle = document.title.split('|')[0].trim();
-                document.title = `${currentTitle} | ${settings.name}`;
-            }
-        }
-    }
-
-    if (settings.metaDescription) {
-        // Only set global meta description if the page doesn't have a specific one (e.g. product page)
-        if (!window.location.pathname.includes('product.html')) {
-            let metaDesc = document.querySelector('meta[name="description"]');
-            if (!metaDesc) {
-                metaDesc = document.createElement('meta');
-                metaDesc.name = "description";
-                document.head.appendChild(metaDesc);
-            }
-            metaDesc.content = settings.metaDescription;
-        }
-    }
-
-    if (settings.metaKeywords) {
-        let metaKeywords = document.querySelector('meta[name="keywords"]');
-        if (!metaKeywords) {
-            metaKeywords = document.createElement('meta');
-            metaKeywords.name = "keywords";
-            document.head.appendChild(metaKeywords);
-        }
-        metaKeywords.content = settings.metaKeywords;
-    }
-
-    // 2. Footer Updates
-    const footerName = document.querySelector('footer .footer-col h3');
-    if (footerName && settings.name) footerName.textContent = settings.name;
-
-    const footerDesc = document.querySelector('footer .footer-col p');
-    if (footerDesc && settings.description) footerDesc.textContent = settings.description;
-
-    const copyright = document.querySelector('.copyright');
-    if (copyright && settings.name) {
-        copyright.textContent = `© ${new Date().getFullYear()} ${settings.name}. جميع الحقوق محفوظة`;
-    }
-
-    // 3. Social & WhatsApp
-    const socialLinks = document.querySelector('.social-links');
-    if (socialLinks) {
-        socialLinks.innerHTML = '';
-        if (settings.instagram) {
-            socialLinks.insertAdjacentHTML('beforeend', `<a href="${settings.instagram}" target="_blank"><i class="fab fa-instagram"></i></a>`);
-        }
-        if (settings.facebook) {
-            socialLinks.insertAdjacentHTML('beforeend', `<a href="${settings.facebook}" target="_blank"><i class="fab fa-facebook"></i></a>`);
-        }
-        if (settings.whatsapp) {
-            const cleanWa = settings.whatsapp.replace(/\D/g, '');
-            socialLinks.insertAdjacentHTML('beforeend', `<a href="https://wa.me/${cleanWa}" target="_blank"><i class="fab fa-whatsapp"></i></a>`);
-
-            // Add Floating WA Button if it doesn't exist
-            if (!document.querySelector('.floating-wa-btn')) {
-                const waFloat = document.createElement('a');
-                waFloat.href = `https://wa.me/${cleanWa}`;
-                waFloat.target = "_blank";
-                waFloat.className = "floating-wa-btn";
-                waFloat.innerHTML = `<i class="fab fa-whatsapp"></i>`;
-                document.body.appendChild(waFloat);
-            }
-        }
-        if (settings.tiktok) {
-            socialLinks.insertAdjacentHTML('beforeend', `<a href="${settings.tiktok}" target="_blank"><i class="fab fa-tiktok"></i></a>`);
-        }
-    }
-
-    // 4. Guest Teaser & Auth UI
-    const user = (typeof AuthService !== 'undefined') ? AuthService.getUser() : null;
-    const teaser = document.getElementById('loyalty-teaser');
-    if (teaser && user) {
-        teaser.style.display = 'none';
-    }
-
-    // 5. Legal & Custom Links in Footer
-    const footerLinksUl = document.querySelector('footer .footer-links');
-    if (footerLinksUl) {
-        // Clear previous dynamic links to avoid duplicates but keep standard ones if they are hardcoded
-        // In our case, we will rebuild the list if settings or pages change
-        let linksHtml = '';
-
-        // Custom Pages from Dynamic Builder
-        const savedPages = localStorage.getItem('misk_pages');
-        if (savedPages) {
-            const pages = JSON.parse(savedPages);
-            pages.forEach(p => {
-                if (p.isActive) {
-                    linksHtml += `<li><a href="page.html?slug=${p.slug}">${p.title}</a></li>`;
-                }
-            });
-        }
-
-        // Standard Legal Links
-        if (settings.privacyPolicy && !linksHtml.includes('type=privacy')) {
-            linksHtml += `<li><a href="legal.html?type=privacy">سياسة الخصوصية</a></li>`;
-        }
-        if (settings.termsOfUse && !linksHtml.includes('type=terms')) {
-            linksHtml += `<li><a href="legal.html?type=terms">شروط الاستخدام</a></li>`;
-        }
-
-        footerLinksUl.innerHTML = linksHtml;
-    }
-}
-
-// --- System Diagnostics ---
-async function checkSystemHealth() {
-    try {
-        const response = await fetch('/api/health');
-        const data = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-            throw new Error(data.message || `Status: ${response.status}`);
-        }
-
-        if (!data.success) {
-            throw new Error(data.message || 'Unknown Error');
-        }
-
-        console.log("✅ System Health Check Passed");
-    } catch (e) {
-        console.error("⚠️ System Health Check Failed:", e);
-        showSystemToast(`⚠️ اتصال غير مستقر: قد تكون البيانات قديمة (${e.message})`, 'error');
-    }
-}
-
-function showSystemToast(message, type = 'info') {
-    const toast = document.createElement('div');
-    toast.className = `sys-toast ${type}`;
-    toast.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
-    document.body.appendChild(toast);
-
-    // Auto remove after 10s
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 500);
-    }, 10000);
-}
-
-// Final Initialization
-async function initSite() {
-    try {
-        console.log("🚀 Site initialization started...");
-
-        // 0. Diagnostic: Check System Health
-        await checkSystemHealth();
-
-        // 1. Apply cached settings immediately for perceived performance
-        applyStoreSettingsToFooter();
-        // Initial header injection from cache (if any)
-        if (window.injectHeader) window.injectHeader();
-
-        // 2. Load critical data from API
-        console.log("📦 Loading categories and settings from API...");
-
-        // Load in parallel
-        const [settings, categories] = await Promise.all([
-            loadSettings(),
-            loadCategories()
-        ]);
-
-        // 3. Apply Fresh Data Immediately
-        if (settings) {
-            applyGlobalSettings();
-            applyStoreSettingsToFooter(); // Apply to footer as well
-        }
-
-        if (window.injectHeader) {
-            console.log("💉 Injecting fresh header with API data...");
-            // Pass categories directly to avoid localStorage race conditions
-            window.injectHeader(categories);
-            initSearchBar();
-        }
-
-        const path = window.location.pathname;
-        console.log(`📍 Current path: ${path}`);
-
-        // Page-specific initialization
-        if (path.includes('product.html')) {
-            console.log("🛠 Initializing product page...");
-            if (typeof initProductPage === 'function') await initProductPage();
-            if (typeof initProductReviews === 'function') initProductReviews();
-        }
-
-        // Global Grid Injection
-        // Force re-render of grids now that we might have fresh products/categories
-        // We need to ensure loadProducts is called again or we pass data if we optimized it
-        const grids = ['productGrid', 'featuredProductsGrid', 'offersGrid'];
-        for (const gridId of grids) {
-            if (document.getElementById(gridId)) {
-                console.log(`🖼 Rendering grid: ${gridId}`);
-                await renderProductGrid(gridId);
-            }
-        }
-
-        // Slider & UI
-        startSlideShow();
-        updateCartUI();
-
-        console.log("✅ Site initialization completed successfully");
-    } catch (error) {
-        console.error("❌ Critical site initialization error:", error);
-        // Emergency Fallback
-        applyGlobalSettings();
-        if (window.injectHeader) window.injectHeader();
-        ['productGrid', 'featuredProductsGrid', 'offersGrid'].forEach(id => {
-            if (document.getElementById(id)) renderProductGrid(id);
-        });
-    }
-}
-
-document.addEventListener('DOMContentLoaded', initSite);
-
-// --- Search Functionality ---
-function initSearchBar() {
-    const searchInput = document.getElementById('searchInput');
-    const noResultsMessage = document.getElementById('noResultsMessage');
-
-    if (searchInput) {
-        // Prevent multiple listeners
-        if (searchInput.getAttribute('data-search-init')) return;
-        searchInput.setAttribute('data-search-init', 'true');
-
-        searchInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase().trim();
-            let anyVisible = false;
-
-            // Re-query cards every time to ensure we catch dynamically added products
-            const currentCards = document.querySelectorAll('.product-card');
-
-            currentCards.forEach(card => {
-                const productName = (card.getAttribute('data-name') || '').toLowerCase();
-                const productPrice = (card.getAttribute('data-price') || '').toLowerCase();
-                // Find product data from local cache if possible or just rely on attributes
-
-                // Enhance: Search also in category or description if available in storage
-                // For now, let's keep it efficient with name match
-                if (productName.includes(searchTerm)) {
-                    card.style.display = 'block';
-                    anyVisible = true;
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-
-            // Show/Hide No Results Message
-            if (noResultsMessage) {
-                if (!anyVisible && searchTerm !== '') {
-                    noResultsMessage.classList.remove('hidden');
-                } else {
-                    noResultsMessage.classList.add('hidden');
-                }
-            }
-        });
-        console.log("🔍 Search bar initialized");
-    }
-}
-
-// Close cart when clicking outside (kept for safety, though we now redirect)
-document.addEventListener('click', (e) => {
-    if (!cartSidebar) return;
-    const isClickInsideCart = cartSidebar.contains(e.target);
-    const isClickOnToggle = (cartToggle && cartToggle.contains(e.target)) || (cartWidgetToggle && cartWidgetToggle.contains(e.target));
-
-    if (!isClickInsideCart && !isClickOnToggle && cartSidebar.classList.contains('active')) {
-        cartSidebar.classList.remove('active');
-    }
-});
-
-// --- Single Product Page Interactions ---
-
-// --- Advanced Product Data Management ---
-
-// --- Pagination State ---
-const paginationState = {
-    page: 1,
-    limit: 12,
-    loading: false,
-    hasMore: true
-};
+let cart = JSON.parse(localStorage.getItem('misk_cart')) || [];
+let currentPage = 1;
+let isLoading = false;
+let hasMoreProducts = true;
 
 async function loadProducts(params = {}) {
     const { page = 1, limit = 12, category = '', subCategory = '' } = params;
-
     try {
-        const query = new URLSearchParams({
-            page: page,
-            limit: limit,
-            t: Date.now()
-        });
-
+        const query = new URLSearchParams({ page, limit, t: Date.now() });
         if (category) query.append('category', category);
         if (subCategory) query.append('subCategory', subCategory);
 
-        const response = await fetch(`/api/products?${query.toString()}`, { cache: 'no-store' });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
+        const response = await fetch(`/api/products?${query.toString()}`);
         const data = await response.json();
-        if (data.success && data.products) {
-            // Update global pagination state if we rely on it, 
-            // but returning data allows caller to handle it
-            return {
-                products: data.products,
-                pagination: data.pagination
-            };
-        }
+        return data.success
+            ? { products: data.products, pagination: data.pagination }
+            : { products: [], pagination: null };
     } catch (e) {
-        console.warn("فشل تحميل المنتجات من الخادم:", e);
+        console.error('خطأ في جلب المنتجات:', e);
+        return { products: [], pagination: null };
     }
-    return { products: [], pagination: { total: 0, page: 1, pages: 1 } };
 }
 
-async function loadCategories() {
-    try {
-        const response = await fetch(`/api/categories?t=${Date.now()}`, { cache: 'no-store' });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        if (data.success && data.categories) {
-            localStorage.setItem('misk_categories', JSON.stringify(data.categories));
-            return data.categories;
-        }
-    } catch (e) {
-        console.warn("Error loading categories from API, falling back to cache:", e);
+// Fix: الدالة الرئيسية تقرأ القسم من URL تلقائياً
+async function renderProductGrid(containerId, isLoadMore = false) {
+    const container = document.getElementById(containerId);
+    if (!container || isLoading) return;
+
+    isLoading = true;
+
+    // عرض loading
+    if (!isLoadMore) {
+        container.innerHTML = `
+            <div class="loading-products" style="grid-column:1/-1;text-align:center;padding:40px;">
+                <i class="fas fa-spinner fa-spin" style="font-size:2rem;color:#c8a96e;"></i>
+                <p>جاري تحميل المنتجات...</p>
+            </div>`;
     }
-    const localCats = localStorage.getItem('misk_categories');
-    return localCats ? JSON.parse(localCats) : [];
-}
 
-async function loadSettings() {
-    try {
-        const response = await fetch(`/api/settings?t=${Date.now()}`, { cache: 'no-store' });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        if (data.success && data.settings) {
-            localStorage.setItem('misk_settings', JSON.stringify(data.settings));
-            applyGlobalSettings(); // Re-apply with fresh data
-            return data.settings;
+    // Fix: تحديد القسم من URL
+    let categoryFilter = '';
+    let subCategoryFilter = '';
+
+    const slugFromPath = getCategorySlugFromPath();
+    const urlParams = getURLParams();
+
+    if (slugFromPath) {
+        // المسار /category/slug — ابحث عن القسم في localStorage أو API
+        const savedCats = localStorage.getItem('misk_categories');
+        const allCats = savedCats ? JSON.parse(savedCats) : [];
+        const matchedCat = allCats.find(c => c.slug === slugFromPath);
+
+        if (matchedCat) {
+            if (matchedCat.parentId) {
+                // قسم فرعي
+                subCategoryFilter = matchedCat.name;
+            } else {
+                // قسم رئيسي
+                categoryFilter = matchedCat.name;
+            }
+        } else {
+            // إذا لم يوجد في الكاش، اجلب من API
+            try {
+                const res = await fetch(`/api/categories?slug=${slugFromPath}`);
+                const data = await res.json();
+                if (data.success && data.categories.length > 0) {
+                    const cat = data.categories[0];
+                    if (cat.parentId) subCategoryFilter = cat.name;
+                    else categoryFilter = cat.name;
+                }
+            } catch (e) {}
         }
-    } catch (e) {
-        console.warn("Error loading settings from API:", e);
+    } else if (urlParams.category) {
+        categoryFilter = urlParams.category;
+    } else if (urlParams.subCategory) {
+        subCategoryFilter = urlParams.subCategory;
     }
-    return JSON.parse(localStorage.getItem('misk_settings')) || {};
-}
 
-function getProductCardHTML(prod) {
-    const primaryImage = prod.images && prod.images[0] ? CloudinaryHelper.optimize(prod.images[0]) : 'https://placehold.co/400x400?text=No+Image';
-    const hasDiscount = prod.originalPrice && prod.originalPrice > prod.price;
-    const discountPercent = hasDiscount ? Math.round(((prod.originalPrice - prod.price) / prod.originalPrice) * 100) : 0;
-    const currentId = prod._id || prod.id;
+    const result = await loadProducts({
+        page: isLoadMore ? currentPage : 1,
+        limit: 12,
+        category: categoryFilter,
+        subCategory: subCategoryFilter
+    });
 
-    // Clean Link Logic
-    const productLink = prod.slug ? `/product/${prod.slug}` : `product.html?id=${currentId}`;
+    const products = result.products || [];
+    const pagination = result.pagination;
 
-    return `
-        <div class="product-card" data-id="${currentId}" data-name="${prod.name}" data-price="${prod.price}">
-            ${hasDiscount ? `<span class="badge-sale">-${discountPercent}%</span>` : ''}
-            <div class="product-image">
-                <a href="${productLink}">
-                    <img src="${primaryImage}" alt="${prod.name}">
-                </a>
-                <div class="product-actions">
-                    <button class="btn-quick-view" onclick="location.href='${productLink}'"><i class="fas fa-eye"></i></button>
+    if (!isLoadMore) {
+        container.innerHTML = '';
+        currentPage = 1;
+    }
+
+    if (products.length === 0 && !isLoadMore) {
+        container.innerHTML = `
+            <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#888;">
+                <i class="fas fa-box-open" style="font-size:3rem;margin-bottom:16px;display:block;"></i>
+                <p>لا توجد منتجات في هذا القسم حالياً</p>
+            </div>`;
+        isLoading = false;
+        return;
+    }
+
+    products.forEach(prod => {
+        const primaryImage = CloudinaryHelper.optimize(prod.images?.[0] || '/assets/images/placeholder.png', 400);
+        const productLink = prod.slug ? `/product/${prod.slug}` : `/product.html?id=${prod._id}`;
+        const hasDiscount = prod.oldPrice && prod.oldPrice > prod.price;
+
+        container.insertAdjacentHTML('beforeend', `
+            <div class="product-card">
+                <div class="product-image">
+                    <a href="${productLink}">
+                        <img src="${primaryImage}" alt="${escapeHTML(prod.name)}" loading="lazy">
+                    </a>
+                    ${hasDiscount ? `<span class="badge-discount">خصم</span>` : ''}
                     <button class="btn-add-cart"
-                        onclick="addToCart('${currentId}', '${prod.name}', ${prod.price}, '${primaryImage}', null, '${prod.category}')">
+                        onclick="addToCart('${prod._id}', '${escapeHTML(prod.name)}', ${prod.price}, '${primaryImage}')">
                         <i class="fas fa-shopping-cart"></i>
                     </button>
                 </div>
-            </div>
-            <div class="product-info">
-                <div class="product-category-small">${prod.subCategory || prod.category}</div>
-                <a href="${productLink}">
-                    <h3>${prod.name}</h3>
-                </a>
-                <div class="price-wrapper" style="margin-bottom: 0;">
-                    ${hasDiscount ? `<span class="old-price" style="font-size: 0.85rem;">${prod.originalPrice} شيكل</span>` : ''}
-                    <p class="price" style="${hasDiscount ? 'color: #ff5252;' : ''}">${prod.price} شيكل</p>
+                <div class="product-info">
+                    <h3><a href="${productLink}">${escapeHTML(prod.name)}</a></h3>
+                    <p class="price">
+                        ${prod.price} شيكل
+                        ${hasDiscount ? `<span class="old-price">${prod.oldPrice} شيكل</span>` : ''}
+                    </p>
                 </div>
             </div>
-        </div>
-    `;
+        `);
+    });
+
+    // تحديث حالة "تحميل المزيد"
+    if (pagination) {
+        hasMoreProducts = currentPage < pagination.pages;
+        currentPage++;
+    }
+
+    isLoading = false;
+    updateLoadMoreButton();
 }
 
-async function renderProductGrid(containerId, isLoadMore = false) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
+function updateLoadMoreButton() {
+    const btn = document.getElementById('loadMoreBtn');
+    if (!btn) return;
+    btn.style.display = hasMoreProducts ? 'block' : 'none';
+}
 
-    // Determine grid type constraints
-    const isMainGrid = (containerId === 'productGrid');
-    const limit = isMainGrid ? 12 : 4;
-
-    // URL Filters
-    const urlParams = new URLSearchParams(window.location.search);
-    let filterCat = urlParams.get('category') || '';
-    let filterSub = urlParams.get('sub') || '';
-
-    // Advanced SEO: Resolve category slug if present
-    const path = window.location.pathname;
-    if (path.includes('/category/')) {
-        const slug = decodeURIComponent(path.split('/category/')[1]);
-        const localCats = localStorage.getItem('misk_categories');
-        const categories = localCats ? JSON.parse(localCats) : [];
-        const matchedCat = categories.find(c => c.slug === slug);
-        if (matchedCat) {
-            matchedCat.parentId ? (filterSub = matchedCat.name) : (filterCat = matchedCat.name);
-            updateCategoryHeader(matchedCat);
-        }
+// إدارة سلة المشتريات
+function addToCart(id, name, price, image) {
+    const existing = cart.find(item => item.id === id);
+    if (existing) {
+        existing.quantity++;
     } else {
-        // Try to update header based on query params too
-        if (filterCat || filterSub) {
-            const localCats = localStorage.getItem('misk_categories');
-            if (localCats) {
-                const categories = JSON.parse(localCats);
-                const c = categories.find(c => c.name === (filterSub || filterCat));
-                if (c) updateCategoryHeader(c);
-            }
-        }
+        cart.push({ id, name, price: parseFloat(price), quantity: 1, image });
+    }
+    localStorage.setItem('misk_cart', JSON.stringify(cart));
+    updateCartUI();
+    showCartNotification(name);
+}
+
+function showCartNotification(name) {
+    // إزالة أي notification قديمة
+    const old = document.getElementById('cart-notification');
+    if (old) old.remove();
+
+    const notif = document.createElement('div');
+    notif.id = 'cart-notification';
+    notif.style.cssText = `
+        position:fixed;bottom:24px;left:24px;
+        background:#2d6a4f;color:#fff;
+        padding:12px 20px;border-radius:10px;
+        font-size:0.9rem;z-index:9999;
+        box-shadow:0 4px 12px rgba(0,0,0,0.2);
+        animation:slideIn 0.3s ease;
+    `;
+    notif.innerHTML = `<i class="fas fa-check-circle" style="margin-left:8px;"></i> تمت الإضافة: ${escapeHTML(name)}`;
+    document.body.appendChild(notif);
+    setTimeout(() => notif.remove(), 3000);
+}
+
+function updateCartUI() {
+    const count = cart.reduce((acc, item) => acc + item.quantity, 0);
+    const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+    const badge = document.getElementById('widgetCartCountBadge');
+    if (badge) {
+        badge.textContent = count;
+        badge.style.display = count > 0 ? 'flex' : 'none';
     }
 
-    // Reset pagination on initial load (not Load More)
-    if (!isLoadMore && isMainGrid) {
-        paginationState.page = 1;
-        paginationState.hasMore = true;
-        container.innerHTML = ''; // Clear only on fresh load
-    }
+    const emptyMsg = document.getElementById('cartEmptyMsg');
+    const filledMsg = document.getElementById('cartFilledMsg');
+    const countText = document.getElementById('widgetCartCountText');
+    const totalText = document.getElementById('widgetCartTotalText');
 
-    // For auxiliary grids (Featured/Offers), always page 1, distinct limit
-    const pageToFetch = isMainGrid ? paginationState.page : 1;
-
-    if (paginationState.loading) return;
-    paginationState.loading = true;
-
-    // Load Data
-    const result = await loadProducts({
-        page: pageToFetch,
-        limit: limit,
-        category: filterCat,
-        subCategory: filterSub
-    });
-
-    const products = result.products || [];
-    const meta = result.pagination;
-
-    // Render
-    products.forEach(prod => {
-        container.insertAdjacentHTML('beforeend', getProductCardHTML(prod));
-    });
-
-    if (products.length === 0 && !isLoadMore) {
-        container.innerHTML = '<p class="no-products">لا توجد منتجات مطابقة حالياً.</p>';
-    }
-
-    paginationState.loading = false;
-
-    // Handle "Load More" Button for Main Grid Only
-    if (isMainGrid) {
-        const loadMoreBtnId = 'btn-load-more-products';
-        let loadMoreBtn = document.getElementById(loadMoreBtnId);
-
-        // Remove existing button if it exists to re-position or hide
-        if (loadMoreBtn) loadMoreBtn.remove();
-
-        if (meta && meta.page < meta.pages) {
-            // Append Load More Button
-            const btnHtml = `
-                <div style="width: 100%; text-align: center; margin-top: 30px;" id="${loadMoreBtnId}-container">
-                     <button id="${loadMoreBtnId}" class="btn-primary" style="padding: 10px 30px;">عرض المزيد</button>
-                </div>
-            `;
-            container.insertAdjacentHTML('afterend', btnHtml); // Outside grid container
-
-            // Re-bind click
-            document.getElementById(loadMoreBtnId).onclick = function () {
-                paginationState.page++;
-                document.getElementById(`${loadMoreBtnId}-container`).remove(); // Remove button before loading next batch
-                renderProductGrid(containerId, true);
-            };
-        }
+    if (count > 0) {
+        if (emptyMsg) emptyMsg.style.display = 'none';
+        if (filledMsg) filledMsg.style.display = 'inline';
+        if (countText) countText.textContent = `${count} منتج`;
+        if (totalText) totalText.textContent = `${total.toFixed(2)} ₪`;
+    } else {
+        if (emptyMsg) emptyMsg.style.display = 'inline';
+        if (filledMsg) filledMsg.style.display = 'none';
     }
 }
 
-function updateCategoryHeader(cat) {
-    const headerContainer = document.getElementById('categoryHeaderContainer');
-    if (headerContainer && cat.staticHeader && cat.staticHeader !== '<p><br></p>') {
-        headerContainer.innerHTML = `<div class="category-rich-header">${cat.staticHeader}</div>`;
-    }
-    const sectionTitle = document.querySelector('.section-title h2');
-    if (sectionTitle) sectionTitle.innerText = cat.name;
+// تشغيل الموقع
+async function initSite() {
+    updateCartUI();
+    await renderProductGrid('productGrid');
 }
 
-// --- Single Product Page (Advanced) ---
-
-async function initProductPage() {
-    const urlParams = new URLSearchParams(window.location.search);
-    let prodId = urlParams.get('id');
-    let prodSlug = null;
-
-    // SEO: Check slug from path
-    const path = window.location.pathname;
-    if (path.includes('/product/')) {
-        prodSlug = path.split('/product/')[1];
-    }
-
-    if (!prodId && !prodSlug) return;
-
-    // Load initial batch (page 1) to see if product is there
-    const result = await loadProducts();
-    const products = result.products || [];
-    let prod;
-
-    if (prodId) {
-        prod = products.find(p => (p._id || p.id).toString() === prodId.toString());
-        // Fallback: Fetch by ID if not in page 1
-        if (!prod) {
-            try {
-                const res = await fetch(`/api/products?id=${prodId}`);
-                const data = await res.json();
-                if (data.success && data.products && data.products.length > 0) {
-                    prod = data.products[0];
-                }
-            } catch (e) { console.error(e); }
-        }
-    } else if (prodSlug) {
-        prod = products.find(p => p.slug === prodSlug);
-        // Fallback: If not found in cache, fetch directly
-        if (!prod) {
-            try {
-                const res = await fetch(`/api/products?slug=${prodSlug}`);
-                const data = await res.json();
-                if (data.success && data.products && data.products.length > 0) {
-                    prod = data.products[0];
-                }
-            } catch (e) { console.error(e); }
-        }
-    }
-
-    if (!prod) return;
-
-    // Update Meta
-    const savedSettings = localStorage.getItem('misk_settings');
-    const storeName = savedSettings ? JSON.parse(savedSettings).name : "مسك بيوتي";
-
-    // SEO Enhancement: Use product-specific meta title if available
-    document.title = prod.metaTitle ? prod.metaTitle : `${prod.name} | ${storeName}`;
-
-    if (prod.metaDesc) {
-        let meta = document.querySelector('meta[name="description"]');
-        if (!meta) {
-            meta = document.createElement('meta');
-            meta.name = "description";
-            document.head.appendChild(meta);
-        }
-        meta.content = prod.metaDesc;
-    }
-
-    // Breadcrumbs
-    const currentBreadcrumb = document.querySelector('.breadcrumbs .current-page');
-    if (currentBreadcrumb) currentBreadcrumb.textContent = prod.name;
-
-    // Gallery
-    const mainImg = document.getElementById('mainProductImg');
-    const thumbList = document.querySelector('.thumbnail-list');
-    if (mainImg && prod.images && prod.images.length > 0) {
-        mainImg.src = prod.images[0];
-
-        if (thumbList) {
-            thumbList.innerHTML = '';
-            prod.images.forEach((img, idx) => {
-                const thumb = document.createElement('img');
-                thumb.src = img;
-                thumb.className = `thumb ${idx === 0 ? 'active' : ''}`;
-                thumb.onclick = function () {
-                    document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
-                    this.classList.add('active');
-                    mainImg.src = this.src;
-                };
-                thumbList.appendChild(thumb);
-            });
-        }
-    }
-
-    // Details logic
-    const titleEl = document.querySelector('.product-title');
-    if (titleEl) titleEl.textContent = prod.name;
-
-    const skuEl = document.getElementById('product-sku');
-    if (skuEl) skuEl.textContent = prod.sku || 'N/A';
-
-    const stockEl = document.getElementById('product-stock-status');
-    const stockCountEl = document.getElementById('stock-count');
-
-    function updateStockDisplay(count) {
-        if (!stockEl) return;
-        if (count > 0) {
-            stockEl.innerHTML = `<span style="color: #2e7d32;"><i class="fas fa-check-circle"></i> متوفر في المخزون</span>`;
-            if (stockCountEl) stockCountEl.textContent = `(${count} متوفرة)`;
-        } else {
-            stockEl.innerHTML = `<span style="color: #d32f2f;"><i class="fas fa-times-circle"></i> غير متوفر حالياً</span>`;
-            if (stockCountEl) stockCountEl.textContent = '';
-        }
-    }
-
-    updateStockDisplay(prod.stock);
-
-    const priceWrapper = document.querySelector('.price-wrapper-single');
-    function updatePriceDisplay(price, original) {
-        if (!priceWrapper) return;
-        const hasDiscount = original && original > price;
-        priceWrapper.innerHTML = `
-            ${hasDiscount ? `<span class="old-price-single">${original} شيكل</span>` : ''}
-            <span class="sale-price-single" style="${hasDiscount ? 'color: #ff5252;' : ''}">${price} شيكل</span>
-        `;
-    }
-
-    updatePriceDisplay(prod.price, prod.originalPrice);
-
-    // Description (Rich Text)
-    const descEl = document.querySelector('.product-description');
-    if (descEl) {
-        descEl.innerHTML = `<h3>وصف المنتج</h3>` + (prod.desc || '<p>لا يوجد وصف متاح.</p>');
-    }
-
-    // Variants v2
-    const purchaseActions = document.querySelector('.purchase-actions');
-    if (purchaseActions && prod.variants && prod.variants.length > 0) {
-        // Remove existing selectors if any
-        document.querySelectorAll('.variant-selectors').forEach(el => el.remove());
-
-        const variantContainer = document.createElement('div');
-        variantContainer.className = 'variant-selectors';
-        variantContainer.style.marginBottom = '25px';
-
-        variantContainer.innerHTML = `
-            <label style="display: block; margin-bottom: 12px; font-weight: 700; color: #444;">المواصفات المختارة:</label>
-            <div class="variant-options-v2" style="display: flex; gap: 12px; flex-wrap: wrap;">
-                ${prod.variants.map((v, i) => `
-                    <button class="variant-opt-v2-btn ${i === 0 ? 'active' : ''}" 
-                            data-label="${v.label}"
-                            data-price="${v.price}"
-                            data-orig="${v.originalPrice || ''}"
-                            data-stock="${v.stock}"
-                            data-sku="${v.sku || ''}">
-                        ${v.label}
-                    </button>
-                `).join('')}
-            </div>
-        `;
-
-        // Insert before purchase actions
-        purchaseActions.parentNode.insertBefore(variantContainer, purchaseActions);
-
-        // Variant Selection Logic
-        document.querySelectorAll('.variant-opt-v2-btn').forEach(btn => {
-            btn.onclick = function () {
-                document.querySelectorAll('.variant-opt-v2-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-
-                // Update Price, Stock, SKU
-                const vPrice = parseInt(this.getAttribute('data-price'));
-                const vOrig = this.getAttribute('data-orig') ? parseInt(this.getAttribute('data-orig')) : null;
-                const vStock = parseInt(this.getAttribute('data-stock'));
-                const vSku = this.getAttribute('data-sku');
-
-                updatePriceDisplay(vPrice, vOrig);
-                updateStockDisplay(vStock);
-                if (skuEl) skuEl.textContent = vSku || prod.sku || 'N/A';
-            };
-        });
-
-        // Initialize with first variant if exists
-        const firstVar = prod.variants[0];
-        updatePriceDisplay(firstVar.price, firstVar.originalPrice);
-        updateStockDisplay(firstVar.stock);
-        if (skuEl) skuEl.textContent = firstVar.sku || prod.sku || 'N/A';
-    }
-
-    // Add to Cart update
-    const addBtn = document.querySelector('.btn-add-cart-single');
-    if (addBtn) {
-        addBtn.onclick = function () {
-            const activeVarBtn = document.querySelector('.variant-opt-v2-btn.active');
-            let finalPrice = prod.price;
-            let finalVariant = null;
-            let finalSku = prod.sku;
-
-            if (activeVarBtn) {
-                finalPrice = parseInt(activeVarBtn.getAttribute('data-price'));
-                finalVariant = { label: activeVarBtn.getAttribute('data-label') };
-                finalSku = activeVarBtn.getAttribute('data-sku');
-            }
-
-            const qty = parseInt(document.getElementById('productQty').value) || 1;
-
-            // Simple validation: check stock
-            const currentStock = activeVarBtn ? parseInt(activeVarBtn.getAttribute('data-stock')) : prod.stock;
-            if (qty > currentStock) {
-                alert("عذراً، الكمية المطلوبة غير متوفرة حالياً.");
-                return;
-            }
-
-            for (let i = 0; i < qty; i++) {
-                addToCart(prod.id, prod.name, finalPrice, prod.images[0], finalVariant, prod.category);
-            }
-        };
-    }
-}
-
-function applyStoreSettingsToFooter() {
-    const savedSettings = localStorage.getItem('misk_settings');
-    if (!savedSettings) return;
-
-    const settings = JSON.parse(savedSettings);
-    const footerStoreName = document.querySelector('.footer-col h3');
-    const footerStoreDesc = document.getElementById('footerStoreDesc') || document.querySelector('.footer-col p');
-    const footerSocialLinks = document.querySelector('.social-links');
-    const copyright = document.querySelector('.copyright');
-
-    if (settings.name && footerStoreName) {
-        footerStoreName.textContent = settings.name;
-    }
-    if (settings.description && footerStoreDesc) {
-        footerStoreDesc.textContent = settings.description;
-    }
-    if (copyright && settings.name) {
-        copyright.textContent = `© ${new Date().getFullYear()} ${settings.name} للجمال والهدايا. جميع الحقوق محفوظة`;
-    }
-
-    if (footerSocialLinks && settings) {
-        footerSocialLinks.innerHTML = `
-            ${settings.instagram ? `<a href="${settings.instagram}" target="_blank"><i class="fab fa-instagram"></i></a>` : ''}
-            ${settings.whatsapp ? `<a href="https://wa.me/${settings.whatsapp.replace('+', '')}" target="_blank"><i class="fab fa-whatsapp"></i></a>` : ''}
-            ${settings.tiktok ? `<a href="${settings.tiktok}" target="_blank"><i class="fab fa-tiktok"></i></a>` : ''}
-            ${settings.facebook ? `<a href="${settings.facebook}" target="_blank"><i class="fab fa-facebook"></i></a>` : ''}
-        `;
-    }
-}
-
-// Zoom Effect
-const zoomContainer = document.getElementById('zoomContainer');
-const mainImg = document.getElementById('mainProductImg'); // Ensure we have a reference
-if (zoomContainer && mainImg) {
-    zoomContainer.addEventListener('mousemove', (e) => {
-        const { left, top, width, height } = zoomContainer.getBoundingClientRect();
-        const x = ((e.pageX - (left + window.scrollX)) / width) * 100;
-        const y = ((e.pageY - (top + window.scrollY)) / height) * 100;
-
-        mainImg.style.transformOrigin = `${x}% ${y}%`;
-        mainImg.style.transform = "scale(2)";
-    });
-
-    zoomContainer.addEventListener('mouseleave', () => {
-        mainImg.style.transform = "scale(1.1)";
-        mainImg.style.transformOrigin = "center center";
-    });
-}
-
-console.log("Misk Beauty JS initialized successfully with Security Validation & Product Page logic.");
-
-// --- Product Reviews Logic ---
-let reviewRating = 0;
-let reviewImages = [];
-
-function initProductReviews() {
-    const starContainer = document.getElementById('form-star-rating');
-    if (starContainer) {
-        const stars = starContainer.querySelectorAll('i');
-        stars.forEach(star => {
-            star.addEventListener('click', function () {
-                reviewRating = parseInt(this.getAttribute('data-rating'));
-                document.getElementById('review-rating-value').value = reviewRating;
-                updateStarRatingUI(stars, reviewRating);
-            });
-            star.addEventListener('mouseover', function () {
-                updateStarRatingUI(stars, parseInt(this.getAttribute('data-rating')));
-            });
-            star.addEventListener('mouseleave', function () {
-                updateStarRatingUI(stars, reviewRating);
-            });
-        });
-    }
-
-    const productId = new URLSearchParams(window.location.search).get('id');
-    if (productId) {
-        renderProductReviews(productId);
-    }
-}
-
-function updateStarRatingUI(stars, rating) {
-    stars.forEach(s => {
-        const r = parseInt(s.getAttribute('data-rating'));
-        if (r <= rating) {
-            s.classList.remove('far');
-            s.classList.add('fas');
-        } else {
-            s.classList.remove('fas');
-            s.classList.add('far');
-        }
-    });
-}
-
-function toggleReviewForm() {
-    const user = (typeof AuthService !== 'undefined') ? AuthService.getUser() : null;
-    if (!user) {
-        alert('يرجى تسجيل الدخول أولاً لتتمكن من إضافة تقييم.');
-        window.location.href = `login.html?redirect=${encodeURIComponent(window.location.href)}`;
-        return;
-    }
-
-    const container = document.getElementById('review-form-container');
-    if (container) {
-        container.classList.toggle('hidden');
-        if (!container.classList.contains('hidden')) {
-            container.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
-}
-
-function previewReviewImages(input) {
-    const previewContainer = document.getElementById('review-images-preview');
-    if (!previewContainer) return;
-
-    reviewImages = [];
-    previewContainer.innerHTML = '';
-
-    if (input.files) {
-        Array.from(input.files).forEach(file => {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                reviewImages.push(e.target.result);
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                previewContainer.appendChild(img);
-            }
-            reader.readAsDataURL(file);
-        });
-    }
-}
-
-function handleReviewSubmit(e) {
-    e.preventDefault();
-    const user = AuthService.getUser();
-    const productId = new URLSearchParams(window.location.search).get('id');
-
-    if (!user || !productId) return;
-
-    const reviewText = document.getElementById('review-text').value;
-    const rating = document.getElementById('review-rating-value').value;
-
-    if (!rating || rating == 0) {
-        alert('يرجى اختيار تقييم بالنجوم.');
-        return;
-    }
-
-    const newReview = {
-        id: Date.now(),
-        productId: productId,
-        userId: user.id,
-        userName: user.name,
-        userPhone: user.phone,
-        rating: parseInt(rating),
-        text: reviewText,
-        images: reviewImages,
-        status: 'pending',
-        date: new Date().toISOString().split('T')[0]
-    };
-
-    const encryptedReviews = localStorage.getItem('misk_reviews_vault');
-    const reviews = DataVault.decrypt(encryptedReviews) || [];
-    reviews.push(newReview);
-    localStorage.setItem('misk_reviews_vault', DataVault.encrypt(reviews));
-
-    alert('شكراً لك! تم إرسال تقييمك بنجاح وهو بانتظار مراجعة الإدارة.');
-    e.target.reset();
-    document.getElementById('review-images-preview').innerHTML = '';
-    reviewImages = [];
-    reviewRating = 0;
-    updateStarRatingUI(document.querySelectorAll('#form-star-rating i'), 0);
-    toggleReviewForm();
-}
-
-function renderProductReviews(productId) {
-    const listContainer = document.getElementById('reviews-list-container');
-    const avgValEl = document.getElementById('avg-rating-value');
-    const avgStarsEl = document.getElementById('avg-stars-display');
-    const countTextEl = document.getElementById('review-count-text');
-
-    if (!listContainer) return;
-
-    const encryptedReviews = localStorage.getItem('misk_reviews_vault');
-    const allReviews = DataVault.decrypt(encryptedReviews) || [];
-    const approvedReviews = allReviews.filter(r => r.productId == productId && r.status === 'approved');
-
-    if (approvedReviews.length === 0) {
-        listContainer.innerHTML = '<p style="text-align: center; color: #888; padding: 40px 0;">لا توجد تقييمات معتمدة لهذا المنتج بعد. كن أول من يضيف تقييمه!</p>';
-        if (avgValEl) avgValEl.textContent = '0.0';
-        if (countTextEl) countTextEl.textContent = '(0 تقييمات)';
-        return;
-    }
-
-    // Sort by date desc
-    approvedReviews.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    let html = '';
-    let totalRating = 0;
-
-    approvedReviews.forEach(rev => {
-        totalRating += rev.rating;
-        const stars = '⭐'.repeat(rev.rating);
-        const verifiedBadge = isVerifiedBuyer(productId, rev.userId) ? '<span class="badge-verified"><i class="fas fa-check-circle"></i> مشترٍ مؤكد</span>' : '';
-
-        let imagesHtml = '';
-        if (rev.images && rev.images.length > 0) {
-            imagesHtml = `<div class="review-images">${rev.images.map(img => `<img src="${img}" onclick="window.open('${img}', '_blank')">`).join('')}</div>`;
-        }
-
-        html += `
-            <div class="review-card">
-                <div class="review-card-header">
-                    <div>
-                        <span class="reviewer-name">${rev.userName}</span>
-                        ${verifiedBadge}
-                        <div class="star-rating">${stars}</div>
-                    </div>
-                    <span class="review-date">${rev.date}</span>
-                </div>
-                <p class="review-text">${rev.text}</p>
-                ${imagesHtml}
-            </div>
-        `;
-    });
-
-    listContainer.innerHTML = html;
-
-    const avg = (totalRating / approvedReviews.length).toFixed(1);
-    if (avgValEl) avgValEl.textContent = avg;
-    if (countTextEl) countTextEl.textContent = `(${approvedReviews.length} تقييمات)`;
-    if (avgStarsEl) {
-        let starHtml = '';
-        for (let i = 1; i <= 5; i++) {
-            if (i <= Math.round(avg)) {
-                starHtml += '<i class="fas fa-star"></i>';
-            } else {
-                starHtml += '<i class="far fa-star"></i>';
-            }
-        }
-        avgStarsEl.innerHTML = starHtml;
-    }
-}
-
-function isVerifiedBuyer(productId, userId) {
-    const encryptedOrders = localStorage.getItem('misk_orders_vault');
-    const orders = DataVault.decrypt(encryptedOrders) || [];
-
-    // Check if user has any completed order containing this productId
-    // Note: mockOrders might use name instead of ID, but we should check both
-    return orders.some(order => {
-        if (order.status !== 'delivered' && order.status !== 'paid') return false;
-
-        // Match user by phone (more reliable if userId/phone are linked)
-        const encryptedUsers = localStorage.getItem('misk_users_vault');
-        const users = DataVault.decrypt(encryptedUsers) || [];
-        const user = users.find(u => u.id == userId);
-        if (!user || order.whatsapp.replace(/\D/g, '') !== user.phone.replace(/\D/g, '')) return false;
-
-        // Check items in order
-        // This assumes order.items exists, or we check order.total/products if provided
-        // In this architecture, mockOrders only has customer/whatsapp/total/city
-        // We'd need to extend orders to include item IDs for full verification.
-        // For now, let's return true if customer name matches (basic check)
-        return order.customer === user.name;
-    });
-}
-
-// Initialized via initSite on DOMContentLoaded
-
+document.addEventListener('DOMContentLoaded', initSite);
