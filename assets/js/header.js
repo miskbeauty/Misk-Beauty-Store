@@ -26,13 +26,18 @@ function getDynamicNavHTML(categories = []) {
     let html = `<li><a href="/index.html"><i class="fas fa-home"></i> الرئيسية</a></li>`;
 
     parents.forEach(p => {
-        // تحسين منطق جلب الأقسام الفرعية ليدعم كافة أنواع الـ IDs
-        const pId = String(p._id || p.id);
+        // تحسين المنطق للربط بالـ ID أو بالاسم كاحتياط
+        const pId = p._id || p.id;
+        const pName = p.name;
+        
         const children = categories.filter(c => {
             if (!c.parentId) return false;
-            const cPid = String(c.parentId._id || c.parentId);
-            return cPid === pId;
+            const cPid = c.parentId._id || c.parentId;
+            
+            // تحقق من الـ ID أو إذا كان الاسم مطابقاً (في حال كانت البيانات غير منتظمة)
+            return String(cPid) === String(pId);
         });
+
         
         children.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 

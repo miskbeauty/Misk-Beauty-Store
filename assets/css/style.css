@@ -86,10 +86,8 @@ header {
     gap: 0;
     align-items: center;
     white-space: nowrap;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    flex-wrap: wrap;
+    overflow: visible;
     padding-bottom: 2px;
 }
 
@@ -1062,12 +1060,15 @@ footer {
     }
 
     .nav-links {
-        width: 100%;
-        overflow-x: auto;
-        padding: 10px 0;
-        justify-content: flex-start;
-        scrollbar-width: none;
-    }
+    display: flex;
+    list-style: none;
+    gap: 0;
+    align-items: center;
+    white-space: nowrap;
+    flex-wrap: wrap;
+    overflow: visible;
+    padding-bottom: 2px;
+}
 
     .nav-links::-webkit-scrollbar {
         display: none;
