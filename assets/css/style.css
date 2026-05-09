@@ -44,54 +44,59 @@ body {
 /* ============================================
    HEADER - Complete Redesign
    ============================================ */
+/* FIX: header يجب أن لا يقطع الـ dropdown */
 header {
     background: var(--primary-color);
     position: sticky;
     top: 0;
     z-index: 1000;
     box-shadow: 0 2px 15px rgba(74, 20, 140, 0.08);
+    overflow: visible !important;   /* مهم جداً */
 }
+
 
 /* ===== MAIN ROW: Logo | Nav | Utils ===== */
 .header-main {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 70px;
-    gap: 16px;
+    height: auto;           /* كان: 70px — يمنع ظهور كل الأقسام */
+    min-height: 70px;
+    padding: 8px 0;
+    gap: 12px;
+    flex-wrap: nowrap;
 }
+
 
 /* Logo */
 .logo { display: flex; align-items: center; flex-shrink: 0; }
 .logo img { height: 52px; width: auto; display: block; }
 
 /* ===== CENTER: Category Navigation ===== */
-/* *** FIX: إظهار كل الأقسام بدل قطعها *** */
 .main-nav {
     flex: 1;
     display: flex;
     justify-content: center;
-    overflow: visible;          /* كان: hidden */
+    overflow: visible;
     min-width: 0;
 }
-
 
 .nav-links {
     display: flex;
     list-style: none;
-    gap: 0px;
+    gap: 0;
     align-items: center;
     white-space: nowrap;
     flex-wrap: nowrap;
-    overflow-x: auto;           /* يسمح بالسكرول إذا كانت الأقسام كثيرة */
-    scrollbar-width: none;      /* إخفاء الـ scrollbar في Firefox */
-    -ms-overflow-style: none;   /* إخفاء الـ scrollbar في IE */
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 2px;
 }
 
 .nav-links::-webkit-scrollbar {
-    display: none;              /* إخفاء الـ scrollbar في Chrome */
+    display: none;
 }
-
 
 .nav-links > li {
     position: relative;
@@ -103,39 +108,58 @@ header {
     text-decoration: none;
     color: var(--primary-dark);
     font-weight: 500;
-    font-size: 0.85rem;         /* تصغير خط بسيط لتوفير مساحة */
-    padding: 7px 9px;           /* تقليل padding */
+    font-size: 0.82rem;
+    padding: 7px 8px;
     border-radius: 10px;
     transition: all 0.25s ease;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
+    white-space: nowrap;
 }
 
-.nav-links > li:hover > a { background: rgba(106,27,154,0.1); color: #6a1b9a; }
-.nav-links > li > a:active { transform: scale(0.97); }
+.nav-links > li:hover > a {
+    background: rgba(106,27,154,0.1);
+    color: #6a1b9a;
+}
 
-/* Dropdown */
+/* ===== Dropdown ===== */
 .dropdown-menu {
     position: absolute;
-    top: calc(100% + 6px);
+    top: calc(100% + 4px);
     right: 0;
     background: #fff;
-    min-width: 210px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+    min-width: 200px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
     border-radius: 16px;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(10px);
-    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    transform: translateY(8px);
+    transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
     list-style: none;
-    padding: 10px;
-    z-index: 1001;
+    padding: 8px;
+    z-index: 9999;          /* رفعنا الـ z-index عالياً */
     border: 1px solid #f0e6ff;
+    pointer-events: none;
 }
-.nav-links > li:hover .dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
-.dropdown-menu li { margin-bottom: 2px; }
-.dropdown-menu li:last-child { margin-bottom: 0; }
+
+/* FIX: تفعيل الـ dropdown عند hover */
+.nav-links > li.dropdown:hover > .dropdown-menu,
+.nav-links > li:hover > .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: all;
+}
+
+.dropdown-menu li {
+    margin-bottom: 2px;
+}
+
+.dropdown-menu li:last-child {
+    margin-bottom: 0;
+}
+
 .dropdown-menu a {
     text-decoration: none;
     color: #444;
@@ -143,12 +167,19 @@ header {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.88rem;
-    padding: 9px 13px;
+    font-size: 0.87rem;
+    padding: 9px 12px;
     border-radius: 10px;
     transition: all 0.2s;
+    white-space: nowrap;
 }
-.dropdown-menu a:hover { background: #fdf6ff; color: #6a1b9a; padding-right: 18px; }
+
+.dropdown-menu a:hover {
+    background: #fdf6ff;
+    color: #6a1b9a;
+    padding-right: 16px;
+}
+
 
 /* ===== RIGHT: Utility Links + Smart Cart ===== */
 .header-utils { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
@@ -372,12 +403,14 @@ header {
     .cart-text-info { display: none; }
     .smart-cart { padding: 7px 11px; }
 }
+
 @media (max-width: 600px) {
-    .header-main { height: 58px; }
+    .header-main { min-height: 58px; }
     .logo img { height: 40px; }
     .mini-cart-dropdown { width: 290px; left: auto; right: -10px; }
     .util-offers span { display: none; }
 }
+
 
 
 
