@@ -1,6 +1,7 @@
 /**
  * Shared Header for Misk Beauty Store
  * Layout: Row 1 (Logo + Nav), Row 2 (Search + Utils)
+ * Features: Smart Cart with Mini-Cart Dropdown
  */
 
 async function fetchAndCacheCategories() {
@@ -19,25 +20,18 @@ async function fetchAndCacheCategories() {
 }
 
 function getDynamicNavHTML(categories = []) {
-    // عرض جميع الأقسام الرئيسية التي ليس لها parentId
     const parents = categories.filter(c => !c.parentId);
     parents.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
     let html = `<li><a href="/index.html"><i class="fas fa-home"></i> الرئيسية</a></li>`;
 
     parents.forEach(p => {
-        // تحسين المنطق للربط بالـ ID أو بالاسم كاحتياط
-        const pId = p._id || p.id;
-        const pName = p.name;
-        
+        const pId = String(p._id || p.id);
         const children = categories.filter(c => {
             if (!c.parentId) return false;
-            const cPid = c.parentId._id || c.parentId;
-            
-            // تحقق من الـ ID أو إذا كان الاسم مطابقاً (في حال كانت البيانات غير منتظمة)
-            return String(cPid) === String(pId);
+            const cPid = String(c.parentId._id || c.parentId);
+            return cPid === pId;
         });
-
         
         children.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
@@ -73,7 +67,6 @@ function getDynamicNavHTML(categories = []) {
     return html;
 }
 
-
 function getUtilityNavHTML() {
     const user = (typeof AuthService !== 'undefined') ? AuthService.getUser() : null;
     let html = `
@@ -97,7 +90,6 @@ function getUtilityNavHTML() {
 }
 
 const headerHTML = `
-    <!-- Row 1: Logo & Navigation -->
     <div class="header-main container">
         <div class="logo">
             <a href="/index.html">
@@ -109,7 +101,6 @@ const headerHTML = `
         </nav>
     </div>
 
-    <!-- Row 2: Search & Utility Buttons -->
     <div class="header-action-bar container">
         <div class="search-bar">
             <i class="fas fa-search"></i>
@@ -117,7 +108,8 @@ const headerHTML = `
         </div>
         <div class="header-utils">
             <div class="util-links" id="utility-nav"></div>
-            <div class="smart-cart" id="cartWidgetToggle" onclick="window.location.href='/cart.html'">
+            
+            <div class="smart-cart" id="cartWidgetToggle">
                 <div class="cart-icon-wrapper">
                     <i class="fas fa-shopping-bag"></i>
                     <span class="cart-badge" id="widgetCartCountBadge" style="display:none;">0</span>
@@ -130,6 +122,25 @@ const headerHTML = `
                         <span id="widgetCartTotalText"></span>
                     </span>
                 </div>
+                
+                <!-- MINI-CART DROPDOWN -->
+                <div class="mini-cart-dropdown" id="miniCartDropdown">
+                    <div class="mini-cart-header">
+                        <i class="fas fa-shopping-basket"></i> مراجعة السلة
+                    </div>
+                    <div class="mini-cart-items" id="miniCartItems">
+                        <!-- Injected by main.js -->
+                    </div>
+                    <div class="mini-cart-footer">
+                        <div class="mini-total">
+                            <span>المجموع:</span>
+                            <span id="miniCartTotal">0 ₪</span>
+                        </div>
+                        <button class="btn-mini-checkout" onclick="window.location.href='/cart.html'">
+                            عرض السلة وإتمام الطلب
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -140,18 +151,7 @@ async function injectHeader() {
     if (!headerElement) return;
     headerElement.innerHTML = headerHTML;
 
-    const savedSettings = localStorage.getItem('misk_settings');
-    if (savedSettings) {
-        try {
-            const settings = JSON.parse(savedSettings);
-            if (settings.logo) {
-                document.querySelectorAll('.logo img').forEach(img => img.src = settings.logo);
-            }
-        } catch(e) {}
-    }
-
     const categories = await fetchAndCacheCategories();
-
     const dynamicNav = document.getElementById('dynamic-nav');
     if (dynamicNav) dynamicNav.innerHTML = getDynamicNavHTML(categories);
 

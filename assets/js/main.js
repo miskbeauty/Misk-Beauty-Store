@@ -1,6 +1,6 @@
 /**
  * Misk Beauty & Gifts - Core Logic
- * Fix: قراءة params من URL لعرض المنتجات الصحيحة حسب القسم
+ * Handles products, cart synchronization, and mini-cart UI
  */
 
 const CloudinaryHelper = {
@@ -15,7 +15,6 @@ function escapeHTML(str) {
     return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
-// Fix: قراءة الـ URL params بشكل صحيح
 function getURLParams() {
     const params = new URLSearchParams(window.location.search);
     return {
@@ -25,7 +24,6 @@ function getURLParams() {
     };
 }
 
-// Fix: استخراج slug من مسار URL مثل /category/عطور
 function getCategorySlugFromPath() {
     const path = window.location.pathname;
     const match = path.match(/^\/category\/(.+)/);
@@ -55,45 +53,27 @@ async function loadProducts(params = {}) {
     }
 }
 
-// Fix: الدالة الرئيسية تقرأ القسم من URL تلقائياً
 async function renderProductGrid(containerId, isLoadMore = false) {
     const container = document.getElementById(containerId);
     if (!container || isLoading) return;
-
     isLoading = true;
-
-    // عرض loading
     if (!isLoadMore) {
-        container.innerHTML = `
-            <div class="loading-products" style="grid-column:1/-1;text-align:center;padding:40px;">
-                <i class="fas fa-spinner fa-spin" style="font-size:2rem;color:#c8a96e;"></i>
-                <p>جاري تحميل المنتجات...</p>
-            </div>`;
+        container.innerHTML = `<div class="loading-products" style="grid-column:1/-1;text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:#c8a96e;"></i><p>جاري تحميل المنتجات...</p></div>`;
     }
 
-    // Fix: تحديد القسم من URL
     let categoryFilter = '';
     let subCategoryFilter = '';
-
     const slugFromPath = getCategorySlugFromPath();
     const urlParams = getURLParams();
 
     if (slugFromPath) {
-        // المسار /category/slug — ابحث عن القسم في localStorage أو API
         const savedCats = localStorage.getItem('misk_categories');
         const allCats = savedCats ? JSON.parse(savedCats) : [];
         const matchedCat = allCats.find(c => c.slug === slugFromPath);
-
         if (matchedCat) {
-            if (matchedCat.parentId) {
-                // قسم فرعي
-                subCategoryFilter = matchedCat.name;
-            } else {
-                // قسم رئيسي
-                categoryFilter = matchedCat.name;
-            }
+            if (matchedCat.parentId) subCategoryFilter = matchedCat.name;
+            else categoryFilter = matchedCat.name;
         } else {
-            // إذا لم يوجد في الكاش، اجلب من API
             try {
                 const res = await fetch(`/api/categories?slug=${slugFromPath}`);
                 const data = await res.json();
@@ -126,11 +106,7 @@ async function renderProductGrid(containerId, isLoadMore = false) {
     }
 
     if (products.length === 0 && !isLoadMore) {
-        container.innerHTML = `
-            <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#888;">
-                <i class="fas fa-box-open" style="font-size:3rem;margin-bottom:16px;display:block;"></i>
-                <p>لا توجد منتجات في هذا القسم حالياً</p>
-            </div>`;
+        container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#888;"><i class="fas fa-box-open" style="font-size:3rem;margin-bottom:16px;display:block;"></i><p>لا توجد منتجات في هذا القسم حالياً</p></div>`;
         isLoading = false;
         return;
     }
@@ -163,12 +139,10 @@ async function renderProductGrid(containerId, isLoadMore = false) {
         `);
     });
 
-    // تحديث حالة "تحميل المزيد"
     if (pagination) {
         hasMoreProducts = currentPage < pagination.pages;
         currentPage++;
     }
-
     isLoading = false;
     updateLoadMoreButton();
 }
@@ -179,7 +153,7 @@ function updateLoadMoreButton() {
     btn.style.display = hasMoreProducts ? 'block' : 'none';
 }
 
-// إدارة سلة المشتريات
+// --- Cart Operations ---
 function addToCart(id, name, price, image) {
     const existing = cart.find(item => item.id === id);
     if (existing) {
@@ -187,26 +161,42 @@ function addToCart(id, name, price, image) {
     } else {
         cart.push({ id, name, price: parseFloat(price), quantity: 1, image });
     }
-    localStorage.setItem('misk_cart', JSON.stringify(cart));
+    saveCart();
     updateCartUI();
     showCartNotification(name);
 }
 
+function removeFromCart(id) {
+    cart = cart.filter(item => item.id !== id);
+    saveCart();
+    updateCartUI();
+    renderCartPage(); // Update cart page if we are on it
+}
+
+function updateQuantity(id, delta) {
+    const item = cart.find(i => i.id === id);
+    if (item) {
+        item.quantity += delta;
+        if (item.quantity <= 0) {
+            removeFromCart(id);
+        } else {
+            saveCart();
+            updateCartUI();
+            renderCartPage();
+        }
+    }
+}
+
+function saveCart() {
+    localStorage.setItem('misk_cart', JSON.stringify(cart));
+}
+
 function showCartNotification(name) {
-    // إزالة أي notification قديمة
     const old = document.getElementById('cart-notification');
     if (old) old.remove();
-
     const notif = document.createElement('div');
     notif.id = 'cart-notification';
-    notif.style.cssText = `
-        position:fixed;bottom:24px;left:24px;
-        background:#2d6a4f;color:#fff;
-        padding:12px 20px;border-radius:10px;
-        font-size:0.9rem;z-index:9999;
-        box-shadow:0 4px 12px rgba(0,0,0,0.2);
-        animation:slideIn 0.3s ease;
-    `;
+    notif.style.cssText = `position:fixed;bottom:24px;left:24px;background:#2d6a4f;color:#fff;padding:12px 20px;border-radius:10px;font-size:0.9rem;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.2);animation:slideIn 0.3s ease;`;
     notif.innerHTML = `<i class="fas fa-check-circle" style="margin-left:8px;"></i> تمت الإضافة: ${escapeHTML(name)}`;
     document.body.appendChild(notif);
     setTimeout(() => notif.remove(), 3000);
@@ -216,12 +206,14 @@ function updateCartUI() {
     const count = cart.reduce((acc, item) => acc + item.quantity, 0);
     const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
+    // Update Header Badge
     const badge = document.getElementById('widgetCartCountBadge');
     if (badge) {
         badge.textContent = count;
         badge.style.display = count > 0 ? 'flex' : 'none';
     }
 
+    // Update Header Text Info
     const emptyMsg = document.getElementById('cartEmptyMsg');
     const filledMsg = document.getElementById('cartFilledMsg');
     const countText = document.getElementById('widgetCartCountText');
@@ -236,11 +228,96 @@ function updateCartUI() {
         if (emptyMsg) emptyMsg.style.display = 'inline';
         if (filledMsg) filledMsg.style.display = 'none';
     }
+
+    // Update Mini-Cart Dropdown Content
+    const miniCartContent = document.getElementById('miniCartItems');
+    if (miniCartContent) {
+        if (cart.length === 0) {
+            miniCartContent.innerHTML = `<div class="mini-cart-empty-state"><i class="fas fa-shopping-basket"></i><p>سلتك فارغة حالياً</p></div>`;
+        } else {
+            miniCartContent.innerHTML = cart.map(item => `
+                <div class="mini-cart-item">
+                    <img src="${item.image}" alt="${escapeHTML(item.name)}">
+                    <div class="mini-item-info">
+                        <h4>${escapeHTML(item.name)}</h4>
+                        <p>${item.quantity} × ${item.price} ₪</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+    }
+    const miniTotal = document.getElementById('miniCartTotal');
+    if (miniTotal) miniTotal.textContent = `${total.toFixed(2)} ₪`;
 }
 
-// تشغيل الموقع
+function renderCartPage() {
+    const container = document.getElementById('cartPageItems');
+    if (!container) return;
+
+    if (cart.length === 0) {
+        container.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:50px;">سلتك فارغة حالياً.. <a href="/index.html" style="color:#6a1b9a;font-weight:700;">تسوق الآن</a></td></tr>`;
+        updateCartTotals(0);
+        return;
+    }
+
+    container.innerHTML = cart.map(item => `
+        <tr>
+            <td>
+                <div class="cart-product-info">
+                    <img src="${item.image}" alt="${escapeHTML(item.name)}">
+                    <span>${escapeHTML(item.name)}</span>
+                </div>
+            </td>
+            <td>${item.price} شيكل</td>
+            <td>
+                <div class="quantity-controls">
+                    <button onclick="updateQuantity('${item.id}', -1)">-</button>
+                    <span>${item.quantity}</span>
+                    <button onclick="updateQuantity('${item.id}', 1)">+</button>
+                </div>
+            </td>
+            <td style="font-weight:700;">${(item.price * item.quantity).toFixed(2)} شيكل</td>
+            <td>
+                <button class="remove-btn" onclick="removeFromCart('${item.id}')"><i class="fas fa-trash-alt"></i></button>
+            </td>
+        </tr>
+    `).join('');
+
+    const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    updateCartTotals(subtotal);
+}
+
+function updateCartTotals(subtotal) {
+    const subtotalEl = document.getElementById('cartSubtotal');
+    if (subtotalEl) subtotalEl.textContent = subtotal.toFixed(2);
+
+    const shippingCost = calculateShipping();
+    const shippingEl = document.getElementById('shippingCost');
+    if (shippingEl) shippingEl.textContent = shippingCost;
+
+    const grandTotalEl = document.getElementById('grandTotal');
+    if (grandTotalEl) grandTotalEl.textContent = (subtotal + parseFloat(shippingCost)).toFixed(2);
+}
+
+function calculateShipping() {
+    const region = document.getElementById('shippingRegion')?.value || 'none';
+    if (region === 'none') return "0";
+    if (region === 'aqraba') return "10";
+    if (region === 'westbank') return "20";
+    if (region === 'jerusalem') return "30";
+    if (region === 'inside') return "50";
+    return "0";
+}
+
+window.updateShipping = function() {
+    const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    updateCartTotals(subtotal);
+};
+
+// --- Initialization ---
 async function initSite() {
     updateCartUI();
+    renderCartPage();
     await renderProductGrid('productGrid');
 }
 
