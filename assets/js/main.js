@@ -53,7 +53,7 @@ async function loadProducts(params = {}) {
     }
 }
 
-async function renderProductGrid(containerId, isLoadMore = false) {
+async function renderProductGrid(containerId, isLoadMore = false, extraParams = {}) {
     const container = document.getElementById(containerId);
     if (!container || isLoading) return;
     isLoading = true;
@@ -102,7 +102,8 @@ async function renderProductGrid(containerId, isLoadMore = false) {
         page: isLoadMore ? currentPage : 1,
         limit: (window.location.pathname === '/' || window.location.pathname.includes('index.html') || window.location.pathname === '') ? 8 : 12,
         category: categoryFilter,
-        subCategory: subCategoryFilter
+        subCategory: subCategoryFilter,
+        ...extraParams
     });
 
     const products = result.products || [];
@@ -361,8 +362,8 @@ async function initSite() {
 
     // Load static grids sequentially to avoid isLoading lock
     if (document.getElementById('productGrid')) await renderProductGrid('productGrid');
-    if (document.getElementById('offersGrid')) await renderProductGrid('offersGrid');
-    if (document.getElementById('featuredProductsGrid')) await renderProductGrid('featuredProductsGrid');
+    if (document.getElementById('offersGrid')) await renderProductGrid('offersGrid', false, { onSale: 'true' });
+    if (document.getElementById('featuredProductsGrid')) await renderProductGrid('featuredProductsGrid', false, { bestSeller: 'true' });
 }
 
 async function renderHomeCategories(containerId) {

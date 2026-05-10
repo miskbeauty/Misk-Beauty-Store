@@ -13,7 +13,7 @@ module.exports = async (req, res) => {
 
     if (req.method === 'GET') {
         try {
-            const { slug, category, subCategory, id } = req.query;
+            const { slug, category, subCategory, id, onSale, bestSeller } = req.query;
             let query = {};
             if (slug) {
                 query = { slug: slug };
@@ -26,6 +26,8 @@ module.exports = async (req, res) => {
             } else {
                 if (category) query.category = category;
                 if (subCategory) query.subCategory = subCategory;
+                if (onSale === 'true') query.oldPrice = { $ne: null };
+                if (bestSeller === 'true') query.isBestSeller = true;
             }
             const page = parseInt(req.query.page) || 1;
             const limit = parseInt(req.query.limit) || 12; // Default 12 products per page
