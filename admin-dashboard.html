@@ -2492,7 +2492,6 @@
                 animation: 150,
                 ghostClass: 'sortable-ghost',
                 onEnd: function() {
-                    // Update currentHomeLayout based on new order
                     const newOrder = [];
                     const items = el.querySelectorAll('.section-item');
                     items.forEach(item => {
@@ -2514,21 +2513,8 @@
                 return;
             }
 
-            const icons = {
-                slider: 'fa-images',
-                categories: 'fa-th-large',
-                products: 'fa-box',
-                promo: 'fa-ad',
-                features: 'fa-truck'
-            };
-
-            const names = {
-                slider: 'سلايدر الصور',
-                categories: 'قائمة التصنيفات',
-                products: 'شبكة المنتجات',
-                promo: 'بنر إعلاني',
-                features: 'شريط المميزات'
-            };
+            const icons = { slider: 'fa-images', categories: 'fa-th-large', products: 'fa-box', promo: 'fa-ad', features: 'fa-truck' };
+            const names = { slider: 'سلايدر الصور', categories: 'قائمة التصنيفات', products: 'شبكة المنتجات', promo: 'بنر إعلاني', features: 'شريط المميزات' };
 
             currentHomeLayout.forEach(sec => {
                 const div = document.createElement('div');
@@ -2552,19 +2538,8 @@
         }
 
         function addHomeSection(type) {
-            const names = {
-                slider: 'سلايدر جديد',
-                categories: 'أقسام مختارة',
-                products: 'منتجات مختارة',
-                promo: 'عرض خاص',
-                features: 'مميزاتنا'
-            };
-            const newSec = {
-                id: Date.now(),
-                type: type,
-                title: names[type],
-                data: type === 'slider' || type === 'features' ? [] : {}
-            };
+            const names = { slider: 'سلايدر جديد', categories: 'أقسام مختارة', products: 'منتجات مختارة', promo: 'عرض خاص', features: 'مميزاتنا' };
+            const newSec = { id: Date.now(), type: type, title: names[type], data: type === 'slider' || type === 'features' ? [] : {} };
             currentHomeLayout.push(newSec);
             renderHomeSectionsList();
         }
@@ -2586,7 +2561,6 @@
                 if (!sessionData) throw new Error('يرجى تسجيل الدخول أولاً');
                 const token = JSON.parse(sessionData).token;
 
-                // We need to fetch current settings first to merge or just update the layout
                 const getRes = await fetch('/api/settings');
                 const getData = await getRes.json();
                 let settings = getData.success && getData.settings ? getData.settings : {};
@@ -2622,17 +2596,11 @@
             const content = document.getElementById('home-sec-content');
             content.innerHTML = '';
 
-            if (sec.type === 'slider') {
-                renderSliderEditor(sec);
-            } else if (sec.type === 'products') {
-                renderProductsEditor(sec);
-            } else if (sec.type === 'promo') {
-                renderPromoEditor(sec);
-            } else if (sec.type === 'features') {
-                renderFeaturesEditor(sec);
-            } else if (sec.type === 'categories') {
-                renderCategoriesEditor(sec);
-            }
+            if (sec.type === 'slider') renderSliderEditor(sec);
+            else if (sec.type === 'products') renderProductsSectionEditor(sec); // Renamed to avoid conflict
+            else if (sec.type === 'promo') renderPromoEditor(sec);
+            else if (sec.type === 'features') renderFeaturesEditor(sec);
+            else if (sec.type === 'categories') renderCategoriesEditor(sec);
 
             document.getElementById('home-section-modal').style.display = 'flex';
         }
@@ -2656,6 +2624,7 @@
             const div = document.createElement('div');
             div.className = 'admin-card';
             div.style.padding = '15px';
+            const slideId = 'slide-' + Math.random().toString(36).substr(2, 9);
             div.innerHTML = `
                 <div class="details-grid">
                     <div class="admin-form-group">
@@ -2671,8 +2640,14 @@
                         <input type="text" class="admin-input slide-link" value="${data.link || ''}" placeholder="/#products">
                     </div>
                     <div class="admin-form-group">
-                        <label>الصورة (URL أو Base64)</label>
-                        <input type="text" class="admin-input slide-img" value="${data.image || ''}" placeholder="رابط الصورة">
+                        <label>الصورة</label>
+                        <div style="display:flex;gap:10px;">
+                            <input type="file" class="admin-input" accept="image/*" onchange="handleHomeImageUpload(this, '${slideId}')">
+                            <input type="hidden" class="slide-img" id="${slideId}" value="${data.image || ''}">
+                        </div>
+                        <div id="${slideId}-preview" style="margin-top:5px;">
+                            ${data.image ? `<img src="${data.image}" style="height:50px;border-radius:5px;">` : ''}
+                        </div>
                     </div>
                 </div>
                 <button type="button" onclick="this.parentElement.remove()" style="color:red;background:none;border:none;margin-top:10px;cursor:pointer;"><i class="fas fa-trash"></i> حذف الشريحة</button>
@@ -2680,7 +2655,41 @@
             list.appendChild(div);
         }
 
-        function renderProductsEditor(sec) {
+        async function handleHomeImageUpload(input, targetId) {
+            if (!input.files || !input.files[0]) return;
+            const preview = document.getElementById(targetId + '-preview');
+            const hidden = document.getElementById(targetId);
+            
+            preview.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الرفع...';
+            
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const base64 = e.target.result;
+                try {
+                    const sessionData = localStorage.getItem('misk_admin_session');
+                    const token = JSON.parse(sessionData).token;
+                    
+                    const res = await fetch('/api/upload', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ file: base64, folder: 'home' })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        hidden.value = data.url;
+                        preview.innerHTML = `<img src="${data.url}" style="height:50px;border-radius:5px;">`;
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (err) {
+                    alert('فشل الرفع: ' + err.message);
+                    preview.innerHTML = '<span style="color:red;">فشل الرفع</span>';
+                }
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        function renderProductsSectionEditor(sec) {
             const content = document.getElementById('home-sec-content');
             content.innerHTML = `
                 <div class="admin-form-group">
@@ -2699,29 +2708,36 @@
         }
 
         function renderPromoEditor(sec) {
-            const data = sec.data || {};
+            const d = sec.data || {};
+            const promoId = 'promo-' + sec.id;
             const content = document.getElementById('home-sec-content');
             content.innerHTML = `
                 <div class="details-grid">
                     <div class="admin-form-group">
                         <label>العنوان الرئيسي</label>
-                        <input type="text" class="admin-input promo-title" value="${data.title || ''}">
+                        <input type="text" class="admin-input promo-title" value="${d.title || ''}">
                     </div>
                     <div class="admin-form-group">
                         <label>النص الوصفي</label>
-                        <input type="text" class="admin-input promo-text" value="${data.text || ''}">
+                        <input type="text" class="admin-input promo-text" value="${d.text || ''}">
                     </div>
                     <div class="admin-form-group">
                         <label>نص الزر</label>
-                        <input type="text" class="admin-input promo-btn" value="${data.btnLabel || ''}">
+                        <input type="text" class="admin-input promo-btn" value="${d.btnLabel || ''}">
                     </div>
                     <div class="admin-form-group">
                         <label>الرابط</label>
-                        <input type="text" class="admin-input promo-link" value="${data.link || ''}">
+                        <input type="text" class="admin-input promo-link" value="${d.link || ''}">
                     </div>
                     <div class="admin-form-group full-width">
-                        <label>رابط الصورة</label>
-                        <input type="text" class="admin-input promo-img" value="${data.image || ''}">
+                        <label>صورة البنر</label>
+                        <div style="display:flex;gap:10px;">
+                            <input type="file" class="admin-input" accept="image/*" onchange="handleHomeImageUpload(this, '${promoId}')">
+                            <input type="hidden" class="promo-img" id="${promoId}" value="${d.image || ''}">
+                        </div>
+                        <div id="${promoId}-preview" style="margin-top:5px;">
+                            ${d.image ? `<img src="${d.image}" style="height:60px;border-radius:5px;">` : ''}
+                        </div>
                     </div>
                 </div>
             `;
@@ -2759,12 +2775,7 @@
 
         function renderCategoriesEditor(sec) {
             const content = document.getElementById('home-sec-content');
-            content.innerHTML = `
-                <div class="admin-form-group">
-                    <label>التصنيفات المختارة</label>
-                    <p style="font-size:0.8rem;color:#888;">سيتم عرض أهم التصنيفات تلقائياً بناءً على الأولوية، أو يمكنك مستقبلاً تحديد تصنيفات معينة هنا.</p>
-                </div>
-            `;
+            content.innerHTML = `<div class="admin-form-group"><label>التصنيفات المختارة</label><p style="font-size:0.8rem;color:#888;">سيتم عرض أهم التصنيفات تلقائياً بناءً على الأولوية.</p></div>`;
         }
 
         function handleHomeSecSubmit(e) {
@@ -2778,12 +2789,15 @@
             if (sec.type === 'slider') {
                 const slides = [];
                 document.querySelectorAll('#slider-items-list .admin-card').forEach(card => {
-                    slides.push({
-                        title: card.querySelector('.slide-title').value,
-                        subtitle: card.querySelector('.slide-sub').value,
-                        link: card.querySelector('.slide-link').value,
-                        image: card.querySelector('.slide-img').value
-                    });
+                    const img = card.querySelector('.slide-img').value;
+                    if (img) {
+                        slides.push({
+                            title: card.querySelector('.slide-title').value,
+                            subtitle: card.querySelector('.slide-sub').value,
+                            link: card.querySelector('.slide-link').value,
+                            image: img
+                        });
+                    }
                 });
                 sec.data = slides;
             } else if (sec.type === 'products') {
