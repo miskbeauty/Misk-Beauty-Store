@@ -323,47 +323,124 @@ window.updateShipping = function() {
     updateCartTotals(subtotal);
 };
 
-// --- Initialization ---
+// --- Dynamic Home Layout Engine ---
+const DEFAULT_LAYOUT = [
+    { id: 'default-slider', type: 'slider', title: 'السلايدر الرئيسي', data: [] },
+    { id: 'default-all', type: 'products', title: 'جميع المنتجات', filter: 'all', limit: 8, showLoadMore: true },
+    { id: 'default-latest', type: 'products', title: 'أحدث المنتجات', filter: 'latest', limit: 8 },
+    { id: 'default-offers', type: 'products', title: 'عروض وتخفيضات', filter: 'offers', limit: 8 },
+    { id: 'default-best', type: 'products', title: 'الأكثر مبيعاً', filter: 'best-seller', limit: 8 },
+    { id: 'default-rated', type: 'products', title: 'الأعلى تقييماً', filter: 'top-rated', limit: 8 },
+    { id: 'default-features', type: 'features', title: 'مميزاتنا', data: [
+        { icon: 'fa-shipping-fast', title: 'شحن سريع وآمن', desc: 'توصيل لجميع المناطق' },
+        { icon: 'fa-certificate', title: 'منتجات أصلية', desc: 'جودة مضمونة 100%' },
+        { icon: 'fa-credit-card', title: 'خيارات دفع سهلة', desc: 'دفع آمن ومتنوع' }
+    ]}
+];
+
 async function initSite() {
     updateCartUI();
     renderCartPage();
 
-    const homeSection = document.getElementById('home');
-    if (homeSection) {
-        // Load only the slider dynamically
-        try {
-            const res = await fetch('/api/settings');
-            const data = await res.json();
-            const layout = (data.success && data.settings && data.settings.homeLayout) ? data.settings.homeLayout : null;
-            const sliderSec = layout ? layout.find(s => s.type === 'slider') : null;
-            
-            if (sliderSec) {
-                renderSliderSection(homeSection, sliderSec);
-            } else {
-                // Fallback Slider
-                homeSection.innerHTML = `
-                    <div class="slider-wrapper">
-                        <div class="slides">
-                            <div class="slide active" style="background: linear-gradient(135deg, #fdf6ff 0%, #F3E5F5 100%);">
-                                <div class="slide-content">
-                                    <h2>مرحباً بكم في مسك بيوتي</h2>
-                                    <p>اكتشفوا أرقى العطور ومنتجات الجمال</p>
-                                    <a href="#products" class="btn btn-primary">تسوق الآن</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-        } catch (e) {
-            console.error("Error loading slider:", e);
-        }
-    }
+    const main = document.getElementById('dynamic-main');
+    if (!main) return; // Not the home page
 
-    // Load static grids sequentially to avoid isLoading lock
-    if (document.getElementById('productGrid')) await renderProductGrid('productGrid');
-    if (document.getElementById('offersGrid')) await renderProductGrid('offersGrid', false, { onSale: 'true' });
-    if (document.getElementById('featuredProductsGrid')) await renderProductGrid('featuredProductsGrid', false, { bestSeller: 'true' });
+    try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        const layout = (data.success && data.settings && data.settings.homeLayout && data.settings.homeLayout.length > 0)
+            ? data.settings.homeLayout
+            : DEFAULT_LAYOUT;
+        await renderHomeLayout(main, layout);
+    } catch (e) {
+        console.error("Error loading home layout:", e);
+        await renderHomeLayout(main, DEFAULT_LAYOUT);
+    }
+}
+
+async function renderHomeLayout(main, layout) {
+    main.innerHTML = '';
+    for (const sec of layout) {
+        if (sec.hidden) continue;
+        const el = document.createElement('section');
+        el.id = `sec-${sec.id}`;
+        el.dataset.secType = sec.type;
+
+        switch (sec.type) {
+            case 'slider':
+                el.className = 'home-slider';
+                renderSliderSection(el, sec);
+                break;
+            case 'products':
+                el.className = 'products-section container';
+                el.style.marginBottom = '60px';
+                await renderProductsSection(el, sec);
+                break;
+            case 'categories':
+                el.className = 'categories-section container';
+                el.style.marginBottom = '60px';
+                await renderCategoriesSection(el, sec);
+                break;
+            case 'features':
+                el.className = 'features-bar';
+                renderFeaturesSection(el, sec.data);
+                break;
+            case 'promo':
+                el.className = 'promo-section container';
+                el.style.marginBottom = '60px';
+                renderPromoSection(el, sec.data);
+                break;
+            default:
+                continue;
+        }
+        main.appendChild(el);
+    }
+}
+
+async function renderProductsSection(el, sec) {
+    const titleIcon = sec.filter === 'offers' ? '<i class="fas fa-tag" style="color:#e91e63;margin-left:10px;"></i>' :
+                      sec.filter === 'top-rated' ? '<i class="fas fa-star" style="color:#FFD700;margin-left:10px;"></i>' :
+                      sec.filter === 'latest' ? '<i class="fas fa-clock" style="color:#6a1b9a;margin-left:10px;"></i>' :
+                      sec.filter === 'best-seller' ? '<i class="fas fa-fire" style="color:#ff6f00;margin-left:10px;"></i>' : '';
+
+    const gridId = `grid-${sec.id}`;
+    const loadMoreId = `loadmore-${sec.id}`;
+
+    el.innerHTML = `
+        <div class="section-title"><h2>${titleIcon}${escapeHTML(sec.title)}</h2></div>
+        <div class="product-grid" id="${gridId}"></div>
+        ${sec.showLoadMore ? `<div style="text-align:center;margin-top:40px;"><button id="${loadMoreId}" class="btn btn-primary" style="display:none;" onclick="loadMoreProducts('${gridId}', '${loadMoreId}')">عرض المزيد من المنتجات</button></div>` : ''}
+    `;
+
+    const params = { limit: sec.limit || 8 };
+    if (sec.filter === 'offers') params.onSale = 'true';
+    else if (sec.filter === 'best-seller') params.bestSeller = 'true';
+    else if (sec.filter === 'top-rated') params.topRated = 'true';
+    else if (sec.filter === 'latest') params.latest = 'true';
+
+    await renderProductGrid(gridId, false, params);
+
+    // Show load more button if applicable
+    if (sec.showLoadMore) {
+        const btn = document.getElementById(loadMoreId);
+        if (btn && hasMoreProducts) btn.style.display = 'inline-block';
+    }
+}
+
+function loadMoreProducts(gridId, btnId) {
+    renderProductGrid(gridId, true).then(() => {
+        const btn = document.getElementById(btnId);
+        if (btn) btn.style.display = hasMoreProducts ? 'inline-block' : 'none';
+    });
+}
+
+async function renderCategoriesSection(el, sec) {
+    const catGridId = `cats-${sec.id}`;
+    el.innerHTML = `
+        <div class="section-title"><h2>${escapeHTML(sec.title || 'الأقسام')}</h2></div>
+        <div id="${catGridId}" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:20px;margin-top:20px;"></div>
+    `;
+    await renderHomeCategories(catGridId);
 }
 
 async function renderHomeCategories(containerId) {
@@ -372,45 +449,90 @@ async function renderHomeCategories(containerId) {
     try {
         const res = await fetch('/api/categories');
         const data = await res.json();
-        if (data.success) {
-            const parents = data.categories.filter(c => !c.parentId).slice(0, 10);
+        if (data.success && data.categories.length > 0) {
+            const parents = data.categories.filter(c => !c.parentId).slice(0, 12);
             grid.innerHTML = parents.map(c => `
-                <a href="/category/${c.slug || c._id}" class="category-card-mini" style="text-align:center; text-decoration:none; color:inherit;">
-                    <div style="width:100%; aspect-ratio:1; border-radius:50%; overflow:hidden; border:2px solid #f3e5f5; margin-bottom:10px;">
-                        <img src="${c.image || '/assets/images/placeholder.png'}" style="width:100%; height:100%; object-fit:cover;">
+                <a href="/category/${c.slug || c._id}" style="text-align:center;text-decoration:none;color:inherit;display:block;transition:transform 0.3s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+                    <div style="width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid #f3e5f5;margin:0 auto 10px;box-shadow:0 4px 15px rgba(106,27,154,0.1);">
+                        <img src="${c.image || '/assets/images/placeholder.png'}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
                     </div>
-                    <h4 style="font-size:0.85rem; font-weight:500;">${escapeHTML(c.name)}</h4>
+                    <h4 style="font-size:0.85rem;font-weight:600;color:var(--text-color);">${escapeHTML(c.name)}</h4>
                 </a>
             `).join('');
         }
-    } catch(e) {}
+    } catch(e) { console.error('Categories load error:', e); }
+}
+
+function renderFeaturesSection(el, data) {
+    const features = (data && data.length > 0) ? data : [
+        { icon: 'fa-shipping-fast', title: 'شحن سريع وآمن', desc: 'توصيل لجميع المناطق' },
+        { icon: 'fa-certificate', title: 'منتجات أصلية', desc: 'جودة مضمونة 100%' },
+        { icon: 'fa-credit-card', title: 'خيارات دفع سهلة', desc: 'دفع آمن ومتنوع' }
+    ];
+    el.innerHTML = `
+        <div class="container">
+            <div class="features-container">
+                ${features.map(f => `
+                    <div class="feature-item">
+                        <i class="fas ${escapeHTML(f.icon)}"></i>
+                        <h4>${escapeHTML(f.title)}</h4>
+                        <p>${escapeHTML(f.desc)}</p>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function renderPromoSection(el, data) {
+    if (!data || !data.image) { el.remove(); return; }
+    el.innerHTML = `
+        <div style="background:url('${data.image}') no-repeat center/cover;padding:80px 40px;border-radius:24px;color:#fff;text-align:center;position:relative;overflow:hidden;min-height:300px;display:flex;align-items:center;justify-content:center;">
+            <div style="position:absolute;inset:0;background:rgba(0,0,0,0.35);"></div>
+            <div style="position:relative;z-index:2;max-width:600px;">
+                <h2 style="font-size:2.2rem;margin-bottom:15px;text-shadow:0 2px 10px rgba(0,0,0,0.3);">${escapeHTML(data.title || '')}</h2>
+                <p style="font-size:1.1rem;margin-bottom:25px;opacity:0.9;">${escapeHTML(data.text || '')}</p>
+                ${data.btnLabel ? `<a href="${data.link || '#'}" class="btn btn-primary">${escapeHTML(data.btnLabel)}</a>` : ''}
+            </div>
+        </div>
+    `;
 }
 
 function renderSliderSection(el, config) {
     const slides = config.data || [];
-    if (slides.length === 0) return;
+    if (slides.length === 0) {
+        el.innerHTML = `
+            <div class="slider-wrapper" style="min-height:450px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#fdf6ff 0%,#F3E5F5 100%);">
+                <div class="slide-content" style="text-align:center;">
+                    <h2 style="color:var(--primary-dark);font-size:2.5rem;">مرحباً بكم في مسك بيوتي</h2>
+                    <p style="color:#666;font-size:1.2rem;">اكتشفوا أرقى العطور ومنتجات الجمال</p>
+                    <a href="#sec-default-all" class="btn btn-primary" style="margin-top:20px;">تسوق الآن</a>
+                </div>
+            </div>`;
+        return;
+    }
 
     el.innerHTML = `
         <div class="slider-wrapper">
             <div class="slides">
                 ${slides.map((s, i) => `
-                    <div class="slide ${i === 0 ? 'active' : ''}" style="background-image: url('${s.image}'); background-size: cover; background-position: center;">
+                    <div class="slide ${i === 0 ? 'active' : ''}" style="background-image:url('${s.image}');background-size:cover;background-position:center;">
                         <div class="slide-content">
-                            <h2>${escapeHTML(s.title)}</h2>
-                            <p>${escapeHTML(s.subtitle)}</p>
+                            <h2>${escapeHTML(s.title || '')}</h2>
+                            <p>${escapeHTML(s.subtitle || '')}</p>
                             ${s.link ? `<a href="${s.link}" class="btn btn-primary">تسوق الآن</a>` : ''}
                         </div>
                     </div>
                 `).join('')}
             </div>
-            <button class="slider-arrow prev"><i class="fas fa-chevron-right"></i></button>
-            <button class="slider-arrow next"><i class="fas fa-chevron-left"></i></button>
-            <div class="slider-dots">
-                ${slides.map((_, i) => `<span class="dot ${i === 0 ? 'active' : ''}"></span>`).join('')}
-            </div>
+            ${slides.length > 1 ? `
+                <button class="slider-arrow prev"><i class="fas fa-chevron-right"></i></button>
+                <button class="slider-arrow next"><i class="fas fa-chevron-left"></i></button>
+                <div class="slider-dots">${slides.map((_, i) => `<span class="dot ${i === 0 ? 'active' : ''}"></span>`).join('')}</div>
+            ` : ''}
         </div>
     `;
-    setTimeout(() => initSliderLogic(el), 100);
+    if (slides.length > 1) setTimeout(() => initSliderLogic(el), 100);
 }
 
 function initSliderLogic(el) {
@@ -419,25 +541,18 @@ function initSliderLogic(el) {
     const prev = el.querySelector('.prev');
     const next = el.querySelector('.next');
     let current = 0;
-
     if (!slides.length) return;
-
-    function show(index) {
+    function show(i) {
         slides.forEach(s => s.classList.remove('active'));
         dots.forEach(d => d.classList.remove('active'));
-        if (slides[index]) slides[index].classList.add('active');
-        if (dots[index]) dots[index].classList.add('active');
-        current = index;
+        current = (i + slides.length) % slides.length;
+        slides[current].classList.add('active');
+        if (dots[current]) dots[current].classList.add('active');
     }
-
-    if (next) next.onclick = () => show((current + 1) % slides.length);
-    if (prev) prev.onclick = () => show((current - 1 + slides.length) % slides.length);
+    if (next) next.onclick = () => show(current + 1);
+    if (prev) prev.onclick = () => show(current - 1);
     dots.forEach((d, i) => d.onclick = () => show(i));
-    
-    const autoSlide = setInterval(() => {
-        if (!document.contains(el)) { clearInterval(autoSlide); return; }
-        if (next) next.click();
-    }, 5000);
+    const timer = setInterval(() => { if (!document.contains(el)) { clearInterval(timer); return; } show(current + 1); }, 6000);
 }
 
 document.addEventListener('DOMContentLoaded', initSite);

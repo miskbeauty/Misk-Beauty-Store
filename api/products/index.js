@@ -30,12 +30,16 @@ module.exports = async (req, res) => {
                 if (bestSeller === 'true') query.isBestSeller = true;
             }
             const page = parseInt(req.query.page) || 1;
-            const limit = parseInt(req.query.limit) || 12; // Default 12 products per page
+            const limit = parseInt(req.query.limit) || 12;
             const skip = (page - 1) * limit;
+
+            let sort = { priority: -1 };
+            if (req.query.sort === 'latest' || req.query.latest === 'true') sort = { _id: -1 };
+            else if (req.query.sort === 'topRated' || req.query.topRated === 'true') sort = { avgRating: -1, ratingCount: -1 };
 
             const total = await products.countDocuments(query);
             const allProducts = await products.find(query)
-                .sort({ priority: -1 })
+                .sort(sort)
                 .skip(skip)
                 .limit(limit)
                 .toArray();

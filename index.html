@@ -22,69 +22,11 @@
     <header></header>
     <script src="/assets/js/auth.js"></script>
     <script src="/assets/js/header.js"></script>
-    <main>
-        <section class="home-slider container" id="home">
-            <!-- Dynamic Slider will be injected here -->
-            <div style="text-align: center; padding: 100px 20px;">
-                <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: var(--primary-dark); margin-bottom: 20px;"></i>
-            </div>
-        </section>
-
-
-
-
-
-        <section class="products container" id="products">
-            <div class="section-title">
-                <h2>جميع المنتجات</h2>
-            </div>
-            <div class="product-grid" id="productGrid">
-                <!-- Products will be loaded dynamically -->
-            </div>
-            <div style="text-align: center; margin-top: 40px;">
-                <button id="loadMoreBtn" class="btn btn-primary" style="display: none;" onclick="renderProductGrid('productGrid', true)">عرض المزيد من المنتجات</button>
-            </div>
-        </section>
-
-        <section class="special-offers container" id="offers">
-            <div class="section-title">
-                <h2><i class="fas fa-star" style="color: #FFD700; font-size: 1.5rem; vertical-align: middle; margin-left: 10px;"></i>عروض وتخفيضات</h2>
-            </div>
-            <div class="product-grid" id="offersGrid">
-                <!-- Offers will be loaded dynamically -->
-            </div>
-        </section>
-
-        <section class="best-sellers container" id="best-sellers">
-            <div class="section-title">
-                <h2>الأكثر مبيعاً</h2>
-            </div>
-            <div class="product-grid" id="featuredProductsGrid">
-                <!-- Best sellers will be loaded dynamically -->
-            </div>
-        </section>
-
-        <section class="features-bar">
-            <div class="container">
-                <div class="features-container">
-                    <div class="feature-item">
-                        <i class="fas fa-shipping-fast"></i>
-                        <h4>شحن سريع وآمن</h4>
-                        <p>توصيل لجميع المناطق</p>
-                    </div>
-                    <div class="feature-item">
-                        <i class="fas fa-certificate"></i>
-                        <h4>منتجات أصلية</h4>
-                        <p>جودة مضمونة 100%</p>
-                    </div>
-                    <div class="feature-item">
-                        <i class="fas fa-credit-card"></i>
-                        <h4>خيارات دفع سهلة</h4>
-                        <p>دفع آمن ومتنوع</p>
-                    </div>
-                </div>
-            </div>
-        </section>
+    <main id="dynamic-main">
+        <!-- Home layout is rendered dynamically from admin settings -->
+        <div style="text-align:center; padding:120px 20px;">
+            <i class="fas fa-spinner fa-spin" style="font-size:2.5rem; color:var(--primary-dark);"></i>
+        </div>
     </main>
 
     <div class="cart-sidebar" id="cartSidebar">
