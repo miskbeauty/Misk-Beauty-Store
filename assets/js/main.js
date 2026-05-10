@@ -36,11 +36,13 @@ let isLoading = false;
 let hasMoreProducts = true;
 
 async function loadProducts(params = {}) {
-    const { page = 1, limit = 12, category = '', subCategory = '' } = params;
+    const { page = 1, limit = 12, category = '', subCategory = '', ...extra } = params;
     try {
         const query = new URLSearchParams({ page, limit, t: Date.now() });
         if (category) query.append('category', category);
         if (subCategory) query.append('subCategory', subCategory);
+        // Pass all extra filters (onSale, bestSeller, topRated, latest, sort, etc)
+        Object.entries(extra).forEach(([k, v]) => { if (v) query.append(k, v); });
 
         const response = await fetch(`/api/products?${query.toString()}`);
         const data = await response.json();
@@ -55,8 +57,10 @@ async function loadProducts(params = {}) {
 
 async function renderProductGrid(containerId, isLoadMore = false, extraParams = {}) {
     const container = document.getElementById(containerId);
-    if (!container || isLoading) return;
-    isLoading = true;
+    if (!container) return;
+    // Use per-grid loading lock to allow multiple grids to load simultaneously
+    if (container.dataset.loading === 'true' && !isLoadMore) return;
+    container.dataset.loading = 'true';
     if (!isLoadMore) {
         container.innerHTML = `<div class="loading-products" style="grid-column:1/-1;text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:#c8a96e;"></i><p>جاري تحميل المنتجات...</p></div>`;
     }
@@ -100,7 +104,7 @@ async function renderProductGrid(containerId, isLoadMore = false, extraParams = 
 
     const result = await loadProducts({
         page: isLoadMore ? currentPage : 1,
-        limit: (window.location.pathname === '/' || window.location.pathname.includes('index.html') || window.location.pathname === '') ? 8 : 12,
+        limit: extraParams.limit || ((window.location.pathname === '/' || window.location.pathname.includes('index.html') || window.location.pathname === '') ? 8 : 12),
         category: categoryFilter,
         subCategory: subCategoryFilter,
         ...extraParams
@@ -152,7 +156,7 @@ async function renderProductGrid(containerId, isLoadMore = false, extraParams = 
         hasMoreProducts = currentPage < pagination.pages;
         currentPage++;
     }
-    isLoading = false;
+    container.dataset.loading = 'false';
     updateLoadMoreButton();
 }
 
