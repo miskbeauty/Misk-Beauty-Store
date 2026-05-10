@@ -32,21 +32,17 @@
 
 
 
-        <section class="categories-section container">
-            <div class="section-title">
-                <h2>تسوقي حسب القسم</h2>
-            </div>
-            <div class="category-grid" id="homeCategories" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap:20px; margin-top:20px;">
-                <!-- Categories will be loaded here -->
-            </div>
-        </section>
+
 
         <section class="products container" id="products">
             <div class="section-title">
-                <h2>تشكيلة مسك بيوتي</h2>
+                <h2>جميع المنتجات</h2>
             </div>
             <div class="product-grid" id="productGrid">
                 <!-- Products will be loaded dynamically -->
+            </div>
+            <div style="text-align: center; margin-top: 40px;">
+                <button id="loadMoreBtn" class="btn btn-primary" style="display: none;" onclick="renderProductGrid('productGrid', true)">عرض المزيد من المنتجات</button>
             </div>
         </section>
 

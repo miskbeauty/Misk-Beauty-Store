@@ -100,7 +100,7 @@ async function renderProductGrid(containerId, isLoadMore = false) {
 
     const result = await loadProducts({
         page: isLoadMore ? currentPage : 1,
-        limit: 12,
+        limit: (window.location.pathname === '/' || window.location.pathname.includes('index.html')) ? 8 : 12,
         category: categoryFilter,
         subCategory: subCategoryFilter
     });
@@ -360,7 +360,6 @@ async function initSite() {
     }
 
     // Load static grids
-    if (document.getElementById('homeCategories')) renderHomeCategories('homeCategories');
     if (document.getElementById('productGrid')) renderProductGrid('productGrid');
     if (document.getElementById('offersGrid')) renderProductGrid('offersGrid');
     if (document.getElementById('featuredProductsGrid')) renderProductGrid('featuredProductsGrid');
