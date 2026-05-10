@@ -640,12 +640,12 @@
                             </div>
                         </div>
                         <div class="admin-form-group">
-                            <label>السعر الأصلي (شيكل)</label>
-                            <input type="number" id="prod-original-price" class="admin-input" placeholder="120">
+                            <label>السعر الأساسي (شيكل)</label>
+                            <input type="number" id="prod-original-price" class="admin-input" required placeholder="120">
                         </div>
                         <div class="admin-form-group">
-                            <label>سعر العرض (شيكل)</label>
-                            <input type="number" id="prod-price" class="admin-input" required placeholder="99">
+                            <label>سعر العرض (اختياري)</label>
+                            <input type="number" id="prod-price" class="admin-input" placeholder="99">
                         </div>
                         <div class="admin-form-group">
                             <label>المخزون الإجمالي</label>
@@ -2140,8 +2140,13 @@
                     document.getElementById('prod-slug').value = prod.slug || '';
                     document.getElementById('prod-meta-title').value = prod.metaTitle || '';
                     document.getElementById('prod-meta-desc').value = prod.metaDesc || '';
-                    document.getElementById('prod-original-price').value = prod.originalPrice || '';
-                    document.getElementById('prod-price').value = prod.price;
+                    if (prod.oldPrice) {
+                        document.getElementById('prod-original-price').value = prod.oldPrice;
+                        document.getElementById('prod-price').value = prod.price;
+                    } else {
+                        document.getElementById('prod-original-price').value = prod.price;
+                        document.getElementById('prod-price').value = '';
+                    }
                     document.getElementById('prod-stock').value = prod.stock;
                     document.getElementById('prod-priority').value = prod.priority || 0;
                     document.getElementById('prod-category').value = prod.category;
@@ -2177,6 +2182,8 @@
         async function handleProductSubmit(e) {
             e.preventDefault();
             const id = document.getElementById('product-id').value;
+            const basePrice = parseInt(document.getElementById('prod-original-price').value);
+            const offerPrice = document.getElementById('prod-price').value ? parseInt(document.getElementById('prod-price').value) : null;
             const newProd = {
                 id: id && !isNaN(id) ? parseInt(id) : undefined,
                 _id: id && isNaN(id) ? id : undefined,
@@ -2184,8 +2191,8 @@
                 slug: document.getElementById('prod-slug').value,
                 metaTitle: document.getElementById('prod-meta-title').value,
                 metaDesc: document.getElementById('prod-meta-desc').value,
-                originalPrice: document.getElementById('prod-original-price').value ? parseInt(document.getElementById('prod-original-price').value) : null,
-                price: parseInt(document.getElementById('prod-price').value),
+                oldPrice: offerPrice ? basePrice : null,
+                price: offerPrice ? offerPrice : basePrice,
                 stock: parseInt(document.getElementById('prod-stock').value),
                 priority: parseInt(document.getElementById('prod-priority').value) || 0,
                 category: document.getElementById('prod-category').value,
@@ -2251,6 +2258,8 @@
                 }
 
                 // 2. Prepare Product Data with URLs
+                const basePriceVal = parseInt(document.getElementById('prod-original-price').value);
+                const offerPriceVal = document.getElementById('prod-price').value ? parseInt(document.getElementById('prod-price').value) : null;
                 const newProd = {
                     id: id && !isNaN(id) ? parseInt(id) : undefined,
                     _id: id && isNaN(id) ? id : undefined,
@@ -2258,8 +2267,8 @@
                     slug: document.getElementById('prod-slug').value,
                     metaTitle: document.getElementById('prod-meta-title').value,
                     metaDesc: document.getElementById('prod-meta-desc').value,
-                    originalPrice: document.getElementById('prod-original-price').value ? parseInt(document.getElementById('prod-original-price').value) : null,
-                    price: parseInt(document.getElementById('prod-price').value),
+                    oldPrice: offerPriceVal ? basePriceVal : null,
+                    price: offerPriceVal ? offerPriceVal : basePriceVal,
                     stock: parseInt(document.getElementById('prod-stock').value),
                     priority: parseInt(document.getElementById('prod-priority').value) || 0,
                     category: document.getElementById('prod-category').value,
