@@ -319,63 +319,47 @@ async function initSite() {
     updateCartUI();
     renderCartPage();
 
-    console.log("Initializing Storefront Home Layout...");
-    const layoutContainer = document.getElementById('home-layout-container');
-    if (layoutContainer) {
+    const homeSection = document.getElementById('home');
+    if (homeSection) {
+        // Load only the slider dynamically
         try {
             const res = await fetch('/api/settings');
             const data = await res.json();
             const layout = (data.success && data.settings && data.settings.homeLayout) ? data.settings.homeLayout : null;
-
-            if (layout && layout.length > 0) {
-                console.log("Loading saved layout:", layout);
-                await renderHomeLayout(layout);
+            const sliderSec = layout ? layout.find(s => s.type === 'slider') : null;
+            
+            if (sliderSec) {
+                renderSliderSection(homeSection, sliderSec);
             } else {
-                console.log("No layout found, loading default products...");
-                const defaultLayout = [{ id: 'def-prod', type: 'products', title: 'أحدث المنتجات' }];
-                await renderHomeLayout(defaultLayout);
+                // Fallback Slider
+                homeSection.innerHTML = `
+                    <div class="slider-wrapper">
+                        <div class="slides">
+                            <div class="slide active" style="background: linear-gradient(135deg, #fdf6ff 0%, #F3E5F5 100%);">
+                                <div class="slide-content">
+                                    <h2>مرحباً بكم في مسك بيوتي</h2>
+                                    <p>اكتشفوا أرقى العطور ومنتجات الجمال</p>
+                                    <a href="#products" class="btn btn-primary">تسوق الآن</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
             }
         } catch (e) {
-            console.error("CRITICAL: Error loading home layout:", e);
-            layoutContainer.innerHTML = '<div style="text-align:center;padding:50px;">فشل تحميل المحتوى، يرجى إعادة المحاولة.</div>';
+            console.error("Error loading slider:", e);
         }
     }
-}
 
-async function renderHomeLayout(layout) {
-    const container = document.getElementById('home-layout-container');
-    if (!container) return;
-    container.innerHTML = '';
-
-    for (const section of layout) {
-        console.log("Rendering section:", section.type);
-        const sectionEl = document.createElement('section');
-        try {
-            if (section.type === 'slider') {
-                renderSliderSection(sectionEl, section);
-            } else if (section.type === 'categories') {
-                await renderCategoriesSection(sectionEl, section);
-            } else if (section.type === 'products') {
-                await renderProductsSection(sectionEl, section);
-            } else if (section.type === 'promo') {
-                renderPromoSection(sectionEl, section);
-            } else if (section.type === 'features') {
-                renderFeaturesSection(sectionEl, section);
-            }
-            container.appendChild(sectionEl);
-        } catch (err) {
-            console.error(`Error rendering section ${section.type}:`, err);
-        }
-    }
+    // Load static grids
+    if (document.getElementById('productGrid')) renderProductGrid('productGrid');
+    if (document.getElementById('offersGrid')) renderProductGrid('offersGrid');
+    if (document.getElementById('featuredProductsGrid')) renderProductGrid('featuredProductsGrid');
 }
 
 function renderSliderSection(el, config) {
-    el.className = 'home-slider container';
     const slides = config.data || [];
-    if (slides.length === 0) {
-        el.style.display = 'none';
-        return;
-    }
+    if (slides.length === 0) return;
 
     el.innerHTML = `
         <div class="slider-wrapper">
@@ -425,85 +409,6 @@ function initSliderLogic(el) {
         if (!document.contains(el)) { clearInterval(autoSlide); return; }
         if (next) next.click();
     }, 5000);
-}
-
-async function renderCategoriesSection(el, config) {
-    el.className = 'categories-section container';
-    const gridId = `cat-grid-${config.id}`;
-    el.innerHTML = `
-        <div class="section-title"><h2>${escapeHTML(config.title || 'تصنيفاتنا')}</h2></div>
-        <div class="category-grid" id="${gridId}" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap:20px; margin-top:20px;"></div>
-    `;
-    
-    const grid = document.getElementById(gridId);
-    try {
-        const res = await fetch('/api/categories');
-        const data = await res.json();
-        if (data.success && grid) {
-            const parents = data.categories.filter(c => !c.parentId).slice(0, 6);
-            grid.innerHTML = parents.map(c => `
-                <a href="/category/${c.slug || c._id}" class="category-card-mini" style="text-align:center; text-decoration:none; color:inherit;">
-                    <div style="width:100%; aspect-ratio:1; border-radius:50%; overflow:hidden; border:3px solid #f3e5f5; margin-bottom:10px;">
-                        <img src="${c.image || '/assets/images/placeholder.png'}" style="width:100%; height:100%; object-fit:cover;">
-                    </div>
-                    <h4 style="font-size:0.9rem;">${escapeHTML(c.name)}</h4>
-                </a>
-            `).join('');
-        }
-    } catch(e) { console.error("Error loading cats for home:", e); }
-}
-
-async function renderProductsSection(el, config) {
-    el.className = 'products container';
-    const gridId = `grid-${config.id}`;
-    el.innerHTML = `
-        <div class="section-title"><h2>${escapeHTML(config.title || 'منتجات مختارة')}</h2></div>
-        <div class="product-grid" id="${gridId}"></div>
-    `;
-    
-    // Use existing renderProductGrid
-    // TEMPORARY FIX: Bypass global isLoading lock for home layout
-    const originalIsLoading = window.isLoading;
-    window.isLoading = false; 
-    await renderProductGrid(gridId);
-    window.isLoading = originalIsLoading;
-}
-
-function renderPromoSection(el, config) {
-    el.className = 'promo-banner container';
-    const d = config.data || {};
-    if (!d.image && !d.title) { el.style.display = 'none'; return; }
-    
-    el.innerHTML = `
-        <div class="promo-content">
-            <h2>${escapeHTML(d.title)}</h2>
-            <p>${escapeHTML(d.text)}</p>
-            ${d.link ? `<a href="${d.link}" class="btn-white">${escapeHTML(d.btnLabel || 'اكتشف المزيد')}</a>` : ''}
-        </div>
-        <div class="promo-image">
-            <img src="${d.image || '/assets/images/placeholder.png'}" alt="Promo">
-        </div>
-    `;
-}
-
-function renderFeaturesSection(el, config) {
-    el.className = 'features-bar';
-    const feats = config.data || [];
-    if (feats.length === 0) { el.style.display = 'none'; return; }
-
-    el.innerHTML = `
-        <div class="container">
-            <div class="features-container" style="display:flex; justify-content:space-around; gap:20px; padding:30px 0; flex-wrap:wrap;">
-                ${feats.map(f => `
-                    <div class="feature-item" style="text-align:center; min-width:200px;">
-                        <i class="fas ${f.icon}" style="font-size:2rem; color:var(--primary-dark); margin-bottom:15px;"></i>
-                        <h4 style="margin-bottom:5px;">${escapeHTML(f.title)}</h4>
-                        <p style="font-size:0.85rem; color:#666;">${escapeHTML(f.desc)}</p>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    `;
 }
 
 document.addEventListener('DOMContentLoaded', initSite);
