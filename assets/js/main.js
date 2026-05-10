@@ -352,10 +352,13 @@ async function initSite() {
     try {
         const res = await fetch('/api/settings');
         const data = await res.json();
-        const layout = (data.success && data.settings && data.settings.homeLayout && data.settings.homeLayout.length > 0)
-            ? data.settings.homeLayout
-            : DEFAULT_LAYOUT;
-        await renderHomeLayout(main, layout);
+        let layout = null;
+        if (data.success && data.settings && data.settings.homeLayout && data.settings.homeLayout.length > 0) {
+            // Only use saved layout if it has actual product sections, not just a slider
+            const hasProductSections = data.settings.homeLayout.some(s => s.type === 'products');
+            layout = hasProductSections ? data.settings.homeLayout : null;
+        }
+        await renderHomeLayout(main, layout || DEFAULT_LAYOUT);
     } catch (e) {
         console.error("Error loading home layout:", e);
         await renderHomeLayout(main, DEFAULT_LAYOUT);
