@@ -90,6 +90,14 @@ async function renderProductGrid(containerId, isLoadMore = false) {
         subCategoryFilter = urlParams.subCategory;
     }
 
+    // Update Section Title if applicable
+    const titleEl = container.closest('section')?.querySelector('.section-title h2');
+    if (titleEl && containerId === 'productGrid') {
+        if (subCategoryFilter) titleEl.textContent = subCategoryFilter;
+        else if (categoryFilter) titleEl.textContent = categoryFilter;
+        else titleEl.textContent = (window.location.pathname === '/' || window.location.pathname.includes('index.html')) ? 'أحدث المنتجات' : 'جميع المنتجات';
+    }
+
     const result = await loadProducts({
         page: isLoadMore ? currentPage : 1,
         limit: 12,
@@ -352,9 +360,30 @@ async function initSite() {
     }
 
     // Load static grids
+    if (document.getElementById('homeCategories')) renderHomeCategories('homeCategories');
     if (document.getElementById('productGrid')) renderProductGrid('productGrid');
     if (document.getElementById('offersGrid')) renderProductGrid('offersGrid');
     if (document.getElementById('featuredProductsGrid')) renderProductGrid('featuredProductsGrid');
+}
+
+async function renderHomeCategories(containerId) {
+    const grid = document.getElementById(containerId);
+    if (!grid) return;
+    try {
+        const res = await fetch('/api/categories');
+        const data = await res.json();
+        if (data.success) {
+            const parents = data.categories.filter(c => !c.parentId).slice(0, 10);
+            grid.innerHTML = parents.map(c => `
+                <a href="/category/${c.slug || c._id}" class="category-card-mini" style="text-align:center; text-decoration:none; color:inherit;">
+                    <div style="width:100%; aspect-ratio:1; border-radius:50%; overflow:hidden; border:2px solid #f3e5f5; margin-bottom:10px;">
+                        <img src="${c.image || '/assets/images/placeholder.png'}" style="width:100%; height:100%; object-fit:cover;">
+                    </div>
+                    <h4 style="font-size:0.85rem; font-weight:500;">${escapeHTML(c.name)}</h4>
+                </a>
+            `).join('');
+        }
+    } catch(e) {}
 }
 
 function renderSliderSection(el, config) {
