@@ -95,12 +95,12 @@ async function renderProductGrid(containerId, isLoadMore = false) {
     if (titleEl && containerId === 'productGrid') {
         if (subCategoryFilter) titleEl.textContent = subCategoryFilter;
         else if (categoryFilter) titleEl.textContent = categoryFilter;
-        else titleEl.textContent = (window.location.pathname === '/' || window.location.pathname.includes('index.html')) ? 'أحدث المنتجات' : 'جميع المنتجات';
+        else titleEl.textContent = 'جميع المنتجات';
     }
 
     const result = await loadProducts({
         page: isLoadMore ? currentPage : 1,
-        limit: (window.location.pathname === '/' || window.location.pathname.includes('index.html')) ? 8 : 12,
+        limit: (window.location.pathname === '/' || window.location.pathname.includes('index.html') || window.location.pathname === '') ? 8 : 12,
         category: categoryFilter,
         subCategory: subCategoryFilter
     });
@@ -359,10 +359,10 @@ async function initSite() {
         }
     }
 
-    // Load static grids
-    if (document.getElementById('productGrid')) renderProductGrid('productGrid');
-    if (document.getElementById('offersGrid')) renderProductGrid('offersGrid');
-    if (document.getElementById('featuredProductsGrid')) renderProductGrid('featuredProductsGrid');
+    // Load static grids sequentially to avoid isLoading lock
+    if (document.getElementById('productGrid')) await renderProductGrid('productGrid');
+    if (document.getElementById('offersGrid')) await renderProductGrid('offersGrid');
+    if (document.getElementById('featuredProductsGrid')) await renderProductGrid('featuredProductsGrid');
 }
 
 async function renderHomeCategories(containerId) {
