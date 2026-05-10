@@ -10,6 +10,8 @@
     <!-- Quill.js for Rich Text -->
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/admin.css">
+    <!-- SortableJS for Drag & Drop -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 </head>
 
 <body>
@@ -56,6 +58,12 @@
                     <a href="#" onclick="switchTab('pages')">
                         <i class="fas fa-file-alt"></i>
                         <span>إدارة الصفحات</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-home-editor">
+                    <a href="#" onclick="switchTab('home-editor')">
+                        <i class="fas fa-home"></i>
+                        <span>تعديل الصفحة الرئيسية</span>
                     </a>
                 </li>
                 <li class="menu-item" id="menu-analytics">
@@ -278,6 +286,42 @@
                             <!-- Data populated by JS -->
                         </tbody>
                     </table>
+                </div>
+            </section>
+
+            <!-- Home Page Editor Section -->
+            <section id="home-editor-section" class="admin-card hidden">
+                <div class="card-header">
+                    <h3 style="font-weight: 700;">تعديل الصفحة الرئيسية</h3>
+                    <div class="header-actions">
+                        <button onclick="saveHomeLayout()" class="btn-admin-login" style="padding: 8px 15px; font-size: 0.9rem; width: auto; box-shadow: none;">
+                            <i class="fas fa-save"></i> حفظ التغييرات
+                        </button>
+                    </div>
+                </div>
+
+                <div class="home-editor-container" style="display: grid; grid-template-columns: 300px 1fr; gap: 20px; margin-top: 20px;">
+                    <!-- Available Sections Panel -->
+                    <div class="available-sections admin-card" style="padding: 15px; background: #f9f9f9; border: 1px solid #eee;">
+                        <h4 style="margin-bottom: 15px; color: var(--admin-purple); border-bottom: 2px solid #eee; padding-bottom: 10px;">إضافة قسم جديد</h4>
+                        <div class="section-buttons-grid" style="display: flex; flex-direction: column; gap: 10px;">
+                            <button onclick="addHomeSection('slider')" class="btn-add-section"><i class="fas fa-images"></i> سلايدر الصور</button>
+                            <button onclick="addHomeSection('categories')" class="btn-add-section"><i class="fas fa-th-large"></i> قائمة التصنيفات</button>
+                            <button onclick="addHomeSection('products')" class="btn-add-section"><i class="fas fa-box"></i> شبكة المنتجات</button>
+                            <button onclick="addHomeSection('promo')" class="btn-add-section"><i class="fas fa-ad"></i> بنر إعلاني</button>
+                            <button onclick="addHomeSection('features')" class="btn-add-section"><i class="fas fa-truck"></i> شريط المميزات</button>
+                        </div>
+                        <p style="font-size: 0.8rem; color: #888; margin-top: 20px; line-height: 1.4;">
+                            <i class="fas fa-info-circle"></i> يمكنك سحب الأقسام في الجهة اليسرى لإعادة ترتيبها.
+                        </p>
+                    </div>
+
+                    <!-- Active Sections (Sortable List) -->
+                    <div class="active-sections-wrapper">
+                        <div id="home-sections-list" class="sortable-list">
+                            <!-- Sections will be injected here -->
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -756,6 +800,32 @@
         </div>
     </div>
 
+    <!-- Home Section Modal -->
+    <div id="home-section-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 id="home-sec-modal-title">تعديل القسم</h3>
+                <button class="close-modal" onclick="closeModal('home-section-modal')">&times;</button>
+            </div>
+            <form id="home-sec-form" onsubmit="handleHomeSecSubmit(event)">
+                <input type="hidden" id="home-sec-id">
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto; padding: 10px;">
+                    <div class="admin-form-group">
+                        <label>عنوان القسم (يظهر في المتجر)</label>
+                        <input type="text" id="home-sec-title" class="admin-input" required>
+                    </div>
+                    <div id="home-sec-content" style="margin-top: 20px;">
+                        <!-- Content injected by JS based on section type -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closeModal('home-section-modal')">إلغاء</button>
+                    <button type="submit" class="btn-admin-login" style="width: auto; padding: 10px 30px;">تحديث القسم</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Quill.js scripts -->
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <script>
@@ -956,8 +1026,8 @@
 
         // --- Core Functions ---
         function switchTab(tab) {
-            const sections = ['orders-section', 'products-section', 'categories-section', 'customers-section', 'reviews-section', 'analytics-section', 'settings-section'];
-            const menuItems = ['menu-orders', 'menu-products', 'menu-categories', 'menu-customers', 'menu-reviews', 'menu-analytics', 'menu-settings'];
+            const sections = ['orders-section', 'products-section', 'categories-section', 'customers-section', 'reviews-section', 'pages-section', 'home-editor-section', 'analytics-section', 'settings-section'];
+            const menuItems = ['menu-orders', 'menu-products', 'menu-categories', 'menu-customers', 'menu-reviews', 'menu-pages', 'menu-home-editor', 'menu-analytics', 'menu-settings'];
 
             sections.forEach(s => {
                 const el = document.getElementById(s);
@@ -979,6 +1049,8 @@
             if (tab === 'categories') renderCategories();
             if (tab === 'customers') renderCustomers();
             if (tab === 'reviews') renderReviewsModeration();
+            if (tab === 'pages') renderPages();
+            if (tab === 'home-editor') initHomeEditor();
             if (tab === 'analytics') renderAnalytics();
             if (tab === 'settings') renderSettings();
         }
@@ -2384,6 +2456,363 @@
                 if(el) el.innerHTML = originalHTML;
             }
         }
+        // --- Home Page Editor Logic ---
+        let currentHomeLayout = [];
+
+        async function initHomeEditor() {
+            const list = document.getElementById('home-sections-list');
+            list.innerHTML = '<div style="text-align:center;padding:20px;"><i class="fas fa-spinner fa-spin"></i> جاري تحميل الإعدادات...</div>';
+            
+            try {
+                const res = await fetch('/api/settings');
+                const data = await res.json();
+                if (data.success && data.settings && data.settings.homeLayout) {
+                    currentHomeLayout = data.settings.homeLayout;
+                } else {
+                    // Default Layout if none exists
+                    currentHomeLayout = [
+                        { id: Date.now() + 1, type: 'slider', title: 'سلايدر العروض', data: [] },
+                        { id: Date.now() + 2, type: 'categories', title: 'الأقسام الرئيسية', data: {} },
+                        { id: Date.now() + 3, type: 'products', title: 'أحدث المنتجات', filter: 'latest' },
+                        { id: Date.now() + 4, type: 'promo', title: 'بنر إعلاني', data: {} },
+                        { id: Date.now() + 5, type: 'features', title: 'مميزات المتجر', data: [] }
+                    ];
+                }
+                renderHomeSectionsList();
+                initSortable();
+            } catch (e) {
+                console.error("Error loading home layout:", e);
+                alert("فشل تحميل إعدادات الصفحة الرئيسية.");
+            }
+        }
+
+        function initSortable() {
+            const el = document.getElementById('home-sections-list');
+            Sortable.create(el, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onEnd: function() {
+                    // Update currentHomeLayout based on new order
+                    const newOrder = [];
+                    const items = el.querySelectorAll('.section-item');
+                    items.forEach(item => {
+                        const id = item.dataset.id;
+                        const section = currentHomeLayout.find(s => String(s.id) === String(id));
+                        if (section) newOrder.push(section);
+                    });
+                    currentHomeLayout = newOrder;
+                }
+            });
+        }
+
+        function renderHomeSectionsList() {
+            const list = document.getElementById('home-sections-list');
+            list.innerHTML = '';
+
+            if (currentHomeLayout.length === 0) {
+                list.innerHTML = '<div style="text-align:center;padding:40px;color:#888;border:2px dashed #eee;border-radius:15px;">لا توجد أقسام نشطة حالياً. ابدأ بإضافة قسم من القائمة اليمنى.</div>';
+                return;
+            }
+
+            const icons = {
+                slider: 'fa-images',
+                categories: 'fa-th-large',
+                products: 'fa-box',
+                promo: 'fa-ad',
+                features: 'fa-truck'
+            };
+
+            const names = {
+                slider: 'سلايدر الصور',
+                categories: 'قائمة التصنيفات',
+                products: 'شبكة المنتجات',
+                promo: 'بنر إعلاني',
+                features: 'شريط المميزات'
+            };
+
+            currentHomeLayout.forEach(sec => {
+                const div = document.createElement('div');
+                div.className = 'section-item';
+                div.dataset.id = sec.id;
+                div.innerHTML = `
+                    <div class="section-info">
+                        <div class="section-icon"><i class="fas ${icons[sec.type]}"></i></div>
+                        <div class="section-details">
+                            <h4>${sec.title || names[sec.type]}</h4>
+                            <p>${names[sec.type]}</p>
+                        </div>
+                    </div>
+                    <div class="section-actions">
+                        <button onclick="openEditSectionModal('${sec.id}')" class="btn-action-sm btn-edit-sec" title="تعديل"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteHomeSection('${sec.id}')" class="btn-action-sm btn-delete-sec" title="حذف"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function addHomeSection(type) {
+            const names = {
+                slider: 'سلايدر جديد',
+                categories: 'أقسام مختارة',
+                products: 'منتجات مختارة',
+                promo: 'عرض خاص',
+                features: 'مميزاتنا'
+            };
+            const newSec = {
+                id: Date.now(),
+                type: type,
+                title: names[type],
+                data: type === 'slider' || type === 'features' ? [] : {}
+            };
+            currentHomeLayout.push(newSec);
+            renderHomeSectionsList();
+        }
+
+        function deleteHomeSection(id) {
+            if (!confirm('هل أنت متأكد من حذف هذا القسم من الصفحة الرئيسية؟')) return;
+            currentHomeLayout = currentHomeLayout.filter(s => String(s.id) !== String(id));
+            renderHomeSectionsList();
+        }
+
+        async function saveHomeLayout() {
+            const btn = document.querySelector('[onclick="saveHomeLayout()"]');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+            btn.disabled = true;
+
+            try {
+                const sessionData = localStorage.getItem('misk_admin_session');
+                if (!sessionData) throw new Error('يرجى تسجيل الدخول أولاً');
+                const token = JSON.parse(sessionData).token;
+
+                // We need to fetch current settings first to merge or just update the layout
+                const getRes = await fetch('/api/settings');
+                const getData = await getRes.json();
+                let settings = getData.success && getData.settings ? getData.settings : {};
+                
+                settings.homeLayout = currentHomeLayout;
+
+                const res = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(settings)
+                });
+
+                if (res.ok) {
+                    alert('تم حفظ إعدادات الصفحة الرئيسية بنجاح!');
+                } else {
+                    throw new Error('فشل حفظ الإعدادات');
+                }
+            } catch (e) {
+                alert('خطأ: ' + e.message);
+            } finally {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }
+        }
+
+        function openEditSectionModal(id) {
+            const sec = currentHomeLayout.find(s => String(s.id) === String(id));
+            if (!sec) return;
+
+            document.getElementById('home-sec-id').value = sec.id;
+            document.getElementById('home-sec-title').value = sec.title || '';
+            
+            const content = document.getElementById('home-sec-content');
+            content.innerHTML = '';
+
+            if (sec.type === 'slider') {
+                renderSliderEditor(sec);
+            } else if (sec.type === 'products') {
+                renderProductsEditor(sec);
+            } else if (sec.type === 'promo') {
+                renderPromoEditor(sec);
+            } else if (sec.type === 'features') {
+                renderFeaturesEditor(sec);
+            } else if (sec.type === 'categories') {
+                renderCategoriesEditor(sec);
+            }
+
+            document.getElementById('home-section-modal').style.display = 'flex';
+        }
+
+        function renderSliderEditor(sec) {
+            const content = document.getElementById('home-sec-content');
+            content.innerHTML = `
+                <div style="margin-bottom:15px;display:flex;justify-content:space-between;align-items:center;">
+                    <label>الشرائح (Slides)</label>
+                    <button type="button" onclick="addSliderItem()" class="btn-admin-login" style="width:auto;padding:5px 15px;font-size:0.8rem;">+ إضافة شريحة</button>
+                </div>
+                <div id="slider-items-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+            `;
+            const list = document.getElementById('slider-items-list');
+            const slides = sec.data || [];
+            slides.forEach(s => addSliderItem(s));
+        }
+
+        function addSliderItem(data = {}) {
+            const list = document.getElementById('slider-items-list');
+            const div = document.createElement('div');
+            div.className = 'admin-card';
+            div.style.padding = '15px';
+            div.innerHTML = `
+                <div class="details-grid">
+                    <div class="admin-form-group">
+                        <label>العنوان</label>
+                        <input type="text" class="admin-input slide-title" value="${data.title || ''}" placeholder="أرقى العطور">
+                    </div>
+                    <div class="admin-form-group">
+                        <label>النص الفرعي</label>
+                        <input type="text" class="admin-input slide-sub" value="${data.subtitle || ''}" placeholder="اكتشف تشكيلتنا">
+                    </div>
+                    <div class="admin-form-group">
+                        <label>رابط الزر</label>
+                        <input type="text" class="admin-input slide-link" value="${data.link || ''}" placeholder="/#products">
+                    </div>
+                    <div class="admin-form-group">
+                        <label>الصورة (URL أو Base64)</label>
+                        <input type="text" class="admin-input slide-img" value="${data.image || ''}" placeholder="رابط الصورة">
+                    </div>
+                </div>
+                <button type="button" onclick="this.parentElement.remove()" style="color:red;background:none;border:none;margin-top:10px;cursor:pointer;"><i class="fas fa-trash"></i> حذف الشريحة</button>
+            `;
+            list.appendChild(div);
+        }
+
+        function renderProductsEditor(sec) {
+            const content = document.getElementById('home-sec-content');
+            content.innerHTML = `
+                <div class="admin-form-group">
+                    <label>نوع التصفية (Filter)</label>
+                    <select class="admin-input" id="sec-prod-filter">
+                        <option value="latest" ${sec.filter === 'latest' ? 'selected' : ''}>أحدث المنتجات</option>
+                        <option value="best-seller" ${sec.filter === 'best-seller' ? 'selected' : ''}>الأكثر مبيعاً</option>
+                        <option value="offers" ${sec.filter === 'offers' ? 'selected' : ''}>العروض فقط</option>
+                    </select>
+                </div>
+                <div class="admin-form-group">
+                    <label>عدد المنتجات</label>
+                    <input type="number" class="admin-input" id="sec-prod-limit" value="${sec.limit || 8}">
+                </div>
+            `;
+        }
+
+        function renderPromoEditor(sec) {
+            const data = sec.data || {};
+            const content = document.getElementById('home-sec-content');
+            content.innerHTML = `
+                <div class="details-grid">
+                    <div class="admin-form-group">
+                        <label>العنوان الرئيسي</label>
+                        <input type="text" class="admin-input promo-title" value="${data.title || ''}">
+                    </div>
+                    <div class="admin-form-group">
+                        <label>النص الوصفي</label>
+                        <input type="text" class="admin-input promo-text" value="${data.text || ''}">
+                    </div>
+                    <div class="admin-form-group">
+                        <label>نص الزر</label>
+                        <input type="text" class="admin-input promo-btn" value="${data.btnLabel || ''}">
+                    </div>
+                    <div class="admin-form-group">
+                        <label>الرابط</label>
+                        <input type="text" class="admin-input promo-link" value="${data.link || ''}">
+                    </div>
+                    <div class="admin-form-group full-width">
+                        <label>رابط الصورة</label>
+                        <input type="text" class="admin-input promo-img" value="${data.image || ''}">
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFeaturesEditor(sec) {
+            const content = document.getElementById('home-sec-content');
+            content.innerHTML = `
+                <div style="margin-bottom:15px;display:flex;justify-content:space-between;align-items:center;">
+                    <label>المميزات</label>
+                    <button type="button" onclick="addFeatureItem()" class="btn-admin-login" style="width:auto;padding:5px 15px;font-size:0.8rem;">+ إضافة ميزة</button>
+                </div>
+                <div id="feature-items-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+            `;
+            const list = document.getElementById('feature-items-list');
+            const features = sec.data || [];
+            features.forEach(f => addFeatureItem(f));
+        }
+
+        function addFeatureItem(data = {}) {
+            const list = document.getElementById('feature-items-list');
+            const div = document.createElement('div');
+            div.className = 'admin-card';
+            div.style.padding = '10px';
+            div.innerHTML = `
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr 40px;gap:10px;align-items:center;">
+                    <input type="text" class="admin-input feat-icon" value="${data.icon || 'fa-truck'}" placeholder="أيقونة FA">
+                    <input type="text" class="admin-input feat-title" value="${data.title || ''}" placeholder="شحن سريع">
+                    <input type="text" class="admin-input feat-desc" value="${data.desc || ''}" placeholder="توصيل لكل المناطق">
+                    <button type="button" onclick="this.parentElement.parentElement.remove()" style="color:red;background:none;border:none;cursor:pointer;"><i class="fas fa-trash"></i></button>
+                </div>
+            `;
+            list.appendChild(div);
+        }
+
+        function renderCategoriesEditor(sec) {
+            const content = document.getElementById('home-sec-content');
+            content.innerHTML = `
+                <div class="admin-form-group">
+                    <label>التصنيفات المختارة</label>
+                    <p style="font-size:0.8rem;color:#888;">سيتم عرض أهم التصنيفات تلقائياً بناءً على الأولوية، أو يمكنك مستقبلاً تحديد تصنيفات معينة هنا.</p>
+                </div>
+            `;
+        }
+
+        function handleHomeSecSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('home-sec-id').value;
+            const sec = currentHomeLayout.find(s => String(s.id) === String(id));
+            if (!sec) return;
+
+            sec.title = document.getElementById('home-sec-title').value;
+
+            if (sec.type === 'slider') {
+                const slides = [];
+                document.querySelectorAll('#slider-items-list .admin-card').forEach(card => {
+                    slides.push({
+                        title: card.querySelector('.slide-title').value,
+                        subtitle: card.querySelector('.slide-sub').value,
+                        link: card.querySelector('.slide-link').value,
+                        image: card.querySelector('.slide-img').value
+                    });
+                });
+                sec.data = slides;
+            } else if (sec.type === 'products') {
+                sec.filter = document.getElementById('sec-prod-filter').value;
+                sec.limit = parseInt(document.getElementById('sec-prod-limit').value);
+            } else if (sec.type === 'promo') {
+                sec.data = {
+                    title: document.querySelector('.promo-title').value,
+                    text: document.querySelector('.promo-text').value,
+                    btnLabel: document.querySelector('.promo-btn').value,
+                    link: document.querySelector('.promo-link').value,
+                    image: document.querySelector('.promo-img').value
+                };
+            } else if (sec.type === 'features') {
+                const feats = [];
+                document.querySelectorAll('#feature-items-list > div').forEach(row => {
+                    feats.push({
+                        icon: row.querySelector('.feat-icon').value,
+                        title: row.querySelector('.feat-title').value,
+                        desc: row.querySelector('.feat-desc').value
+                    });
+                });
+                sec.data = feats;
+            }
+
+            renderHomeSectionsList();
+            closeModal('home-section-modal');
+        }
+
         async function seedDefaultCategories(btn) {
             if (!confirm('هل أنت متأكد من استعادة التصنيفات الافتراضية؟ هذا سيضيف الأقسام الأساسية فقط في حال عدم وجودها ولن يحذف بياناتك الحالية.')) return;
             

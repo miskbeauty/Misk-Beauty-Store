@@ -318,7 +318,173 @@ window.updateShipping = function() {
 async function initSite() {
     updateCartUI();
     renderCartPage();
-    await renderProductGrid('productGrid');
+
+    const layoutContainer = document.getElementById('home-layout-container');
+    if (layoutContainer) {
+        try {
+            const res = await fetch('/api/settings');
+            const data = await res.json();
+            const layout = (data.success && data.settings && data.settings.homeLayout) ? data.settings.homeLayout : null;
+
+            if (layout) {
+                await renderHomeLayout(layout);
+            } else {
+                // Default Layout if none exists (matches Admin default)
+                const defaultLayout = [
+                    { id: 'def-prod', type: 'products', title: 'أحدث المنتجات' }
+                ];
+                await renderHomeLayout(defaultLayout);
+            }
+        } catch (e) {
+            console.error("Error loading home layout:", e);
+            await renderProductGrid('productGrid');
+        }
+    }
+}
+
+async function renderHomeLayout(layout) {
+    const container = document.getElementById('home-layout-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    for (const section of layout) {
+        const sectionEl = document.createElement('section');
+        if (section.type === 'slider') {
+            renderSliderSection(sectionEl, section);
+        } else if (section.type === 'categories') {
+            await renderCategoriesSection(sectionEl, section);
+        } else if (section.type === 'products') {
+            await renderProductsSection(sectionEl, section);
+        } else if (section.type === 'promo') {
+            renderPromoSection(sectionEl, section);
+        } else if (section.type === 'features') {
+            renderFeaturesSection(sectionEl, section);
+        }
+        container.appendChild(sectionEl);
+    }
+}
+
+function renderSliderSection(el, config) {
+    el.className = 'home-slider container';
+    const slides = config.data || [];
+    if (slides.length === 0) return;
+
+    el.innerHTML = `
+        <div class="slider-wrapper">
+            <div class="slides">
+                ${slides.map((s, i) => `
+                    <div class="slide ${i === 0 ? 'active' : ''}" style="background-image: url('${s.image}'); background-size: cover; background-position: center;">
+                        <div class="slide-content">
+                            <h2>${escapeHTML(s.title)}</h2>
+                            <p>${escapeHTML(s.subtitle)}</p>
+                            ${s.link ? `<a href="${s.link}" class="btn btn-primary">تسوق الآن</a>` : ''}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            <button class="slider-arrow prev"><i class="fas fa-chevron-right"></i></button>
+            <button class="slider-arrow next"><i class="fas fa-chevron-left"></i></button>
+            <div class="slider-dots">
+                ${slides.map((_, i) => `<span class="dot ${i === 0 ? 'active' : ''}"></span>`).join('')}
+            </div>
+        </div>
+    `;
+    // Re-init slider logic (briefly)
+    setTimeout(() => initSliderLogic(el), 100);
+}
+
+function initSliderLogic(el) {
+    const slides = el.querySelectorAll('.slide');
+    const dots = el.querySelectorAll('.dot');
+    const prev = el.querySelector('.prev');
+    const next = el.querySelector('.next');
+    let current = 0;
+
+    if (!slides.length) return;
+
+    function show(index) {
+        slides.forEach(s => s.classList.remove('active'));
+        dots.forEach(d => d.classList.remove('active'));
+        slides[index].classList.add('active');
+        dots[index].classList.add('active');
+        current = index;
+    }
+
+    if (next) next.onclick = () => show((current + 1) % slides.length);
+    if (prev) prev.onclick = () => show((current - 1 + slides.length) % slides.length);
+    dots.forEach((d, i) => d.onclick = () => show(i));
+    
+    // Auto slide
+    setInterval(() => next && next.click(), 5000);
+}
+
+async function renderCategoriesSection(el, config) {
+    el.className = 'categories-section container';
+    el.innerHTML = `
+        <div class="section-title"><h2>${escapeHTML(config.title || 'تصنيفاتنا')}</h2></div>
+        <div class="category-grid" id="cat-grid-${config.id}" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap:20px; margin-top:20px;"></div>
+    `;
+    
+    const grid = el.querySelector(`#cat-grid-${config.id}`);
+    try {
+        const res = await fetch('/api/categories');
+        const data = await res.json();
+        if (data.success) {
+            const parents = data.categories.filter(c => !c.parentId).slice(0, 6);
+            grid.innerHTML = parents.map(c => `
+                <a href="/category/${c.slug || c._id}" class="category-card-mini" style="text-align:center; text-decoration:none; color:inherit;">
+                    <img src="${c.image || '/assets/images/placeholder.png'}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:50%; margin-bottom:10px; border:3px solid #f3e5f5;">
+                    <h4 style="font-size:0.9rem;">${escapeHTML(c.name)}</h4>
+                </a>
+            `).join('');
+        }
+    } catch(e) {}
+}
+
+async function renderProductsSection(el, config) {
+    el.className = 'products container';
+    const gridId = `grid-${config.id}`;
+    el.innerHTML = `
+        <div class="section-title"><h2>${escapeHTML(config.title || 'منتجات مختارة')}</h2></div>
+        <div class="product-grid" id="${gridId}"></div>
+    `;
+    
+    // Use existing renderProductGrid but with custom filters if needed
+    // For now, let's just use it to load products
+    await renderProductGrid(gridId);
+}
+
+function renderPromoSection(el, config) {
+    el.className = 'promo-banner container';
+    const d = config.data || {};
+    el.innerHTML = `
+        <div class="promo-content">
+            <h2>${escapeHTML(d.title)}</h2>
+            <p>${escapeHTML(d.text)}</p>
+            ${d.link ? `<a href="${d.link}" class="btn-white">${escapeHTML(d.btnLabel || 'اكتشف المزيد')}</a>` : ''}
+        </div>
+        <div class="promo-image">
+            <img src="${d.image || '/assets/images/placeholder.png'}" alt="Promo">
+        </div>
+    `;
+}
+
+function renderFeaturesSection(el, config) {
+    el.className = 'features-bar';
+    const feats = config.data || [];
+    el.innerHTML = `
+        <div class="container">
+            <div class="features-container">
+                ${feats.map(f => `
+                    <div class="feature-item">
+                        <i class="fas ${f.icon}"></i>
+                        <h4>${escapeHTML(f.title)}</h4>
+                        <p>${escapeHTML(f.desc)}</p>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
 }
 
 document.addEventListener('DOMContentLoaded', initSite);

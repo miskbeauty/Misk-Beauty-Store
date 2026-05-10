@@ -588,3 +588,110 @@ body {
     color: var(--admin-purple);
     margin-bottom: 10px;
 }
+
+/* --- Home Editor Styles --- */
+.btn-add-section {
+    width: 100%;
+    padding: 12px 15px;
+    background: white;
+    border: 1px solid #dfe6e9;
+    border-radius: 10px;
+    text-align: right;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--admin-text-dark);
+}
+
+.btn-add-section:hover {
+    background: var(--admin-purple);
+    color: white;
+    border-color: var(--admin-purple);
+    transform: translateX(-5px);
+}
+
+.btn-add-section i {
+    margin-left: 10px;
+    width: 20px;
+}
+
+.sortable-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.section-item {
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 15px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+    cursor: grab;
+    transition: all 0.2s ease;
+}
+
+.section-item:active {
+    cursor: grabbing;
+}
+
+.section-item.sortable-ghost {
+    opacity: 0.4;
+    border: 2px dashed var(--admin-purple);
+}
+
+.section-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.section-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 10px;
+    background: #f3e5f5;
+    color: var(--admin-purple);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+}
+
+.section-details h4 {
+    margin-bottom: 3px;
+    font-size: 1rem;
+}
+
+.section-details p {
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.section-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-action-sm {
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+    border: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-edit-sec { background: #e3f2fd; color: #1976d2; }
+.btn-delete-sec { background: #ffebee; color: #d32f2f; }
+
+.btn-edit-sec:hover { background: #1976d2; color: white; }
+.btn-delete-sec:hover { background: #d32f2f; color: white; }
+
