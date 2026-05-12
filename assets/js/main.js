@@ -368,21 +368,47 @@ async function initSite() {
     if (document.getElementById('featuredProductsGrid')) await renderBestsellersGrid();
 }
 
+let offersCurrentPage = 1;
+let hasMoreOffers = true;
+
 // Renders only discounted products (oldPrice > price)
-async function renderOffersGrid() {
+async function renderOffersGrid(isLoadMore = false) {
     const container = document.getElementById('offersGrid');
-    if (!container) return;
+    if (!container || (isLoading && isLoadMore)) return;
+    
+    if (!isLoadMore) {
+        container.innerHTML = `<div class="loading-products" style="grid-column:1/-1;text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:#c8a96e;"></i></div>`;
+        offersCurrentPage = 1;
+    }
+    
     isLoading = true;
-    container.innerHTML = `<div class="loading-products" style="grid-column:1/-1;text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:#c8a96e;"></i></div>`;
-    const result = await loadProducts({ limit: 8, onSale: 'true' });
+    const result = await loadProducts({ 
+        page: isLoadMore ? offersCurrentPage : 1, 
+        limit: 4, 
+        onSale: 'true' 
+    });
+    
     const products = result.products || [];
+    const pagination = result.pagination;
+    
     isLoading = false;
-    if (products.length === 0) {
+    
+    if (products.length === 0 && !isLoadMore) {
         container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#888;"><i class="fas fa-tag" style="font-size:3rem;margin-bottom:16px;display:block;"></i><p>لا توجد عروض متاحة حالياً</p></div>`;
         return;
     }
-    container.innerHTML = '';
+    
+    if (!isLoadMore) container.innerHTML = '';
+    
     products.forEach(prod => renderProductCard(prod, container));
+    
+    if (pagination) {
+        hasMoreOffers = offersCurrentPage < pagination.pages;
+        offersCurrentPage++;
+    }
+    
+    const btn = document.getElementById('loadMoreOffersBtn');
+    if (btn) btn.style.display = hasMoreOffers ? 'inline-block' : 'none';
 }
 
 // Renders bestselling products (sorted by salesCount)
