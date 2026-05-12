@@ -1845,3 +1845,244 @@ footer {
         transform: translateY(0);
     }
 }
+
+/* ============================================
+   NEW SECTIONS - PREMIUM DESIGN
+   ============================================ */
+
+/* Shop by Category - Circular Icons */
+.shop-categories {
+    padding: 60px 0;
+    background: transparent;
+}
+
+.categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 30px;
+    justify-content: center;
+}
+
+.category-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.category-image-wrapper {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: #fff;
+    padding: 5px;
+    border: 2px solid var(--primary-color);
+    margin-bottom: 15px;
+    overflow: hidden;
+    transition: all 0.4s;
+    box-shadow: 0 10px 20px rgba(74, 20, 140, 0.05);
+}
+
+.category-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    transition: transform 0.5s;
+}
+
+.category-card:hover .category-image-wrapper {
+    border-color: var(--primary-dark);
+    transform: translateY(-8px) scale(1.05);
+    box-shadow: 0 15px 30px rgba(74, 20, 140, 0.12);
+}
+
+.category-card:hover img {
+    transform: scale(1.15);
+}
+
+.category-card h4 {
+    color: var(--primary-dark);
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+/* Brands Slider */
+.brands-section {
+    padding: 50px 0;
+    background: #fff;
+    margin: 60px 0;
+}
+
+.brands-slider {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: 50px;
+    overflow: hidden;
+    padding: 20px 0;
+}
+
+.brand-item img {
+    height: 45px;
+    width: auto;
+    filter: grayscale(100%);
+    opacity: 0.5;
+    transition: all 0.4s;
+}
+
+.brand-item:hover img {
+    filter: grayscale(0%);
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Customer Testimonials */
+.testimonials-section {
+    padding: 80px 0;
+    background: rgba(243, 229, 245, 0.3);
+}
+
+.testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+}
+
+.testimonial-card {
+    background: #fff;
+    padding: 35px;
+    border-radius: 24px;
+    box-shadow: 0 15px 40px rgba(74, 20, 140, 0.04);
+    position: relative;
+    transition: all 0.4s;
+}
+
+.testimonial-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 25px 60px rgba(74, 20, 140, 0.08);
+}
+
+.testimonial-card::before {
+    content: '\f10e';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    top: 25px;
+    left: 25px;
+    font-size: 2rem;
+    color: var(--primary-color);
+    opacity: 0.3;
+}
+
+.testimonial-user {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.testimonial-user img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.user-info h4 {
+    font-size: 1rem;
+    color: var(--primary-dark);
+    margin: 0;
+}
+
+.user-info .stars {
+    color: #FFD700;
+    font-size: 0.8rem;
+}
+
+.testimonial-card p {
+    font-size: 0.95rem;
+    color: #666;
+    font-style: italic;
+    line-height: 1.8;
+}
+
+/* Beauty Tips Section */
+.beauty-tips {
+    padding: 80px 0;
+}
+
+.tips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 30px;
+}
+
+.tip-card {
+    background: #fff;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+    transition: all 0.4s;
+}
+
+.tip-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 50px rgba(74, 20, 140, 0.1);
+}
+
+.tip-image {
+    height: 220px;
+    overflow: hidden;
+}
+
+.tip-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s;
+}
+
+.tip-card:hover .tip-image img {
+    transform: scale(1.1);
+}
+
+.tip-content {
+    padding: 25px;
+}
+
+.tip-content .category {
+    font-size: 0.75rem;
+    color: var(--accent-color);
+    font-weight: 700;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.tip-content h3 {
+    font-size: 1.2rem;
+    color: var(--primary-dark);
+    margin-bottom: 12px;
+}
+
+.tip-content p {
+    font-size: 0.9rem;
+    color: #777;
+    margin-bottom: 20px;
+}
+
+.btn-read-more {
+    color: var(--primary-dark);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-read-more:hover {
+    gap: 12px;
+}

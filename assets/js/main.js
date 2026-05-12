@@ -363,9 +363,58 @@ async function initSite() {
     }
 
     // Revert to simple initialization of fixed grids
-    if (document.getElementById('productGrid')) await renderProductGrid('productGrid');
+    if (document.getElementById('categoriesGrid')) await renderCategoriesGrid();
+    if (document.getElementById('newArrivalsGrid')) await renderNewArrivalsGrid();
     if (document.getElementById('offersGrid')) await renderOffersGrid();
     if (document.getElementById('featuredProductsGrid')) await renderBestsellersGrid();
+    if (document.getElementById('topRatedGrid')) await renderTopRatedGrid();
+    if (document.getElementById('productGrid')) await renderProductGrid('productGrid');
+}
+
+async function renderCategoriesGrid() {
+    const container = document.getElementById('categoriesGrid');
+    if (!container) return;
+    try {
+        const res = await fetch('/api/categories');
+        const data = await res.json();
+        if (data.success) {
+            const mainCats = data.categories.filter(c => !c.parentId).slice(0, 6);
+            container.innerHTML = mainCats.map(cat => `
+                <a href="/category/${cat.slug || cat.name}" class="category-card">
+                    <div class="category-image-wrapper">
+                        <img src="${cat.image || '/assets/images/placeholder.png'}" alt="${escapeHTML(cat.name)}">
+                    </div>
+                    <h4>${escapeHTML(cat.name)}</h4>
+                </a>
+            `).join('');
+        }
+    } catch (e) { console.error("Error loading categories:", e); }
+}
+
+async function renderNewArrivalsGrid() {
+    const container = document.getElementById('newArrivalsGrid');
+    if (!container) return;
+    const result = await loadProducts({ limit: 4, sort: 'newest' });
+    const products = result.products || [];
+    if (products.length === 0) {
+        container.closest('section').style.display = 'none';
+        return;
+    }
+    container.innerHTML = '';
+    products.forEach(prod => renderProductCard(prod, container));
+}
+
+async function renderTopRatedGrid() {
+    const container = document.getElementById('topRatedGrid');
+    if (!container) return;
+    const result = await loadProducts({ limit: 4, sort: 'top-rated' });
+    const products = result.products || [];
+    if (products.length === 0) {
+        container.closest('section').style.display = 'none';
+        return;
+    }
+    container.innerHTML = '';
+    products.forEach(prod => renderProductCard(prod, container));
 }
 
 let offersCurrentPage = 1;
@@ -411,21 +460,47 @@ async function renderOffersGrid(isLoadMore = false) {
     if (btn) btn.style.display = hasMoreOffers ? 'inline-block' : 'none';
 }
 
+let bestsellersCurrentPage = 1;
+let hasMoreBestsellers = true;
+
 // Renders bestselling products (sorted by salesCount)
-async function renderBestsellersGrid() {
+async function renderBestsellersGrid(isLoadMore = false) {
     const container = document.getElementById('featuredProductsGrid');
-    if (!container) return;
+    if (!container || (isLoading && isLoadMore)) return;
+    
+    if (!isLoadMore) {
+        container.innerHTML = `<div class="loading-products" style="grid-column:1/-1;text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:#c8a96e;"></i></div>`;
+        bestsellersCurrentPage = 1;
+    }
+    
     isLoading = true;
-    container.innerHTML = `<div class="loading-products" style="grid-column:1/-1;text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:#c8a96e;"></i></div>`;
-    const result = await loadProducts({ limit: 8, sort: 'bestsellers' });
+    const result = await loadProducts({ 
+        page: isLoadMore ? bestsellersCurrentPage : 1, 
+        limit: 4, 
+        sort: 'bestsellers' 
+    });
+    
     const products = result.products || [];
+    const pagination = result.pagination;
+    
     isLoading = false;
-    if (products.length === 0) {
+    
+    if (products.length === 0 && !isLoadMore) {
         container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#888;"><i class="fas fa-fire" style="font-size:3rem;margin-bottom:16px;display:block;"></i><p>لا توجد بيانات مبيعات بعد</p></div>`;
         return;
     }
-    container.innerHTML = '';
+    
+    if (!isLoadMore) container.innerHTML = '';
+    
     products.forEach(prod => renderProductCard(prod, container));
+    
+    if (pagination) {
+        hasMoreBestsellers = bestsellersCurrentPage < pagination.pages;
+        bestsellersCurrentPage++;
+    }
+    
+    const btn = document.getElementById('loadMoreBestsellersBtn');
+    if (btn) btn.style.display = hasMoreBestsellers ? 'inline-block' : 'none';
 }
 
 function renderProductCard(prod, container) {

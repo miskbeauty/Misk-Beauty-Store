@@ -35,10 +35,11 @@ module.exports = async (req, res) => {
             const limit = parseInt(req.query.limit) || 12;
             const skip = (page - 1) * limit;
 
-            // Sort by salesCount for bestsellers, otherwise by priority
-            const sortOrder = sort === 'bestsellers'
-                ? { salesCount: -1, priority: -1 }
-                : { priority: -1 };
+            // Sort logic
+            let sortOrder = { priority: -1, _id: -1 };
+            if (sort === 'bestsellers') sortOrder = { salesCount: -1, priority: -1 };
+            else if (sort === 'top-rated') sortOrder = { rating: -1, priority: -1 };
+            else if (sort === 'newest') sortOrder = { _id: -1 };
 
             const total = await products.countDocuments(query);
             const allProducts = await products.find(query)
