@@ -102,7 +102,7 @@ async function renderProductGrid(containerId, isLoadMore = false) {
 
     const result = await loadProducts({
         page: isLoadMore ? currentPage : 1,
-        limit: (window.location.pathname === '/' || window.location.pathname.includes('index.html') || window.location.pathname === '') ? 8 : 12,
+        limit: (window.location.pathname === '/' || window.location.pathname.includes('index.html') || window.location.pathname === '') ? 16 : 12,
         category: categoryFilter,
         subCategory: subCategoryFilter
         // No special filters for the main grid - shows all products

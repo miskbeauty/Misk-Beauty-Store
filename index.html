@@ -36,7 +36,7 @@
         <section class="products container" id="products">
             <div id="categoryHeaderContainer"></div>
             <div class="section-title">
-                <h2>أحدث المنتجات</h2>
+                <h2>جميع المنتجات</h2>
             </div>
             <div id="noResultsMessage" class="hidden"
                 style="text-align: center; padding: 50px; color: var(--primary-dark); font-size: 1.2rem; font-weight: 600;">
@@ -46,6 +46,9 @@
             </div>
             <div class="product-grid" id="productGrid">
                 <!-- Products will be loaded dynamically -->
+            </div>
+            <div style="text-align: center; margin-top: 40px;">
+                <button id="loadMoreBtn" class="btn btn-primary" style="display: none;" onclick="renderProductGrid('productGrid', true)">عرض المزيد من المنتجات</button>
             </div>
         </section>
 
