@@ -2480,13 +2480,11 @@
                 } else {
                     // Default Layout if none exists
                     currentHomeLayout = [
-                        { id: Date.now() + 1, type: 'slider', title: 'السلايدر الرئيسي', data: [] },
-                        { id: Date.now() + 2, type: 'products', title: 'جميع المنتجات', filter: 'all', limit: 8, showLoadMore: true },
-                        { id: Date.now() + 3, type: 'products', title: 'أحدث المنتجات', filter: 'latest', limit: 8 },
-                        { id: Date.now() + 4, type: 'products', title: 'عروض وتخفيضات', filter: 'offers', limit: 8 },
-                        { id: Date.now() + 5, type: 'products', title: 'الأكثر مبيعاً', filter: 'best-seller', limit: 8 },
-                        { id: Date.now() + 6, type: 'products', title: 'الأعلى تقييماً', filter: 'top-rated', limit: 8 },
-                        { id: Date.now() + 7, type: 'features', title: 'مميزاتنا', data: [] }
+                        { id: Date.now() + 1, type: 'slider', title: 'سلايدر العروض', data: [] },
+                        { id: Date.now() + 2, type: 'categories', title: 'الأقسام الرئيسية', data: {} },
+                        { id: Date.now() + 3, type: 'products', title: 'أحدث المنتجات', filter: 'latest' },
+                        { id: Date.now() + 4, type: 'promo', title: 'بنر إعلاني', data: {} },
+                        { id: Date.now() + 5, type: 'features', title: 'مميزات المتجر', data: [] }
                     ];
                 }
                 renderHomeSectionsList();
@@ -2526,7 +2524,6 @@
 
             const icons = { slider: 'fa-images', categories: 'fa-th-large', products: 'fa-box', promo: 'fa-ad', features: 'fa-truck' };
             const names = { slider: 'سلايدر الصور', categories: 'قائمة التصنيفات', products: 'شبكة المنتجات', promo: 'بنر إعلاني', features: 'شريط المميزات' };
-            const filterLabels = { 'all': 'جميع المنتجات', 'latest': 'أحدث المنتجات', 'offers': 'عروض وتخفيضات', 'best-seller': 'الأكثر مبيعاً', 'top-rated': 'الأعلى تقييماً' };
 
             currentHomeLayout.forEach(sec => {
                 const div = document.createElement('div');
@@ -2537,7 +2534,7 @@
                         <div class="section-icon"><i class="fas ${icons[sec.type]}"></i></div>
                         <div class="section-details">
                             <h4>${sec.title || names[sec.type]}</h4>
-                            <p>${sec.type === 'products' ? (filterLabels[sec.filter] || names[sec.type]) : names[sec.type]}</p>
+                            <p>${names[sec.type]}</p>
                         </div>
                     </div>
                     <div class="section-actions">
@@ -2550,21 +2547,8 @@
         }
 
         function addHomeSection(type) {
-            const names = {
-                slider: 'سلايدر جديد',
-                categories: 'الأقسام',
-                products: 'منتجات',
-                promo: 'بنر إعلاني',
-                features: 'مميزاتنا'
-            };
-            const defaults = {
-                slider: { data: [] },
-                categories: { data: {} },
-                products: { filter: 'all', limit: 8, showLoadMore: false },
-                promo: { data: {} },
-                features: { data: [] }
-            };
-            const newSec = { id: Date.now(), type: type, title: names[type], ...(defaults[type] || {}) };
+            const names = { slider: 'سلايدر جديد', categories: 'أقسام مختارة', products: 'منتجات مختارة', promo: 'عرض خاص', features: 'مميزاتنا' };
+            const newSec = { id: Date.now(), type: type, title: names[type], data: type === 'slider' || type === 'features' ? [] : {} };
             currentHomeLayout.push(newSec);
             renderHomeSectionsList();
         }
@@ -2720,22 +2704,14 @@
                 <div class="admin-form-group">
                     <label>نوع التصفية (Filter)</label>
                     <select class="admin-input" id="sec-prod-filter">
-                        <option value="all" ${sec.filter === 'all' ? 'selected' : ''}>جميع المنتجات</option>
-                        <option value="latest" ${sec.filter === 'latest' ? 'selected' : ''}>أحدث المنتجات (حسب تاريخ الإضافة)</option>
+                        <option value="latest" ${sec.filter === 'latest' ? 'selected' : ''}>أحدث المنتجات</option>
                         <option value="best-seller" ${sec.filter === 'best-seller' ? 'selected' : ''}>الأكثر مبيعاً</option>
-                        <option value="top-rated" ${sec.filter === 'top-rated' ? 'selected' : ''}>الأعلى تقييماً</option>
-                        <option value="offers" ${sec.filter === 'offers' ? 'selected' : ''}>العروض والتخفيضات</option>
+                        <option value="offers" ${sec.filter === 'offers' ? 'selected' : ''}>العروض فقط</option>
                     </select>
                 </div>
                 <div class="admin-form-group">
-                    <label>عدد المنتجات المعروضة</label>
-                    <input type="number" class="admin-input" id="sec-prod-limit" value="${sec.limit || 8}" min="4" max="24">
-                </div>
-                <div class="admin-form-group">
-                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-                        <input type="checkbox" id="sec-prod-loadmore" ${sec.showLoadMore ? 'checked' : ''}>
-                        إظهار زر "عرض المزيد"
-                    </label>
+                    <label>عدد المنتجات</label>
+                    <input type="number" class="admin-input" id="sec-prod-limit" value="${sec.limit || 8}">
                 </div>
             `;
         }
@@ -2835,8 +2811,7 @@
                 sec.data = slides;
             } else if (sec.type === 'products') {
                 sec.filter = document.getElementById('sec-prod-filter').value;
-                sec.limit = parseInt(document.getElementById('sec-prod-limit').value) || 8;
-                sec.showLoadMore = document.getElementById('sec-prod-loadmore')?.checked || false;
+                sec.limit = parseInt(document.getElementById('sec-prod-limit').value);
             } else if (sec.type === 'promo') {
                 sec.data = {
                     title: document.querySelector('.promo-title').value,

@@ -22,15 +22,121 @@
     <header></header>
     <script src="/assets/js/auth.js"></script>
     <script src="/assets/js/header.js"></script>
-    <main id="dynamic-main">
-        <!-- Home layout is rendered dynamically from admin settings -->
-        <div style="text-align:center; padding:120px 20px;">
-            <i class="fas fa-spinner fa-spin" style="font-size:2.5rem; color:var(--primary-dark);"></i>
-        </div>
+
+    <main>
+        <section class="home-slider container" id="home">
+            <div class="slider-wrapper">
+                <div class="slides">
+                    <!-- Slide 1 -->
+                    <div class="slide active" style="background: linear-gradient(135deg, #fdf6ff 0%, #F3E5F5 100%);">
+                        <div class="slide-content">
+                            <h2>أرقى العطور العالمية</h2>
+                            <p>اكتشفوا تشكيلة واسعة من الروائح التي تأسر الحواس</p>
+                            <a href="#products" class="btn btn-primary">تسوق الآن</a>
+                        </div>
+                    </div>
+                    <!-- Slide 2 -->
+                    <div class="slide" style="background: linear-gradient(135deg, #fff9f9 0%, #fce4ec 100%);">
+                        <div class="slide-content">
+                            <h2>عناية فائقة بجمالك</h2>
+                            <p>منتجات طبيعية ومختارة بعناية لبشرة مشرقة دائماً</p>
+                            <a href="#products" class="btn btn-primary">تسوق الآن</a>
+                        </div>
+                    </div>
+                    <!-- Slide 3 -->
+                    <div class="slide" style="background: linear-gradient(135deg, #f0f4ff 0%, #e3f2fd 100%);">
+                        <div class="slide-content">
+                            <h2>هدايا لكل المناسبات</h2>
+                            <p>اجعل لحظاتك لا تنسى مع هدايانا المميزة والقابلة للتخصيص</p>
+                            <a href="#products" class="btn btn-primary">تسوق الآن</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slider Navigation -->
+                <button class="slider-arrow prev"><i class="fas fa-chevron-right"></i></button>
+                <button class="slider-arrow next"><i class="fas fa-chevron-left"></i></button>
+
+                <div class="slider-dots">
+                    <span class="dot active"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+            </div>
+        </section>
+
+        <section class="promo-banner container">
+            <div class="promo-content">
+                <h2>عروض المسك الكبرى</h2>
+                <p>استمتعي بخصومات تصل إلى 50% على تشكيلة مختارة من أرقى العطور ومنتجات العناية.</p>
+                <a href="offers.html" class="btn-white">اكتشفي العروض</a>
+            </div>
+            <div class="promo-image">
+                <img src="/assets/images/1745215944148877862-removebg-preview.png" alt="Promo product">
+            </div>
+        </section>
+
+        <section class="products container" id="products">
+            <div id="categoryHeaderContainer"></div>
+            <div class="section-title">
+                <h2>أحدث المنتجات</h2>
+            </div>
+            <div id="noResultsMessage" class="hidden"
+                style="text-align: center; padding: 50px; color: var(--primary-dark); font-size: 1.2rem; font-weight: 600;">
+                <i class="fas fa-search"
+                    style="display: block; font-size: 3rem; margin-bottom: 20px; opacity: 0.3;"></i>
+                عذراً، لا توجد نتائج تطابق بحثك.
+            </div>
+            <div class="product-grid" id="productGrid">
+                <!-- Products will be loaded dynamically -->
+            </div>
+        </section>
+
+        <section class="special-offers container" id="offers">
+            <div class="section-title">
+                <h2><i class="fas fa-star"
+                        style="color: #FFD700; font-size: 1.5rem; vertical-align: middle; margin-left: 10px;"></i>عروض
+                    وتخفيضات حصرية</h2>
+            </div>
+            <div class="product-grid" id="offersGrid">
+                <!-- Offers will be loaded dynamically -->
+            </div>
+        </section>
+
+        <section class="best-sellers container" id="best-sellers">
+            <div class="section-title">
+                <h2>الأكثر مبيعاً</h2>
+            </div>
+            <div class="product-grid" id="featuredProductsGrid">
+                <!-- Best sellers will be loaded dynamically -->
+            </div>
+        </section>
+
+        <section class="features-bar">
+            <div class="container">
+                <div class="features-container">
+                    <div class="feature-item">
+                        <i class="fas fa-shipping-fast"></i>
+                        <h4>شحن سريع وآمن</h4>
+                        <p>توصيل لجميع المناطق</p>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-certificate"></i>
+                        <h4>منتجات أصلية</h4>
+                        <p>جودة مضمونة 100%</p>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-credit-card"></i>
+                        <h4>خيارات دفع سهلة</h4>
+                        <p>دفع آمن ومتنوع</p>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <div class="cart-sidebar" id="cartSidebar">
-        <!-- ... existing cart content ... -->
+        <!-- Cart content -->
         <div class="cart-header">
             <h3>سلة التسوق</h3>
             <button id="closeCart"><i class="fas fa-times"></i></button>
@@ -49,9 +155,7 @@
             <div class="footer-grid">
                 <div class="footer-col">
                     <h3>مسك بيوتي</h3>
-                    <p>مسك بيوتي - وجهتكم الأولى لأرقى العطور ومنتجات العناية والجمال. نحن نجمع بين الجودة والفخامة
-                        لنقدم
-                        لكم الأفضل دائماً.</p>
+                    <p>مسك بيوتي - وجهتكم الأولى لأرقى العطور ومنتجات العناية والجمال. نحن نجمع بين الجودة والفخامة لنقدم لكم الأفضل دائماً.</p>
                 </div>
                 <div class="footer-col">
                     <h3>روابط سريعة</h3>
@@ -85,4 +189,4 @@
     <script src="assets/js/main.js?v=1.0.3"></script>
 </body>
 
-</html>
+</html>

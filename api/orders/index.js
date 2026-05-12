@@ -74,6 +74,22 @@ module.exports = async (req, res) => {
                 );
             }
 
+            // 3. Increment salesCount for each product in the order
+            const productsCollection = db.collection('products');
+            if (orderData.items && Array.isArray(orderData.items)) {
+                for (const item of orderData.items) {
+                    const qty = item.qty || item.quantity || 1;
+                    if (item.productId) {
+                        try {
+                            await productsCollection.updateOne(
+                                { _id: new ObjectId(item.productId) },
+                                { $inc: { salesCount: qty } }
+                            );
+                        } catch(e) { /* ignore invalid id */ }
+                    }
+                }
+            }
+
             res.status(201).json({ success: true, orderId: result.insertedId });
         } catch (error) {
             console.error(error);

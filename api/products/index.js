@@ -13,7 +13,7 @@ module.exports = async (req, res) => {
 
     if (req.method === 'GET') {
         try {
-            const { slug, category, subCategory, id, onSale, bestSeller } = req.query;
+            const { slug, category, subCategory, id, onSale, sort } = req.query;
             let query = {};
             if (slug) {
                 query = { slug: slug };
@@ -26,20 +26,23 @@ module.exports = async (req, res) => {
             } else {
                 if (category) query.category = category;
                 if (subCategory) query.subCategory = subCategory;
-                if (onSale === 'true') query.oldPrice = { $ne: null };
-                if (bestSeller === 'true') query.isBestSeller = true;
+                // Filter only discounted products
+                if (onSale === 'true') {
+                    query.oldPrice = { $exists: true, $ne: null, $gt: 0 };
+                }
             }
             const page = parseInt(req.query.page) || 1;
             const limit = parseInt(req.query.limit) || 12;
             const skip = (page - 1) * limit;
 
-            let sort = { priority: -1 };
-            if (req.query.sort === 'latest' || req.query.latest === 'true') sort = { _id: -1 };
-            else if (req.query.sort === 'topRated' || req.query.topRated === 'true') sort = { avgRating: -1, ratingCount: -1 };
+            // Sort by salesCount for bestsellers, otherwise by priority
+            const sortOrder = sort === 'bestsellers'
+                ? { salesCount: -1, priority: -1 }
+                : { priority: -1 };
 
             const total = await products.countDocuments(query);
             const allProducts = await products.find(query)
-                .sort(sort)
+                .sort(sortOrder)
                 .skip(skip)
                 .limit(limit)
                 .toArray();
