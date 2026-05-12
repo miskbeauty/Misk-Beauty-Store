@@ -330,16 +330,42 @@ async function initSite() {
     updateCartUI();
     renderCartPage();
 
+    const homeSection = document.getElementById('home');
+    if (homeSection) {
+        // Load only the slider dynamically
+        try {
+            const res = await fetch('/api/settings');
+            const data = await res.json();
+            const layout = (data.success && data.settings && data.settings.homeLayout) ? data.settings.homeLayout : null;
+            const sliderSec = layout ? layout.find(s => s.type === 'slider') : null;
+            
+            if (sliderSec) {
+                renderSliderSection(homeSection, sliderSec);
+            } else {
+                // Fallback Slider
+                homeSection.innerHTML = `
+                    <div class="slider-wrapper">
+                        <div class="slides">
+                            <div class="slide active" style="background: linear-gradient(135deg, #fdf6ff 0%, #F3E5F5 100%);">
+                                <div class="slide-content">
+                                    <h2>مرحباً بكم في مسك بيوتي</h2>
+                                    <p>اكتشفوا أرقى العطور ومنتجات الجمال</p>
+                                    <a href="#products" class="btn btn-primary">تسوق الآن</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        } catch (e) {
+            console.error("Error loading slider:", e);
+        }
+    }
+
     // Revert to simple initialization of fixed grids
     if (document.getElementById('productGrid')) await renderProductGrid('productGrid');
     if (document.getElementById('offersGrid')) await renderOffersGrid();
     if (document.getElementById('featuredProductsGrid')) await renderBestsellersGrid();
-    
-    // Static slider logic (if needed, though HTML now has static slides)
-    const homeSection = document.getElementById('home');
-    if (homeSection && homeSection.querySelector('.slides')) {
-        initSliderLogic(homeSection);
-    }
 }
 
 // Renders only discounted products (oldPrice > price)
@@ -403,6 +429,34 @@ function renderProductCard(prod, container) {
             </div>
         </div>
     `);
+}
+
+
+function renderSliderSection(el, config) {
+    const slides = config.data || [];
+    if (slides.length === 0) return;
+
+    el.innerHTML = `
+        <div class="slider-wrapper">
+            <div class="slides">
+                ${slides.map((s, i) => `
+                    <div class="slide ${i === 0 ? 'active' : ''}" style="background-image: url('${s.image}'); background-size: cover; background-position: center;">
+                        <div class="slide-content">
+                            <h2>${escapeHTML(s.title)}</h2>
+                            <p>${escapeHTML(s.subtitle)}</p>
+                            ${s.link ? `<a href="${s.link}" class="btn btn-primary">تسوق الآن</a>` : ''}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            <button class="slider-arrow prev"><i class="fas fa-chevron-right"></i></button>
+            <button class="slider-arrow next"><i class="fas fa-chevron-left"></i></button>
+            <div class="slider-dots">
+                ${slides.map((_, i) => `<span class="dot ${i === 0 ? 'active' : ''}"></span>`).join('')}
+            </div>
+        </div>
+    `;
+    setTimeout(() => initSliderLogic(el), 100);
 }
 
 function initSliderLogic(el) {
