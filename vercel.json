@@ -2,6 +2,10 @@
     "version": 2,
     "rewrites": [
         {
+            "source": "/api/auth/:action",
+            "destination": "/api/auth.js"
+        },
+        {
             "source": "/product/:slug",
             "destination": "/product.html?slug=:slug"
         },
