@@ -368,6 +368,7 @@ async function initSite() {
     if (document.getElementById('offersGrid')) await renderOffersGrid();
     if (document.getElementById('featuredProductsGrid')) await renderBestsellersGrid();
     if (document.getElementById('topRatedGrid')) await renderTopRatedGrid();
+    if (document.querySelector('.brands-slider')) await renderBrandsSlider();
     if (document.getElementById('productGrid')) await renderProductGrid('productGrid');
 }
 
@@ -585,6 +586,29 @@ function initSliderLogic(el) {
         if (!document.contains(el)) { clearInterval(autoSlide); return; }
         if (next) next.click();
     }, 5000);
+}
+
+async function renderBrandsSlider() {
+    const sliderContainer = document.querySelector('.brands-slider');
+    if (!sliderContainer) return;
+
+    try {
+        const res = await fetch('/api/brands');
+        const data = await res.json();
+        if (data.success && data.brands.length > 0) {
+            const sortedBrands = data.brands.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+            // Double the items for seamless loop if few brands
+            const brandsToRender = sortedBrands.length < 6 ? [...sortedBrands, ...sortedBrands] : sortedBrands;
+            
+            sliderContainer.innerHTML = brandsToRender.map(brand => `
+                <div class="brand-item">
+                    <img src="${brand.logo || '/assets/images/placeholder.png'}" alt="${escapeHTML(brand.name)}">
+                </div>
+            `).join('');
+        }
+    } catch (e) {
+        console.error("Error loading brands slider:", e);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', initSite);

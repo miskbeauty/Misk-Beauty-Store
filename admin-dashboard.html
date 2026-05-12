@@ -42,6 +42,12 @@
                         <span>إدارة التصنيفات</span>
                     </a>
                 </li>
+                <li class="menu-item" id="menu-brands">
+                    <a href="#" onclick="switchTab('brands')">
+                        <i class="fas fa-certificate"></i>
+                        <span>إدارة الماركات</span>
+                    </a>
+                </li>
                 <li class="menu-item" id="menu-customers">
                     <a href="#" onclick="switchTab('customers')">
                         <i class="fas fa-users"></i>
@@ -232,6 +238,35 @@
                             </tr>
                         </thead>
                         <tbody id="categories-table-body">
+                            <!-- Data populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Brands Management Table -->
+            <section id="brands-section" class="admin-card hidden">
+                <div class="card-header">
+                    <h3 style="font-weight: 700;">إدارة الماركات</h3>
+                    <div class="header-actions">
+                        <button onclick="openBrandModal()" class="btn-admin-login"
+                            style="padding: 8px 15px; font-size: 0.9rem; width: auto; box-shadow: none;">
+                            <i class="fas fa-plus"></i> إضافة ماركة جديدة
+                        </button>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>شعار الماركة</th>
+                                <th>الاسم</th>
+                                <th>الأولوية</th>
+                                <th>العمليات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="brands-table-body">
                             <!-- Data populated by JS -->
                         </tbody>
                     </table>
@@ -652,6 +687,13 @@
                             <input type="number" id="prod-stock" class="admin-input" required placeholder="50">
                         </div>
                         <div class="admin-form-group">
+                            <label>الماركة / العلامة التجارية</label>
+                            <select id="prod-brand" class="admin-input">
+                                <option value="">بدون ماركة</option>
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                        <div class="admin-form-group">
                             <label>أولوية الظهور (Priority)</label>
                             <input type="number" id="prod-priority" class="admin-input" value="0">
                         </div>
@@ -795,6 +837,42 @@
                     <button type="button" class="btn-cancel" onclick="closeModal('category-modal')">إلغاء</button>
                     <button type="submit" class="btn-admin-login" style="width: auto; padding: 10px 30px;">حفظ
                         التصنيف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Brand Modal (Add/Edit) -->
+    <div id="brand-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 id="brand-modal-title">إضافة ماركة جديدة</h3>
+                <button class="close-modal" onclick="closeModal('brand-modal')">&times;</button>
+            </div>
+            <form id="brand-form" onsubmit="handleBrandSubmit(event)">
+                <input type="hidden" id="brand-id">
+                <div class="modal-body" style="padding: 10px;">
+                    <div class="details-grid">
+                        <div class="admin-form-group full-width">
+                            <label>اسم الماركة</label>
+                            <input type="text" id="brand-name" class="admin-input" required
+                                placeholder="مثلاً: شانيل">
+                        </div>
+                        <div class="admin-form-group full-width">
+                            <label>أولوية الترتيب</label>
+                            <input type="number" id="brand-priority" class="admin-input" value="0">
+                        </div>
+                        <div class="admin-form-group full-width">
+                            <label>شعار الماركة</label>
+                            <input type="file" id="brand-image-input" class="admin-input" accept="image/*"
+                                onchange="previewBrandImage(this)">
+                            <div id="brand-image-preview" style="margin-top: 10px; text-align: center;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closeModal('brand-modal')">إلغاء</button>
+                    <button type="submit" class="btn-admin-login" style="width: auto; padding: 10px 30px;">حفظ الماركة</button>
                 </div>
             </form>
         </div>
@@ -1007,6 +1085,23 @@
             return variants;
         }
 
+        // --- Brand Image Logic ---
+        let brandImageBase64 = null;
+        function previewBrandImage(input) {
+            const container = document.getElementById('brand-image-preview');
+            container.innerHTML = '';
+            brandImageBase64 = null;
+
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    brandImageBase64 = e.target.result;
+                    container.innerHTML = `<img src="${brandImageBase64}" style="max-width: 100px; border-radius: 8px;">`;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
         // --- Mock Data ---
         let mockOrders = [
             { id: "10521", date: "2024-01-29", customer: "ياسر الأحمد", whatsapp: "+970 599 123 456", city: "عقربا، نابلس", address: "شارع المدارس، عمارة الأمل، ط2", total: "120 شيكل", status: "waiting" },
@@ -1017,6 +1112,8 @@
             { id: 1, name: "عطر مسك فاخر", category: "عطور", price: 85, stock: 24, images: ["assets/images/perfume-sample.jpg"], variants: [] }
         ];
 
+        let mockBrands = [];
+
         const statusMap = {
             'waiting': 'بانتظار التأكيد',
             'preparing': 'قيد التجهيز',
@@ -1026,8 +1123,8 @@
 
         // --- Core Functions ---
         function switchTab(tab) {
-            const sections = ['orders-section', 'products-section', 'categories-section', 'customers-section', 'reviews-section', 'pages-section', 'home-editor-section', 'analytics-section', 'settings-section'];
-            const menuItems = ['menu-orders', 'menu-products', 'menu-categories', 'menu-customers', 'menu-reviews', 'menu-pages', 'menu-home-editor', 'menu-analytics', 'menu-settings'];
+            const sections = ['orders-section', 'products-section', 'categories-section', 'brands-section', 'customers-section', 'reviews-section', 'pages-section', 'home-editor-section', 'analytics-section', 'settings-section'];
+            const menuItems = ['menu-orders', 'menu-products', 'menu-categories', 'menu-brands', 'menu-customers', 'menu-reviews', 'menu-pages', 'menu-home-editor', 'menu-analytics', 'menu-settings'];
 
             sections.forEach(s => {
                 const el = document.getElementById(s);
@@ -1047,6 +1144,7 @@
             if (tab === 'orders') renderOrders();
             if (tab === 'products') renderProducts();
             if (tab === 'categories') renderCategories();
+            if (tab === 'brands') renderBrands();
             if (tab === 'customers') renderCustomers();
             if (tab === 'reviews') renderReviewsModeration();
             if (tab === 'pages') renderPages();
@@ -1554,6 +1652,116 @@
                 }
             }
             document.getElementById('category-modal').style.display = 'flex';
+        }
+
+        // --- Brand Management Logic ---
+        async function renderBrands() {
+            const tableBody = document.getElementById('brands-table-body');
+            if (!tableBody) return;
+            tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</td></tr>';
+
+            try {
+                const response = await fetch('/api/brands');
+                const data = await response.json();
+                if (data.success) {
+                    mockBrands = data.brands;
+                }
+            } catch (e) {
+                console.error("Error fetching brands:", e);
+            }
+
+            if (mockBrands.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;">لا يوجد ماركات متاحة.</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = '';
+            mockBrands.forEach(brand => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><img src="${brand.logo || 'https://placehold.co/50x50?text=Brand'}" style="width: 50px; height: 50px; object-fit: contain;"></td>
+                    <td>${brand.name}</td>
+                    <td>${brand.priority || 0}</td>
+                    <td>
+                        <button onclick="openBrandModal('${brand._id}')" style="background:none; border:none; cursor:pointer; color: #2e7d32; margin-left: 10px;">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteBrand('${brand._id}')" style="background:none; border:none; cursor:pointer; color: #d32f2f;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function openBrandModal(id = null) {
+            const form = document.getElementById('brand-form');
+            form.reset();
+            document.getElementById('brand-id').value = id || '';
+            document.getElementById('brand-modal-title').innerText = id ? 'تعديل الماركة' : 'إضافة ماركة جديدة';
+            document.getElementById('brand-image-preview').innerHTML = '';
+            brandImageBase64 = null;
+
+            if (id) {
+                const brand = mockBrands.find(b => b._id === id);
+                if (brand) {
+                    document.getElementById('brand-name').value = brand.name;
+                    document.getElementById('brand-priority').value = brand.priority || 0;
+                    if (brand.logo) {
+                        brandImageBase64 = brand.logo;
+                        document.getElementById('brand-image-preview').innerHTML = `<img src="${brand.logo}" style="max-width: 100px; border-radius: 8px;">`;
+                    }
+                }
+            }
+            document.getElementById('brand-modal').style.display = 'flex';
+        }
+
+        async function handleBrandSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('brand-id').value;
+            const newBrand = {
+                _id: id || undefined,
+                name: document.getElementById('brand-name').value,
+                priority: parseInt(document.getElementById('brand-priority').value) || 0,
+                logo: brandImageBase64
+            };
+
+            try {
+                const sessionData = localStorage.getItem('misk_admin_session');
+                const token = JSON.parse(sessionData).token;
+                const method = id ? 'PUT' : 'POST';
+                const response = await fetch('/api/brands', {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(newBrand)
+                });
+
+                if (response.ok) {
+                    closeModal('brand-modal');
+                    renderBrands();
+                } else {
+                    alert('خطأ في حفظ الماركة');
+                }
+            } catch (e) {
+                console.error("Error saving brand:", e);
+            }
+        }
+
+        async function deleteBrand(id) {
+            if (confirm('هل أنت متأكد من حذف هذه الماركة؟')) {
+                try {
+                    const sessionData = localStorage.getItem('misk_admin_session');
+                    const token = JSON.parse(sessionData).token;
+                    const response = await fetch(`/api/brands?id=${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (response.ok) renderBrands();
+                } catch (e) {
+                    console.error("Error deleting brand:", e);
+                }
+            }
         }
 
         // --- Page Management Logic ---
@@ -2086,6 +2294,7 @@
         function updateProductCategoryDropdowns() {
             const mainSel = document.getElementById('prod-category');
             const subSel = document.getElementById('prod-sub-category');
+            const brandSel = document.getElementById('prod-brand');
 
             if (!mainSel || !subSel) return;
 
@@ -2106,6 +2315,13 @@
                     subSel.innerHTML += group;
                 }
             });
+
+            if (brandSel) {
+                brandSel.innerHTML = '<option value="">بدون ماركة</option>';
+                mockBrands.forEach(b => {
+                    brandSel.innerHTML += `<option value="${b.name}">${b.name}</option>`;
+                });
+            }
         }
 
 
@@ -2137,6 +2353,7 @@
                 const prod = mockProducts.find(p => p.id == id || p._id == id);
                 if (prod) {
                     document.getElementById('prod-name').value = prod.name;
+                    document.getElementById('prod-brand').value = prod.brand || '';
                     document.getElementById('prod-slug').value = prod.slug || '';
                     document.getElementById('prod-meta-title').value = prod.metaTitle || '';
                     document.getElementById('prod-meta-desc').value = prod.metaDesc || '';
@@ -2188,6 +2405,7 @@
                 id: id && !isNaN(id) ? parseInt(id) : undefined,
                 _id: id && isNaN(id) ? id : undefined,
                 name: document.getElementById('prod-name').value,
+                brand: document.getElementById('prod-brand').value,
                 slug: document.getElementById('prod-slug').value,
                 metaTitle: document.getElementById('prod-meta-title').value,
                 metaDesc: document.getElementById('prod-meta-desc').value,
