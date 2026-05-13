@@ -20,6 +20,7 @@ function getURLParams() {
     return {
         category: params.get('category') || '',
         subCategory: params.get('subCategory') || '',
+        brand: params.get('brand') || '',
         slug: params.get('slug') || ''
     };
 }
@@ -36,11 +37,12 @@ let isLoading = false;
 let hasMoreProducts = true;
 
 async function loadProducts(params = {}) {
-    const { page = 1, limit = 12, category = '', subCategory = '', onSale = '', sort = '' } = params;
+    const { page = 1, limit = 12, category = '', subCategory = '', brand = '', onSale = '', sort = '' } = params;
     try {
         const query = new URLSearchParams({ page, limit, t: Date.now() });
         if (category) query.append('category', category);
         if (subCategory) query.append('subCategory', subCategory);
+        if (brand) query.append('brand', brand);
         if (onSale) query.append('onSale', onSale);
         if (sort) query.append('sort', sort);
 
@@ -65,6 +67,7 @@ async function renderProductGrid(containerId, isLoadMore = false) {
 
     let categoryFilter = '';
     let subCategoryFilter = '';
+    let brandFilter = '';
     const slugFromPath = getCategorySlugFromPath();
     const urlParams = getURLParams();
 
@@ -90,12 +93,15 @@ async function renderProductGrid(containerId, isLoadMore = false) {
         categoryFilter = urlParams.category;
     } else if (urlParams.subCategory) {
         subCategoryFilter = urlParams.subCategory;
+    } else if (urlParams.brand) {
+        brandFilter = urlParams.brand;
     }
 
     // Update Section Title if applicable
     const titleEl = container.closest('section')?.querySelector('.section-title h2');
     if (titleEl && containerId === 'productGrid') {
-        if (subCategoryFilter) titleEl.textContent = subCategoryFilter;
+        if (brandFilter) titleEl.textContent = `منتجات ${brandFilter}`;
+        else if (subCategoryFilter) titleEl.textContent = subCategoryFilter;
         else if (categoryFilter) titleEl.textContent = categoryFilter;
         else titleEl.textContent = 'جميع المنتجات';
     }
@@ -104,7 +110,8 @@ async function renderProductGrid(containerId, isLoadMore = false) {
         page: isLoadMore ? currentPage : 1,
         limit: (window.location.pathname === '/' || window.location.pathname.includes('index.html') || window.location.pathname === '') ? 16 : 12,
         category: categoryFilter,
-        subCategory: subCategoryFilter
+        subCategory: subCategoryFilter,
+        brand: brandFilter
         // No special filters for the main grid - shows all products
     });
 
@@ -601,9 +608,9 @@ async function renderBrandsSlider() {
             const brandsToRender = sortedBrands.length < 6 ? [...sortedBrands, ...sortedBrands] : sortedBrands;
             
             sliderContainer.innerHTML = brandsToRender.map(brand => `
-                <div class="brand-item">
+                <a href="/index.html?brand=${encodeURIComponent(brand.name)}#products" class="brand-item">
                     <img src="${brand.logo || '/assets/images/placeholder.png'}" alt="${escapeHTML(brand.name)}">
-                </div>
+                </a>
             `).join('');
         }
     } catch (e) {

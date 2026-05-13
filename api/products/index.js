@@ -13,7 +13,7 @@ module.exports = async (req, res) => {
 
     if (req.method === 'GET') {
         try {
-            const { slug, category, subCategory, id, onSale, sort } = req.query;
+            const { slug, category, subCategory, brand, id, onSale, sort } = req.query;
             let query = {};
             if (slug) {
                 query = { slug: slug };
@@ -26,6 +26,7 @@ module.exports = async (req, res) => {
             } else {
                 if (category) query.category = category;
                 if (subCategory) query.subCategory = subCategory;
+                if (brand) query.brand = brand;
                 // Filter only discounted products
                 if (onSale === 'true') {
                     query.oldPrice = { $exists: true, $ne: null, $gt: 0 };
