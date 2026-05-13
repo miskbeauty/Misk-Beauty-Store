@@ -2482,6 +2482,7 @@
                     id: id && !isNaN(id) ? parseInt(id) : undefined,
                     _id: id && isNaN(id) ? id : undefined,
                     name: document.getElementById('prod-name').value,
+                    brand: document.getElementById('prod-brand').value,
                     slug: document.getElementById('prod-slug').value,
                     metaTitle: document.getElementById('prod-meta-title').value,
                     metaDesc: document.getElementById('prod-meta-desc').value,
@@ -2599,9 +2600,10 @@
 
             // Load essential data from API
             try {
-                const [catRes, setRes] = await Promise.all([
+                const [catRes, setRes, brandRes] = await Promise.all([
                     fetch('/api/categories').then(r => r.json()),
-                    fetch('/api/settings').then(r => r.json())
+                    fetch('/api/settings').then(r => r.json()),
+                    fetch('/api/brands').then(r => r.json())
                 ]);
 
                 if (catRes.success) {
@@ -2611,6 +2613,9 @@
                 if (setRes.success && setRes.settings) {
                     storeSettings = setRes.settings;
                     localStorage.setItem('misk_settings', JSON.stringify(setRes.settings));
+                }
+                if (brandRes.success) {
+                    mockBrands = brandRes.brands;
                 }
             } catch (e) {
                 console.warn("API Fetch failed, using local storage fallback:", e);
