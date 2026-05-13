@@ -1910,10 +1910,52 @@ footer {
 
 /* Brands Strip - Premium Slim Bar */
 .brands-strip {
-    padding: 12px 0;
+    padding: 8px 0;
     background: #fff;
     border-bottom: 1px solid rgba(74, 20, 140, 0.08);
     margin-bottom: 10px;
+}
+
+.brands-strip-flex {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.brands-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    color: var(--primary-dark);
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding-left: 20px;
+    border-left: 1px solid rgba(74, 20, 140, 0.1);
+}
+
+.brands-label i {
+    color: #ffd700;
+    font-size: 0.9rem;
+}
+
+.brands-slider-wrapper {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+@media (max-width: 600px) {
+    .brands-label span {
+        display: none;
+    }
+    .brands-label {
+        padding-left: 10px;
+        gap: 0;
+    }
+    .brands-strip-flex {
+        gap: 10px;
+    }
 }
 
 .brands-strip .brands-slider {
