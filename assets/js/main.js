@@ -89,11 +89,15 @@ async function renderProductGrid(containerId, isLoadMore = false) {
                 }
             } catch (e) {}
         }
-    } else if (urlParams.category) {
+    }
+    
+    if (urlParams.category) {
         categoryFilter = urlParams.category;
-    } else if (urlParams.subCategory) {
+    }
+    if (urlParams.subCategory) {
         subCategoryFilter = urlParams.subCategory;
-    } else if (urlParams.brand) {
+    }
+    if (urlParams.brand) {
         brandFilter = urlParams.brand;
     }
 

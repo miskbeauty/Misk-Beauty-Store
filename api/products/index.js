@@ -26,7 +26,7 @@ module.exports = async (req, res) => {
             } else {
                 if (category) query.category = category;
                 if (subCategory) query.subCategory = subCategory;
-                if (brand) query.brand = brand;
+                if (brand) query.brand = { $regex: new RegExp(`^${brand}$`, 'i') };
                 // Filter only discounted products
                 if (onSale === 'true') {
                     query.oldPrice = { $exists: true, $ne: null, $gt: 0 };
