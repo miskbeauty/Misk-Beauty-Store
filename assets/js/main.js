@@ -101,13 +101,45 @@ async function renderProductGrid(containerId, isLoadMore = false) {
         brandFilter = urlParams.brand;
     }
 
-    // Update Section Title if applicable
-    const titleEl = container.closest('section')?.querySelector('.section-title h2');
-    if (titleEl && containerId === 'productGrid') {
-        if (brandFilter) titleEl.textContent = `منتجات ${brandFilter}`;
-        else if (subCategoryFilter) titleEl.textContent = subCategoryFilter;
-        else if (categoryFilter) titleEl.textContent = categoryFilter;
-        else titleEl.textContent = 'جميع المنتجات';
+    const isFiltered = !!(brandFilter || categoryFilter || subCategoryFilter);
+
+    if (isFiltered && containerId === 'productGrid') {
+        const headerContainer = document.getElementById('categoryHeaderContainer');
+        if (headerContainer) {
+            let filterType = 'بحث';
+            let filterValue = '';
+            let icon = 'fa-search';
+            if (brandFilter) { filterType = 'ماركة'; filterValue = brandFilter; icon = 'fa-award'; }
+            else if (subCategoryFilter) { filterType = 'قسم فرعي'; filterValue = subCategoryFilter; icon = 'fa-tags'; }
+            else if (categoryFilter) { filterType = 'قسم رئيسي'; filterValue = categoryFilter; icon = 'fa-th-large'; }
+            
+            headerContainer.innerHTML = `
+                <div class="filter-results-header">
+                    <div class="filter-info">
+                        <div class="filter-breadcrumbs">
+                            <span onclick="clearAllFilters()">الرئيسية</span>
+                            <i class="fas fa-chevron-left"></i>
+                            <span>${filterType}</span>
+                        </div>
+                        <h2 class="filter-current-title">
+                            <i class="fas ${icon}"></i>
+                            منتجات ${filterValue}
+                        </h2>
+                    </div>
+                    <button class="clear-filter-btn" onclick="clearAllFilters()">
+                        <i class="fas fa-times-circle"></i>
+                        إلغاء التصفية
+                    </button>
+                </div>
+            `;
+            const defaultTitle = container.closest('section')?.querySelector('.section-title');
+            if (defaultTitle) defaultTitle.style.display = 'none';
+        }
+    } else if (containerId === 'productGrid') {
+        const headerContainer = document.getElementById('categoryHeaderContainer');
+        if (headerContainer) headerContainer.innerHTML = '';
+        const defaultTitle = container.closest('section')?.querySelector('.section-title');
+        if (defaultTitle) defaultTitle.style.display = 'block';
     }
 
     const result = await loadProducts({
@@ -116,7 +148,6 @@ async function renderProductGrid(containerId, isLoadMore = false) {
         category: categoryFilter,
         subCategory: subCategoryFilter,
         brand: brandFilter
-        // No special filters for the main grid - shows all products
     });
 
     const products = result.products || [];
@@ -340,6 +371,27 @@ window.updateShipping = function() {
 async function initSite() {
     updateCartUI();
     renderCartPage();
+
+    // Check for filters to enable Focus Mode early
+    const urlParams = getURLParams();
+    const slugFromPath = getCategorySlugFromPath();
+    const isFiltered = !!(urlParams.brand || urlParams.category || urlParams.subCategory || slugFromPath);
+    
+    if (isFiltered) {
+        document.body.classList.add('focus-mode-active');
+        const mainSectionsToHide = ['home', 'new-arrivals', 'offers', 'best-sellers', 'top-rated', 'shop-categories'];
+        mainSectionsToHide.forEach(id => {
+            const sec = document.getElementById(id);
+            if (sec) sec.classList.add('focus-mode-hidden');
+            if (id === 'shop-categories') {
+                const shopSec = document.querySelector('.shop-categories');
+                if (shopSec) shopSec.classList.add('focus-mode-hidden');
+            }
+        });
+        // Only render the products grid and skip the rest for better performance
+        if (document.getElementById('productGrid')) await renderProductGrid('productGrid');
+        return; // Exit early as we are in focus mode
+    }
 
     const homeSection = document.getElementById('home');
     if (homeSection) {
@@ -623,4 +675,17 @@ async function renderBrandsSlider() {
 }
 
 document.addEventListener('DOMContentLoaded', initSite);
+
+// --- Filter Management ---
+function clearAllFilters() {
+    // Reset URL to base path without params or hash
+    const baseUrl = window.location.origin + window.location.pathname;
+    window.history.pushState({}, '', baseUrl);
+    
+    // Smooth scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Force re-render
+    renderProductGrid('productGrid');
+}
 

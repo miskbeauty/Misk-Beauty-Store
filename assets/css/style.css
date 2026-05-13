@@ -2185,3 +2185,94 @@ footer {
         height: 60px;
     }
 }
+
+/* ===== FILTER RESULTS HEADER (Focus Mode) ===== */
+.filter-results-header {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(15px);
+    border-radius: 24px;
+    padding: 30px;
+    margin: 40px auto 60px;
+    box-shadow: 0 10px 40px rgba(106, 27, 154, 0.08);
+    border: 1px solid rgba(106, 27, 154, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: slide-down-fade 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+@keyframes slide-down-fade {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.filter-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.filter-breadcrumbs span { cursor: pointer; transition: color 0.2s; }
+.filter-breadcrumbs span:hover { color: var(--primary-dark); }
+.filter-breadcrumbs i { font-size: 0.7rem; opacity: 0.5; }
+
+.filter-current-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--primary-dark);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.filter-current-title i {
+    font-size: 1.8rem;
+    color: var(--primary-light);
+}
+
+.clear-filter-btn {
+    background: #fff;
+    color: #d32f2f;
+    border: 1.5px solid #ffcdd2;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.clear-filter-btn:hover {
+    background: #fff5f5;
+    border-color: #d32f2f;
+    box-shadow: 0 5px 15px rgba(211, 47, 47, 0.1);
+    transform: translateX(-5px);
+}
+
+/* Hide sections in Focus Mode */
+.focus-mode-hidden {
+    display: none !important;
+}
+
+/* Adjust main spacing in Focus Mode */
+.focus-mode-active #products {
+    margin-top: 20px !important;
+    padding-top: 0 !important;
+}
+
+.focus-mode-active .brands-strip {
+    border-bottom: 1px solid #f0e6ff;
+    background: #fff;
+}
