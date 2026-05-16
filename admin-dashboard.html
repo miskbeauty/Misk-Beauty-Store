@@ -1430,7 +1430,9 @@
             tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</td></tr>';
 
             try {
-                const token = localStorage.getItem('misk_admin_session');
+                const sessionData = localStorage.getItem('misk_admin_session');
+                const session = sessionData ? JSON.parse(sessionData) : null;
+                const token = session ? session.token : '';
                 const response = await fetch('/api/orders', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -1486,7 +1488,9 @@
         }
 
         async function updateStatus(orderId, newStatus) {
-            const token = localStorage.getItem('misk_admin_session');
+            const sessionData = localStorage.getItem('misk_admin_session');
+            const session = sessionData ? JSON.parse(sessionData) : null;
+            const token = session ? session.token : '';
             try {
                 const response = await fetch('/api/orders', {
                     method: 'PUT',
