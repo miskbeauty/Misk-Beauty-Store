@@ -1509,7 +1509,7 @@
                 document.getElementById('detail-total').innerText = (order.total || 0) + ' شيكل';
                 const status = order.status || 'waiting';
                 const badge = document.getElementById('detail-status-badge');
-                badge.className = \`status-badge status-\${status}\`;
+                badge.className = `status-badge status-${status}`;
                 badge.innerText = statusMap[status] || status;
                 document.getElementById('order-modal').style.display = 'flex';
             }
