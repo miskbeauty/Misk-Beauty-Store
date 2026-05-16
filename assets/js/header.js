@@ -67,8 +67,8 @@ function getDynamicNavHTML(categories = []) {
     return html;
 }
 
-function getUtilityNavHTML() {
-    const user = (typeof AuthService !== 'undefined') ? AuthService.getUser() : null;
+async function getUtilityNavHTML() {
+    const user = (typeof AuthService !== 'undefined') ? await AuthService.getUser() : null;
     let html = `
         <a href="/offers.html" class="util-btn util-offers">
             <i class="fas fa-fire"></i> العروض
@@ -156,7 +156,7 @@ async function injectHeader() {
     if (dynamicNav) dynamicNav.innerHTML = getDynamicNavHTML(categories);
 
     const utilityNav = document.getElementById('utility-nav');
-    if (utilityNav) utilityNav.innerHTML = getUtilityNavHTML();
+    if (utilityNav) utilityNav.innerHTML = await getUtilityNavHTML();
 }
 
 window.injectHeader = injectHeader;

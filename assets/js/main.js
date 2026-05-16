@@ -689,3 +689,149 @@ function clearAllFilters() {
     renderProductGrid('productGrid');
 }
 
+// --- Checkout and Loyalty ---
+let pointsUsed = 0;
+let pointsDiscount = 0;
+
+window.updateCheckoutShipping = function() {
+    const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    const shipping = parseFloat(calculateShipping() || 0);
+    
+    const subtotalEl = document.getElementById('checkoutSubtotal');
+    if (subtotalEl) subtotalEl.textContent = subtotal.toFixed(2);
+    
+    const shippingEl = document.getElementById('checkoutShipping');
+    if (shippingEl) shippingEl.textContent = shipping.toFixed(2);
+    
+    const grandTotalEl = document.getElementById('checkoutGrandTotal');
+    if (grandTotalEl) grandTotalEl.textContent = (subtotal + shipping - pointsDiscount).toFixed(2);
+};
+
+window.applyPointRedemption = function() {
+    if (typeof AuthService === 'undefined') return;
+    const user = AuthService.getUserSync ? AuthService.getUserSync() : null; // use sync if available
+    if (!user) return;
+    
+    if (user.points < 100) {
+        alert('لا تملك 100 نقطة لاستبدالها.');
+        return;
+    }
+    
+    if (pointsUsed > 0) {
+        alert('لقد قمت مسبقاً بتطبيق خصم النقاط على هذا الطلب.');
+        return;
+    }
+    
+    pointsUsed = 100;
+    pointsDiscount = 10;
+    
+    const applyMsg = document.getElementById('applied-points-msg');
+    if (applyMsg) applyMsg.style.display = 'block';
+    
+    updateCheckoutShipping();
+};
+
+window.handleCheckoutSubmit = async function(event) {
+    event.preventDefault();
+    if (cart.length === 0) {
+        alert('سلتك فارغة!');
+        return;
+    }
+    
+    const btn = event.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري تأكيد الطلب...';
+    
+    const orderData = {
+        fullName: document.getElementById('fullName').value,
+        phone: document.getElementById('phone').value,
+        region: document.getElementById('checkoutCity').value,
+        cityText: document.getElementById('cityText').value,
+        address: document.getElementById('address').value,
+        items: cart,
+        subtotal: cart.reduce((acc, item) => acc + (item.price * item.quantity), 0),
+        shipping: parseFloat(calculateShipping() || 0),
+        pointsUsed: pointsUsed,
+        pointsDiscount: pointsDiscount,
+        total: (cart.reduce((acc, item) => acc + (item.price * item.quantity), 0) + parseFloat(calculateShipping() || 0)) - pointsDiscount,
+        date: new Date().toISOString()
+    };
+    
+    if (typeof AuthService !== 'undefined') {
+        const user = AuthService.getUserSync ? AuthService.getUserSync() : null;
+        if (user && user.userId) orderData.userId = user.userId;
+        else if (user && user._id) orderData.userId = user._id;
+    }
+    
+    try {
+        const response = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(orderData)
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            cart = [];
+            saveCart();
+            updateCartUI();
+            
+            document.getElementById('checkoutContent').style.display = 'none';
+            document.getElementById('successSection').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            alert('حدث خطأ أثناء تقديم الطلب: ' + (data.message || ''));
+            btn.disabled = false;
+            btn.innerHTML = 'تأكيد الطلب';
+        }
+    } catch (e) {
+        console.error(e);
+        alert('حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.');
+        btn.disabled = false;
+        btn.innerHTML = 'تأكيد الطلب';
+    }
+};
+
+async function initCheckout() {
+    if (!window.location.pathname.includes('checkout.html')) return;
+    
+    const listContainer = document.getElementById('checkoutItemsList');
+    if (!listContainer) return;
+    
+    if (cart.length === 0) {
+        listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">السلة فارغة</div>';
+        return;
+    }
+    
+    listContainer.innerHTML = cart.map(item => `
+        <div style="display: flex; gap: 15px; margin-bottom: 15px; align-items: center;">
+            <img src="${item.image}" alt="${escapeHTML(item.name)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+            <div style="flex: 1;">
+                <h4 style="margin: 0 0 5px; font-size: 0.95rem;">${escapeHTML(item.name)}</h4>
+                <div style="color: #666; font-size: 0.85rem;">الكمية: ${item.quantity}</div>
+            </div>
+            <div style="font-weight: 600;">${(item.price * item.quantity).toFixed(2)} شيكل</div>
+        </div>
+    `).join('');
+    
+    updateCheckoutShipping();
+    
+    if (typeof AuthService !== 'undefined') {
+        const user = await AuthService.getUser();
+        if (user) {
+            const nameInput = document.getElementById('fullName');
+            const phoneInput = document.getElementById('phone');
+            if (nameInput && !nameInput.value) nameInput.value = user.name || '';
+            if (phoneInput && !phoneInput.value) phoneInput.value = user.phone || '';
+            
+            if (user.points >= 100) {
+                const box = document.getElementById('loyalty-redemption-box');
+                const ptsText = document.getElementById('current-user-points');
+                if (box) box.style.display = 'block';
+                if (ptsText) ptsText.textContent = user.points;
+            }
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', initCheckout);

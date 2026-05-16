@@ -64,13 +64,37 @@ module.exports = async (req, res) => {
 
             // 2. Update Loyalty Points if user is logged in
             if (orderData.userId) {
-                const amount = parseInt(orderData.total) || 0;
+                const amount = parseInt(orderData.total) || 0; // Points earned based on final total
+                const pointsUsed = parseInt(orderData.pointsUsed) || 0;
+                const pointsEarned = amount;
+                
+                const updateQuery = {
+                    $inc: { 
+                        points: pointsEarned - pointsUsed, 
+                        totalSpend: amount, 
+                        orderCount: 1 
+                    },
+                    $push: { 
+                        pointsHistory: { 
+                            $each: [
+                                { amount: pointsEarned, date: new Date().toISOString(), reason: 'Order #' + result.insertedId }
+                            ]
+                        }
+                    }
+                };
+
+                // Add a separate history entry if points were redeemed
+                if (pointsUsed > 0) {
+                    updateQuery.$push.pointsHistory.$each.push({
+                        amount: -pointsUsed,
+                        date: new Date().toISOString(),
+                        reason: 'Redeemed on Order #' + result.insertedId
+                    });
+                }
+
                 await users.updateOne(
                     { _id: new ObjectId(orderData.userId) },
-                    {
-                        $inc: { points: amount, totalSpend: amount, orderCount: 1 },
-                        $push: { pointsHistory: { amount, date: new Date().toISOString(), reason: 'Order #' + orderData.id } }
-                    }
+                    updateQuery
                 );
             }
 

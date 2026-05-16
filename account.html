@@ -173,8 +173,8 @@
     <script src="assets/js/header.js"></script>
     <script src="assets/js/main.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const user = AuthService.getUser();
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await AuthService.getUser();
             if (!user) {
                 window.location.href = 'login.html?redirect=account.html';
                 return;
