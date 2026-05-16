@@ -485,6 +485,19 @@
                             <label>حد الشحن المجاني (شيكل)</label>
                             <input type="number" id="set-free-shipping-threshold" class="admin-input" placeholder="300">
                         </div>
+                        
+                        <div class="full-width" style="margin-top: 10px; margin-bottom: 20px; background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <h4 style="color: var(--admin-purple); margin: 0;">مناطق وأسعار التوصيل</h4>
+                                <button type="button" onclick="addShippingRegion()" style="padding: 6px 12px; font-size: 0.85rem; background: var(--admin-purple); color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                    <i class="fas fa-plus"></i> إضافة منطقة
+                                </button>
+                            </div>
+                            <div id="shipping-regions-list">
+                                <!-- Regions will be rendered here -->
+                            </div>
+                        </div>
+
                         <div class="admin-form-group">
                             <label>رابط فيسبوك</label>
                             <input type="text" id="set-facebook" class="admin-input"
@@ -2280,6 +2293,56 @@
             if (storeSettings.logo) {
                 document.getElementById('logo-preview').innerHTML = `<img src="${storeSettings.logo}" style="max-height: 80px; border-radius: 8px;">`;
             }
+
+            // Render Shipping Regions
+            const regionsList = document.getElementById('shipping-regions-list');
+            regionsList.innerHTML = '';
+            
+            // Default regions if none exist
+            let regions = storeSettings.shippingRegions;
+            if (!regions || regions.length === 0) {
+                regions = [
+                    { name: 'عقربا', cost: 10 },
+                    { name: 'مدن الضفة الغربية', cost: 20 },
+                    { name: 'القدس', cost: 30 },
+                    { name: 'داخل الخط الأخضر', cost: 50 }
+                ];
+            }
+            
+            regions.forEach(region => addShippingRegion(region));
+        }
+
+        // --- Shipping Regions Logic ---
+        function addShippingRegion(data = {}) {
+            const list = document.getElementById('shipping-regions-list');
+            const div = document.createElement('div');
+            div.className = 'shipping-region-row';
+            div.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 40px; gap: 10px; margin-bottom: 10px; align-items: center;';
+
+            div.innerHTML = `
+                <input type="text" class="admin-input region-name" placeholder="اسم المنطقة (مثال: رام الله)" value="${data.name || ''}" required>
+                <input type="number" class="admin-input region-cost" placeholder="التكلفة" value="${data.cost !== undefined ? data.cost : ''}" required>
+                <button type="button" onclick="this.parentElement.remove()" style="color: #dc3545; background: none; border: none; font-size: 1.2rem; cursor: pointer;" title="حذف المنطقة">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            `;
+            list.appendChild(div);
+        }
+
+        function getShippingRegionsData() {
+            const rows = document.querySelectorAll('.shipping-region-row');
+            const regions = [];
+            rows.forEach(row => {
+                const name = row.querySelector('.region-name').value.trim();
+                const cost = row.querySelector('.region-cost').value;
+                if (name && cost !== '') {
+                    regions.push({
+                        name,
+                        cost: parseFloat(cost) || 0
+                    });
+                }
+            });
+            return regions;
         }
 
         function previewLogo(input) {
@@ -2310,7 +2373,8 @@
                 pointsExpiryDays: parseInt(document.getElementById('set-points-expiry').value) || 365,
                 pointsPerReview: parseInt(document.getElementById('set-points-review').value) || 50,
                 privacyPolicy: privacyQuill.root.innerHTML,
-                termsOfUse: termsQuill.root.innerHTML
+                termsOfUse: termsQuill.root.innerHTML,
+                shippingRegions: getShippingRegionsData()
             };
 
             try {

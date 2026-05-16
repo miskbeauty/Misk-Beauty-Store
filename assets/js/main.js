@@ -352,13 +352,54 @@ function updateCartTotals(subtotal) {
     if (grandTotalEl) grandTotalEl.textContent = (subtotal + parseFloat(shippingCost)).toFixed(2);
 }
 
+window.shippingRegions = [
+    { name: 'عقربا', cost: 10 },
+    { name: 'مدن الضفة الغربية', cost: 20 },
+    { name: 'القدس', cost: 30 },
+    { name: 'داخل الخط الأخضر', cost: 50 }
+];
+
+async function loadShippingRegions(selectId) {
+    try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        if (data.success && data.settings && data.settings.shippingRegions) {
+            window.shippingRegions = data.settings.shippingRegions;
+        }
+    } catch (e) {
+        console.error("Failed to load shipping regions, using defaults", e);
+    }
+    
+    const selectBox = document.getElementById(selectId);
+    if (selectBox) {
+        selectBox.innerHTML = '<option value="none" disabled selected>اختر المنطقة...</option>';
+        window.shippingRegions.forEach((region, index) => {
+            const opt = document.createElement('option');
+            opt.value = index.toString();
+            opt.textContent = `${region.name} (${region.cost} شيكل)`;
+            selectBox.appendChild(opt);
+        });
+    }
+}
+
 function calculateShipping() {
-    const region = document.getElementById('shippingRegion')?.value || 'none';
-    if (region === 'none') return "0";
-    if (region === 'aqraba') return "10";
-    if (region === 'westbank') return "20";
-    if (region === 'jerusalem') return "30";
-    if (region === 'inside') return "50";
+    // Determine which dropdown is on the page (checkout or cart)
+    let regionVal = 'none';
+    const checkoutCity = document.getElementById('checkoutCity');
+    const shippingRegion = document.getElementById('shippingRegion');
+    
+    if (checkoutCity && checkoutCity.value !== 'none') {
+        regionVal = checkoutCity.value;
+    } else if (shippingRegion && shippingRegion.value !== 'none') {
+        regionVal = shippingRegion.value;
+    }
+    
+    if (regionVal === 'none') return "0";
+    
+    const regionIndex = parseInt(regionVal);
+    if (!isNaN(regionIndex) && window.shippingRegions[regionIndex]) {
+        return window.shippingRegions[regionIndex].cost.toString();
+    }
     return "0";
 }
 
@@ -370,6 +411,9 @@ window.updateShipping = function() {
 // --- Initialization ---
 async function initSite() {
     updateCartUI();
+    if (document.getElementById('shippingRegion')) {
+        await loadShippingRegions('shippingRegion');
+    }
     renderCartPage();
 
     // Check for filters to enable Focus Mode early
@@ -742,10 +786,15 @@ window.handleCheckoutSubmit = async function(event) {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري تأكيد الطلب...';
     
+    const selectedRegionIndex = parseInt(document.getElementById('checkoutCity').value);
+    const regionName = !isNaN(selectedRegionIndex) && window.shippingRegions[selectedRegionIndex] 
+        ? window.shippingRegions[selectedRegionIndex].name 
+        : document.getElementById('checkoutCity').value;
+
     const orderData = {
         fullName: document.getElementById('fullName').value,
         phone: document.getElementById('phone').value,
-        region: document.getElementById('checkoutCity').value,
+        region: regionName,
         cityText: document.getElementById('cityText').value,
         address: document.getElementById('address').value,
         items: cart,
@@ -794,6 +843,9 @@ window.handleCheckoutSubmit = async function(event) {
 
 async function initCheckout() {
     if (!window.location.pathname.includes('checkout.html')) return;
+    
+    // Load dynamic shipping regions
+    await loadShippingRegions('checkoutCity');
     
     const listContainer = document.getElementById('checkoutItemsList');
     if (!listContainer) return;
