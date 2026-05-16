@@ -83,7 +83,7 @@ async function getUtilityNavHTML() {
         html += `
         <a href="/login.html" class="util-btn util-login">
             <i class="fas fa-sign-in-alt"></i>
-            <span>دخول</span>
+            <span>نقاطي</span>
         </a>`;
     }
     return html;

@@ -105,18 +105,18 @@
     <script src="assets/js/header.js"></script>
     <script src="assets/js/main.js"></script>
     <script>
-        document.getElementById('loginForm').addEventListener('submit', (e) => {
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const phone = document.getElementById('phone').value;
             const password = document.getElementById('password').value;
 
-            const result = AuthService.login(phone, password);
+            const result = await AuthService.login(phone, password);
             if (result.success) {
                 const urlParams = new URLSearchParams(window.location.search);
                 const redirect = urlParams.get('redirect') || 'index.html';
                 window.location.href = redirect;
             } else {
-                alert(result.message);
+                alert(result.message || 'حدث خطأ غير متوقع');
             }
         });
     </script>

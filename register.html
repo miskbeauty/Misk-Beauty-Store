@@ -109,7 +109,7 @@
     <script src="assets/js/header.js"></script>
     <script src="assets/js/main.js"></script>
     <script>
-        document.getElementById('registerForm').addEventListener('submit', (e) => {
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const userData = {
                 name: document.getElementById('name').value,
@@ -117,12 +117,12 @@
                 password: document.getElementById('password').value
             };
 
-            const result = AuthService.register(userData);
+            const result = await AuthService.register(userData);
             if (result.success) {
                 alert('تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول.');
                 window.location.href = 'login.html';
             } else {
-                alert(result.message);
+                alert(result.message || 'حدث خطأ غير متوقع');
             }
         });
     </script>

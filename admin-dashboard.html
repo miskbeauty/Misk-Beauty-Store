@@ -1411,35 +1411,59 @@
             }
         }
 
-        function renderOrders() {
+        async function renderOrders() {
             const tableBody = document.getElementById('orders-table-body');
             if (!tableBody) return;
+            tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</td></tr>';
+
+            try {
+                const token = localStorage.getItem('misk_admin_session');
+                const response = await fetch('/api/orders', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    mockOrders = data.orders; // Store globally for viewDetails/whatsapp
+                }
+            } catch (e) {
+                console.error("Failed to fetch real orders", e);
+            }
+
+            if (mockOrders.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">لا يوجد طلبات.</td></tr>';
+                return;
+            }
+
             tableBody.innerHTML = '';
+            mockOrders.forEach(order => {
+                const orderId = order._id || order.id;
+                const customer = order.fullName || order.customer || 'غير معروف';
+                const date = order.date ? new Date(order.date).toLocaleDateString('ar-EG') : '-';
+                const city = order.region || order.city || '-';
+                const total = order.total || 0;
+                const status = order.status || 'waiting';
 
-            const encryptedOrders = localStorage.getItem('misk_orders_vault');
-            const orders = DataVault.decrypt(encryptedOrders) || mockOrders;
-
-            orders.forEach(order => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>#${order.id}</td>
-                    <td>${order.date}</td>
-                    <td>${order.customer}</td>
-                    <td>${order.city}</td>
-                    <td>${order.total}</td>
+                    <td>#${String(orderId).slice(-6).toUpperCase()}</td>
+                    <td>${date}</td>
+                    <td>${customer}</td>
+                    <td>${city}</td>
+                    <td>${total} شيكل</td>
                     <td>
-                        <select class="status-select" onchange="updateStatus('${order.id}', this.value)">
-                            <option value="waiting" ${order.status === 'waiting' ? 'selected' : ''}>بانتظار التأكيد</option>
-                            <option value="preparing" ${order.status === 'preparing' ? 'selected' : ''}>قيد التجهيز</option>
-                            <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>تم الشحن</option>
-                            <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>تم التوصيل</option>
+                        <select class="status-select" onchange="updateStatus('${orderId}', this.value)">
+                            <option value="waiting" ${status === 'waiting' ? 'selected' : ''}>بانتظار التأكيد</option>
+                            <option value="preparing" ${status === 'preparing' ? 'selected' : ''}>قيد التجهيز</option>
+                            <option value="shipped" ${status === 'shipped' ? 'selected' : ''}>تم الشحن</option>
+                            <option value="delivered" ${status === 'delivered' ? 'selected' : ''}>تم التوصيل</option>
                         </select>
                     </td>
                     <td style="text-align: center; display: flex; align-items: center; justify-content: center; gap: 10px;">
-                        <button onclick="viewDetails('${order.id}')" title="عرض التفاصيل" style="background:none; border:none; cursor:pointer;">
+                        <button onclick="viewDetails('${orderId}')" title="عرض التفاصيل" style="background:none; border:none; cursor:pointer;">
                             <i class="fas fa-eye" style="color: #6a1b9a; font-size: 1.1rem;"></i>
                         </button>
-                        <button onclick="contactWhatsApp('${order.id}')" title="تواصل عبر واتساب" class="btn-whatsapp-icon">
+                        <button onclick="contactWhatsApp('${orderId}')" title="تواصل عبر واتساب" class="btn-whatsapp-icon" style="background:none; border:none; cursor:pointer; color:#25D366; font-size:1.3rem;">
                             <i class="fab fa-whatsapp"></i>
                         </button>
                     </td>
@@ -1448,37 +1472,69 @@
             });
         }
 
-        function updateStatus(orderId, newStatus) {
-            const order = mockOrders.find(o => o.id === orderId);
-            if (order) {
-                order.status = newStatus;
-                alert(`تم تحديث حالة الطلب #${orderId} إلى: ${statusMap[newStatus]}`);
+        async function updateStatus(orderId, newStatus) {
+            const token = localStorage.getItem('misk_admin_session');
+            try {
+                const response = await fetch('/api/orders', {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ id: orderId, status: newStatus })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const order = mockOrders.find(o => (o._id || o.id) === orderId);
+                    if (order) order.status = newStatus;
+                    alert(\`تم تحديث حالة الطلب بنجاح إلى: \${statusMap[newStatus]}\`);
+                } else {
+                    alert('فشل تحديث الحالة: ' + data.message);
+                }
+            } catch(e) {
+                console.error(e);
+                alert('خطأ في الاتصال بالخادم.');
             }
         }
 
         function viewDetails(orderId) {
-            const order = mockOrders.find(o => o.id === orderId);
+            const order = mockOrders.find(o => (o._id || o.id) === orderId);
             if (order) {
-                document.getElementById('modal-order-number').innerText = `تفاصيل الطلب #${order.id}`;
-                document.getElementById('detail-name').innerText = order.customer;
-                document.getElementById('detail-whatsapp').innerText = order.whatsapp;
-                document.getElementById('detail-city').innerText = order.city;
-                document.getElementById('detail-date').innerText = order.date;
-                document.getElementById('detail-address').innerText = order.address;
-                document.getElementById('detail-total').innerText = order.total;
+                document.getElementById('modal-order-number').innerText = \`تفاصيل الطلب #\${String(orderId).slice(-6).toUpperCase()}\`;
+                document.getElementById('detail-name').innerText = order.fullName || order.customer || '-';
+                document.getElementById('detail-whatsapp').innerText = order.phone || order.whatsapp || '-';
+                document.getElementById('detail-city').innerText = (order.region || order.city || '') + ' - ' + (order.cityText || '');
+                document.getElementById('detail-date').innerText = order.date ? new Date(order.date).toLocaleString('ar-EG') : '-';
+                document.getElementById('detail-address').innerText = order.address || '-';
+                document.getElementById('detail-total').innerText = (order.total || 0) + ' شيكل';
+                const status = order.status || 'waiting';
                 const badge = document.getElementById('detail-status-badge');
-                badge.className = `status-badge status-${order.status}`;
-                badge.innerText = statusMap[order.status];
+                badge.className = \`status-badge status-\${status}\`;
+                badge.innerText = statusMap[status] || status;
                 document.getElementById('order-modal').style.display = 'flex';
             }
         }
 
         function contactWhatsApp(orderId) {
-            const order = mockOrders.find(o => o.id === orderId);
+            const order = mockOrders.find(o => (o._id || o.id) === orderId);
             if (order) {
-                const cleanPhone = order.whatsapp.replace(/\D/g, '');
-                const message = `أهلاً بكِ في مسك بيوتي، نؤكد استلام طلبك رقم ${order.id}. هل العنوان المذكور ( ${order.address} ) دقيق للبدء بالتجهيز؟`;
-                const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+                const phone = order.phone || order.whatsapp || '';
+                const cleanPhone = phone.replace(/\\D/g, '');
+                
+                let phoneFormatted = cleanPhone;
+                // If local Palestinian/Israeli number like 059... convert to 97259...
+                if (phoneFormatted.startsWith('05')) {
+                    phoneFormatted = '972' + phoneFormatted.substring(1);
+                } else if (!phoneFormatted.startsWith('970') && !phoneFormatted.startsWith('972')) {
+                    phoneFormatted = '972' + phoneFormatted; // fallback assume 972
+                }
+
+                const shortId = String(orderId).slice(-6).toUpperCase();
+                const address = order.address || '';
+                const city = order.region || '';
+                const message = \`أهلاً بك في مسك بيوتي 🌸،\nنتواصل معك لتأكيد طلبك رقم (#\${shortId}) بقيمة (\${order.total || 0} شيكل).\nهل عنوانك في (\${city} - \${address}) صحيح للبدء بتجهيز الطلب؟\`;
+                
+                const whatsappUrl = \`https://wa.me/\${phoneFormatted}?text=\${encodeURIComponent(message)}\`;
                 window.open(whatsappUrl, '_blank');
             }
         }
