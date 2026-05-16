@@ -1487,7 +1487,7 @@
                 if (data.success) {
                     const order = mockOrders.find(o => (o._id || o.id) === orderId);
                     if (order) order.status = newStatus;
-                    alert(\`تم تحديث حالة الطلب بنجاح إلى: \${statusMap[newStatus]}\`);
+                    alert(`تم تحديث حالة الطلب بنجاح إلى: ${statusMap[newStatus]}`);
                 } else {
                     alert('فشل تحديث الحالة: ' + data.message);
                 }
@@ -1500,7 +1500,7 @@
         function viewDetails(orderId) {
             const order = mockOrders.find(o => (o._id || o.id) === orderId);
             if (order) {
-                document.getElementById('modal-order-number').innerText = \`تفاصيل الطلب #\${String(orderId).slice(-6).toUpperCase()}\`;
+                document.getElementById('modal-order-number').innerText = `تفاصيل الطلب #${String(orderId).slice(-6).toUpperCase()}`;
                 document.getElementById('detail-name').innerText = order.fullName || order.customer || '-';
                 document.getElementById('detail-whatsapp').innerText = order.phone || order.whatsapp || '-';
                 document.getElementById('detail-city').innerText = (order.region || order.city || '') + ' - ' + (order.cityText || '');
@@ -1532,9 +1532,9 @@
                 const shortId = String(orderId).slice(-6).toUpperCase();
                 const address = order.address || '';
                 const city = order.region || '';
-                const message = \`أهلاً بك في مسك بيوتي 🌸،\nنتواصل معك لتأكيد طلبك رقم (#\${shortId}) بقيمة (\${order.total || 0} شيكل).\nهل عنوانك في (\${city} - \${address}) صحيح للبدء بتجهيز الطلب؟\`;
+                const message = `أهلاً بك في مسك بيوتي 🌸،\nنتواصل معك لتأكيد طلبك رقم (#${shortId}) بقيمة (${order.total || 0} شيكل).\nهل عنوانك في (${city} - ${address}) صحيح للبدء بتجهيز الطلب؟`;
                 
-                const whatsappUrl = \`https://wa.me/\${phoneFormatted}?text=\${encodeURIComponent(message)}\`;
+                const whatsappUrl = `https://wa.me/${phoneFormatted}?text=${encodeURIComponent(message)}`;
                 window.open(whatsappUrl, '_blank');
             }
         }
